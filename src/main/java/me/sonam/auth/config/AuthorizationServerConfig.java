@@ -93,6 +93,7 @@ public class AuthorizationServerConfig {
                 //.postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
+                .scope(OidcScopes.EMAIL)
                 .scope("message.read")
                 .scope("message.write")
                 //.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())

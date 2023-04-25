@@ -44,15 +44,15 @@ public class DefaultSecurityConfig {
     // @formatter:off
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        /*http
+        http
                 .authorizeHttpRequests(authorize ->
                         authorize.anyRequest().authenticated()
                 )
-                .formLogin(withDefaults());*/
-        return http
+                .formLogin(withDefaults());
+    /*    return http
                 .formLogin(Customizer.withDefaults())
-                .build();
-        //return http.build();
+                .build();*/
+        return http.build();
     }
     // @formatter:on
 
