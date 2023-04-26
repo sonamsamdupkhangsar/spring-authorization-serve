@@ -49,9 +49,6 @@ public class DefaultSecurityConfig {
                         authorize.anyRequest().authenticated()
                 )
                 .formLogin(withDefaults());
-    /*    return http
-                .formLogin(Customizer.withDefaults())
-                .build();*/
         return http.build();
     }
     // @formatter:on
