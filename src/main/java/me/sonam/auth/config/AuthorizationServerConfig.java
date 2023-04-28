@@ -17,12 +17,18 @@ package me.sonam.auth.config;
 
 import java.util.UUID;
 
+import jakarta.annotation.PostConstruct;
 import me.sonam.auth.jose.Jwks;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
+import me.sonam.auth.jpa.entity.Client;
+import me.sonam.auth.service.JpaRegisteredClientRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -59,6 +65,10 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
  */
 @Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
+
+    @Autowired
+    private JpaRegisteredClientRepository jpaRegisteredClientRepository;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -77,46 +87,39 @@ public class AuthorizationServerConfig {
         return http.build();
     }
 
-    // @formatter:off
-    @Bean
-    public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
-        RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("messaging-client")
-                .clientSecret("{noop}secret")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                //.redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
-                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
-                .redirectUri("http://127.0.0.1:8080/authorized")
-                //.postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
-                .scope(OidcScopes.OPENID)
-                .scope(OidcScopes.PROFILE)
-                .scope(OidcScopes.EMAIL)
-                .scope("message.read")
-                .scope("message.write")
-                //.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false)
-                        .requireProofKey(true).build())
-                .build();
+    @PostConstruct
+    private void saveRegisteredClient() {
+        final String clientId = "messaging-client";
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
+        if (registeredClient != null) {
+            LOG.info("registered client exists");
+        }
+        else {
+            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientId(clientId)
+                    .clientSecret("{noop}secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    //.clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    //.redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
+                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
+                    .redirectUri("http://127.0.0.1:8080/authorized")
+                    //.postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope(OidcScopes.EMAIL)
+                    .scope("message.read")
+                    .scope("message.write")
+                    //.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
+                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false)
+                            .requireProofKey(true).build())
+                    .build();
 
-        // Save registered client in db as if in-memory
-        JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
-        registeredClientRepository.save(registeredClient);
-
-        return registeredClientRepository;
-    }
-    // @formatter:on
-
-    @Bean
-    public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
-    }
-
-    @Bean
-    public OAuth2AuthorizationConsentService authorizationConsentService(JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
+            jpaRegisteredClientRepository.save(registeredClient);
+            LOG.info("saved registeredClient");
+        }
     }
 
     @Bean
@@ -134,20 +137,6 @@ public class AuthorizationServerConfig {
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder().build();
-    }
-
-    @Bean
-    public EmbeddedDatabase embeddedDatabase() {
-        // @formatter:off
-        return new EmbeddedDatabaseBuilder()
-                .generateUniqueName(true)
-                .setType(EmbeddedDatabaseType.H2)
-                .setScriptEncoding("UTF-8")
-                .addScript("org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql")
-                .addScript("org/springframework/security/oauth2/server/authorization/oauth2-authorization-consent-schema.sql")
-                .addScript("org/springframework/security/oauth2/server/authorization/client/oauth2-registered-client-schema.sql")
-                .build();
-        // @formatter:on
     }
 
 }
