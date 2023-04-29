@@ -103,7 +103,10 @@ public class AuthorizationServerConfig {
         else {
             registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                    .clientSecret("{noop}secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
                     .redirectUri("http://127.0.0.1:8080/authorized")
