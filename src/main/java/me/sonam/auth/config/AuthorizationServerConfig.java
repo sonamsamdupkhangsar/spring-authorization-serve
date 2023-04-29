@@ -25,6 +25,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
 import me.sonam.auth.jpa.entity.Client;
+import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +71,9 @@ public class AuthorizationServerConfig {
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
 
+    @Autowired
+    private ClientRepository clientRepository;
+
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -89,7 +93,9 @@ public class AuthorizationServerConfig {
 
     @PostConstruct
     private void saveRegisteredClient() {
-        final String clientId = "messaging-client";
+        final String clientId = "pkce-client";
+        clientRepository.deleteAll();
+
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
         if (registeredClient != null) {
             LOG.info("registered client exists");
@@ -97,13 +103,8 @@ public class AuthorizationServerConfig {
         else {
             registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
-                    .clientSecret("{noop}secret")
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                    //.clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                    //.redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
                     .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
                     .redirectUri("http://127.0.0.1:8080/authorized")
                     //.postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
@@ -112,10 +113,15 @@ public class AuthorizationServerConfig {
                     .scope(OidcScopes.EMAIL)
                     .scope("message.read")
                     .scope("message.write")
-                    //.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
                     .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false)
                             .requireProofKey(true).build())
                     .build();
+
+            //.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
+            //.clientSecret("{noop}secret")
+            //.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            //.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            //.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 
             jpaRegisteredClientRepository.save(registeredClient);
             LOG.info("saved registeredClient");
