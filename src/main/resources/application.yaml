@@ -1,14 +1,13 @@
 server:
-  port: 8085
-#  port: 9000
+  port: 9000
 
 logging:
   level:
     root: warn
     me.sonam.auth: info
     org.springframework.web: error
-    org.springframework.security: error
-    org.springframework.security.oauth2: error
+    org.springframework.security: trace
+    org.springframework.security.oauth2: trace
 #    org.springframework.boot.autoconfigure: DEBUG
 
 spring:

@@ -48,8 +48,9 @@ public class DefaultSecurityConfig {
                 .authorizeHttpRequests(authorize ->
                         authorize.anyRequest().authenticated()
                 )
+                .csrf().disable()
                 .formLogin(withDefaults());
-        return http.build();
+        return http.cors(Customizer.withDefaults()).build();
     }
     // @formatter:on
 
@@ -57,7 +58,7 @@ public class DefaultSecurityConfig {
     @Bean
     UserDetailsService users() {
         UserDetails user = User.withDefaultPasswordEncoder()
-                .username("user1")
+                .username("user")
                 .password("password")
                 .roles("USER")
                 .build();

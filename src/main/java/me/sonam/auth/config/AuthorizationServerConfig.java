@@ -15,15 +15,12 @@ package me.sonam.auth.config;
  * limitations under the License.
  */
 
-import java.util.UUID;
-
-import jakarta.annotation.PostConstruct;
-import me.sonam.auth.jose.Jwks;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-
+import jakarta.annotation.PostConstruct;
+import me.sonam.auth.jose.Jwks;
 import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
@@ -34,30 +31,30 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
-import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * @author Joe Grandja
@@ -86,19 +83,66 @@ public class AuthorizationServerConfig {
                 .exceptionHandling(exceptions ->
                         exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                 )
+                .csrf().disable()
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
         // @formatter:on
-        return http.build();
+        return http.cors(Customizer.withDefaults()).build();
     }
 
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfig = new CorsConfiguration();
+        corsConfig.setAllowedOrigins(Arrays.asList("http://127.0.0.1:8080"));
+        corsConfig.addAllowedMethod("*");
+        corsConfig.addAllowedHeader("*");
+        corsConfig.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfig);
+        return source;
+    }
+
+
     @PostConstruct
-    private void saveRegisteredClient() {
-        final String clientId = "pkce-client";
-        clientRepository.deleteAll();
+    private void savePublicRegisteredClient() {
+        final String clientId = "public-client";
+        Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
+        cLientOptional.ifPresent(client -> clientRepository.delete(client));
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
         if (registeredClient != null) {
-            LOG.info("registered client exists");
+            LOG.info("registered public client exists");
+        }
+        else {
+            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientId(clientId)
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    //.redirectUri("http://localhost:8080")
+                   // .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
+                    .redirectUri("http://127.0.0.1:8080")
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope("message.read")
+                    .scope("message.write")
+                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true)
+                            .requireProofKey(true).build())
+                    .build();
+            jpaRegisteredClientRepository.save(registeredClient);
+
+            LOG.info("saved registeredClient");
+        }
+    }
+
+    @PostConstruct
+    private void savePrivateRegisteredClient() {
+        final String clientId = "private-client";
+        Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
+        cLientOptional.ifPresent(client -> clientRepository.delete(client));
+
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
+        if (registeredClient != null) {
+            LOG.info("registered private client exists");
         }
         else {
             registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
@@ -119,15 +163,35 @@ public class AuthorizationServerConfig {
                     .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false)
                             .requireProofKey(true).build())
                     .build();
-
-            //.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-            //.clientSecret("{noop}secret")
-            //.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            //.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            //.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-
             jpaRegisteredClientRepository.save(registeredClient);
+
             LOG.info("saved registeredClient");
+        }
+    }
+    @PostConstruct
+    private void saveClientCredential() {
+        final String clientId = "oauth-client";
+        clientRepository.deleteAll();
+
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
+        if (registeredClient != null) {
+            LOG.info("registered client exists");
+        }
+        else {
+            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientId(clientId)
+                    .clientSecret("{noop}oauth-secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope(OidcScopes.EMAIL)
+                    .scope("message.read")
+                    .scope("message.write")
+                    .build();
+            jpaRegisteredClientRepository.save(registeredClient);
+
+            LOG.info("save a client-credential");
         }
     }
 
@@ -148,4 +212,11 @@ public class AuthorizationServerConfig {
         return AuthorizationServerSettings.builder().build();
     }
 
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> auth2TokenCustomizer() {
+        LOG.info("get authorities");
+        return context -> {
+            context.getClaims().claim("authorities", context.getAuthorizedScopes());
+        };
+    }
 }
