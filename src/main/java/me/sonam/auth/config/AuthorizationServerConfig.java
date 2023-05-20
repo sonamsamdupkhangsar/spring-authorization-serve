@@ -106,7 +106,7 @@ public class AuthorizationServerConfig {
     }
 
 
-    @PostConstruct
+  //  @PostConstruct
     private void savePublicRegisteredClient() {
         final String clientId = "public-client";
         Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
@@ -140,8 +140,8 @@ public class AuthorizationServerConfig {
     @PostConstruct
     private void savePrivateRegisteredClient() {
         final String clientId = "private-client";
-        Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
-        cLientOptional.ifPresent(client -> clientRepository.delete(client));
+       // Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
+       // cLientOptional.ifPresent(client -> clientRepository.delete(client));
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
         if (registeredClient != null) {
@@ -171,7 +171,7 @@ public class AuthorizationServerConfig {
             LOG.info("saved registeredClient");
         }
     }
-    @PostConstruct
+    //@PostConstruct
     private void saveClientCredential() {
         final String clientId = "oauth-client";
         clientRepository.deleteAll();
@@ -223,7 +223,7 @@ public class AuthorizationServerConfig {
         };
     }
 
-    @PostConstruct
+    //@PostConstruct
     public void registeredClientRepository() {
         clientRepository.deleteAll();
 

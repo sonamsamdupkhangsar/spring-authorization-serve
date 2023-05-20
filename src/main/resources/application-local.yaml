@@ -13,6 +13,6 @@ EUREKA_PASSWORD: test
 
 eureka:
   client:
-    enabled: true
+    enabled: false
 
 DEFAULT_ZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
