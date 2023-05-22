@@ -40,3 +40,7 @@ eureka:
   client:
     serviceUrl:
       defaultZone: ${DEFAULT_ZONE}
+
+application-rest-service:
+  root: ${APPLICATION_REST_SERVICE}
+  client-role: /applications/clients/{clientId}/users/{authenticationId}

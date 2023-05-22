@@ -19,7 +19,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
-@Service
+//@Service
 public class ClientDetailService implements UserDetailsService {
     private static final Logger LOG = LoggerFactory.getLogger(ClientDetailService.class);
 
@@ -32,7 +32,7 @@ public class ClientDetailService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         LOG.info("loading by username: {}", username);
 
-        var clientId = getClientId(requestCache);
+        var clientId = ClientIdUtil.getClientId(requestCache);
         LOG.info("clientId: {}", clientId);
 
         final Authentication auth = new UsernamePasswordAuthenticationToken("user", "password", List.of());
@@ -45,19 +45,4 @@ public class ClientDetailService implements UserDetailsService {
     }
 
 
-    private static String getClientId(RequestCache requestCache) {
-        var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        var request = requestAttributes.getRequest();
-        var response = requestAttributes.getResponse();
-        var savedRequest = requestCache.getRequest(request, response);
-        return getParameter(savedRequest, OAuth2ParameterNames.CLIENT_ID);
-    }
-
-    private static String getParameter(SavedRequest savedRequest, String parameterName) {
-        var parameterValues = savedRequest.getParameterValues(parameterName);
-        if (parameterValues.length != 1) {
-            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
-        }
-        return parameterValues[0];
-    }
 }

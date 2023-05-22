@@ -44,3 +44,7 @@ spring:
     generate-ddl: true
     hibernate:
       ddl-auto: update
+
+application-rest-service:
+  root: http://localhost:8080
+  client-role: /applications/clients/{clientId}/users/{authenticationId}

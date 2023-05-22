@@ -58,7 +58,7 @@ public class DefaultAuthorizationServerConsentTests {
     @MockBean
     private OAuth2AuthorizationConsentService authorizationConsentService;
 
-    private final String redirectUri = "http://127.0.0.1/login/oauth2/code/messaging-client-oidc";
+    private final String redirectUri = "http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc";
 
     private final String authorizationRequestUri = UriComponentsBuilder
             .fromPath("/oauth2/authorize")

@@ -66,8 +66,8 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class DefaultSecurityConfig {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultSecurityConfig.class);
 
-   // @Autowired
-    private AuthenticationCallout authenticationCallout;
+    //@Autowired
+    //private AuthenticationCallout authenticationCallout;
   // @Autowired
     //private ClientDetailService clientDetailService;
 
@@ -97,10 +97,6 @@ public class DefaultSecurityConfig {
         return new InMemoryUserDetailsManager(user);
     }
 
-    @Bean
-    public RequestCache requestCache() {
-        return new HttpSessionRequestCache();
-    }
 
   /*  @Bean
     public UserDetailsService userDetailsService(RequestCache requestCache) {
@@ -119,13 +115,13 @@ public class DefaultSecurityConfig {
     }*/
 
     //@Bean
-    public AuthenticationManager authManager(HttpSecurity http) throws Exception {
+   /* public AuthenticationManager authManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
         authenticationManagerBuilder.authenticationProvider(authenticationCallout);
         //authenticationManagerBuilder.userDetailsService(clientDetailService);
         return authenticationManagerBuilder.build();
-    }
+    }*/
 
 
     // @formatter:on
