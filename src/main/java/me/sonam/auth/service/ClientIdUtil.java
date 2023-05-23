@@ -23,9 +23,14 @@ public class ClientIdUtil {
 
     private static String getParameter(SavedRequest savedRequest, String parameterName) {
         if (savedRequest == null) {
+            LOG.error("savedRequest is null");
             return "";
         }
         var parameterValues = savedRequest.getParameterValues(parameterName);
+        if (parameterValues == null) {
+            LOG.error("parameterValues is null");
+            return "";
+        }
         if (parameterValues.length != 1) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
         }

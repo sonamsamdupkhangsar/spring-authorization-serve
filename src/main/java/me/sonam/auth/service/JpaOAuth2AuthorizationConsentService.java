@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-//@Component
+@Component
 public class JpaOAuth2AuthorizationConsentService implements OAuth2AuthorizationConsentService {
     private static final Logger LOG = LoggerFactory.getLogger(JpaOAuth2AuthorizationConsentService.class);
 

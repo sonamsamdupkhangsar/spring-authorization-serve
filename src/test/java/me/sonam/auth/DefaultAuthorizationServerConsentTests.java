@@ -78,7 +78,7 @@ public class DefaultAuthorizationServerConsentTests {
     }
 
     @Test
-    @WithMockUser("user1")
+    @WithMockUser("user")
     public void whenUserConsentsToAllScopesThenReturnAuthorizationCode() throws IOException {
         final HtmlPage consentPage = this.webClient.getPage(this.authorizationRequestUri);
         assertThat(consentPage.getTitleText()).isEqualTo("Consent required");
@@ -108,7 +108,7 @@ public class DefaultAuthorizationServerConsentTests {
     }
 
     @Test
-    @WithMockUser("user1")
+    @WithMockUser("user")
     public void whenUserCancelsConsentThenReturnAccessDeniedError() throws IOException {
         final HtmlPage consentPage = this.webClient.getPage(this.authorizationRequestUri);
         assertThat(consentPage.getTitleText()).isEqualTo("Consent required");
