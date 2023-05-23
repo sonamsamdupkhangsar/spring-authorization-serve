@@ -17,6 +17,8 @@ package me.sonam.auth.config;
  */
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -33,37 +35,23 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-/**
- * @author Joe Grandja
- * @since 0.1.0
- */
 @EnableWebSecurity
 @Configuration(proxyBeanMethods = false)
 public class DefaultSecurityConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultSecurityConfig.class);
 
-    // @formatter:off
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize ->
                         authorize.anyRequest().authenticated()
                 )
+                .csrf().disable()
                 .formLogin(withDefaults());
-        return http.build();
+               // .addFilterBefore(getLoginFilter(), UsernamePasswordAuthenticationFilter.class)
+               // .addFilterAfter(getLoginFilter(), UsernamePasswordAuthenticationFilter.class);
+        return http.cors(Customizer.withDefaults()).build();
     }
-    // @formatter:on
-
-    // @formatter:off
-    @Bean
-    UserDetailsService users() {
-        UserDetails user = User.withDefaultPasswordEncoder()
-                .username("user1")
-                .password("password")
-                .roles("USER")
-                .build();
-        return new InMemoryUserDetailsManager(user);
-    }
-    // @formatter:on
 
     @Bean
     SessionRegistry sessionRegistry() {

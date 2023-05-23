@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sample;
+package me.sonam.auth;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class DefaultAuthorizationServerConsentTests {
     @MockBean
     private OAuth2AuthorizationConsentService authorizationConsentService;
 
-    private final String redirectUri = "http://127.0.0.1/login/oauth2/code/messaging-client-oidc";
+    private final String redirectUri = "http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc";
 
     private final String authorizationRequestUri = UriComponentsBuilder
             .fromPath("/oauth2/authorize")
@@ -78,7 +78,7 @@ public class DefaultAuthorizationServerConsentTests {
     }
 
     @Test
-    @WithMockUser("user1")
+    @WithMockUser("user")
     public void whenUserConsentsToAllScopesThenReturnAuthorizationCode() throws IOException {
         final HtmlPage consentPage = this.webClient.getPage(this.authorizationRequestUri);
         assertThat(consentPage.getTitleText()).isEqualTo("Consent required");
@@ -108,7 +108,7 @@ public class DefaultAuthorizationServerConsentTests {
     }
 
     @Test
-    @WithMockUser("user1")
+    @WithMockUser("user")
     public void whenUserCancelsConsentThenReturnAccessDeniedError() throws IOException {
         final HtmlPage consentPage = this.webClient.getPage(this.authorizationRequestUri);
         assertThat(consentPage.getTitleText()).isEqualTo("Consent required");

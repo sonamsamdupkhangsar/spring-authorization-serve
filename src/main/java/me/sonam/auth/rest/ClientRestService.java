@@ -1,4 +1,4 @@
-package me.sonam.auth;
+package me.sonam.auth.rest;
 
 import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
@@ -19,11 +19,20 @@ public class ClientRestService {
     }
 
     @PostMapping("/clients")
-    public void createNew(@RequestBody RegisteredClient registeredClient) {
+    public String createNew(@RequestBody RegisteredClient registeredClient) {
         registeredClient.withId(UUID.randomUUID().toString());
 
         jpaRegisteredClientRepository.save(registeredClient);
         LOG.info("saved registeredClient entity");
+        return registeredClient.getClientId();
+    }
+
+    @GetMapping("/clients/{clientId}")
+    public RegisteredClient getByClientId(String clientId) {
+        LOG.info("get by clientId: {}", clientId);
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
+        LOG.debug("for clientId: '{}', found registeredClient: {}", clientId, registeredClient);
+        return registeredClient;
     }
 
     @PutMapping("/clients")
@@ -39,15 +48,4 @@ public class ClientRestService {
         }
     }
 
-    @GetMapping("/clients/{id}")
-    public RegisteredClient getById(@PathVariable String id) {
-        LOG.info("get client by id: {}", id);
-        return jpaRegisteredClientRepository.findById(id);
-    }
-
-    @GetMapping("/clients/{clientId}")
-    public RegisteredClient getByClientId(@PathVariable String clientId) {
-        LOG.info("get client by clientId: {}", clientId);
-        return jpaRegisteredClientRepository.findByClientId(clientId);
-    }
 }

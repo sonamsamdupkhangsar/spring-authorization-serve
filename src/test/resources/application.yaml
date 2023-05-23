@@ -1,14 +1,23 @@
+eureka:
+  client:
+    enabled: false
 server:
-  port: ${SERVER_PORT}
+  port: 9000
 
 logging:
   level:
     root: error
     me.sonam.auth: info
-#    org.springframework.web: error
-#    org.springframework.security: trace
-    org.springframework.security.oauth2: trace
+    org.springframework.web: info
+    org.springframework.security: info
+    org.springframework.security.oauth2: info
 #    org.springframework.boot.autoconfigure: DEBUG
+
+POSTGRES_USERNAME: test
+POSTGRES_PASSWORD: test
+POSTGRES_DBNAME: authorization
+POSTGRES_SERVICE: localhost:5432
+DB_SSLMODE: disable
 
 spring:
   application:
@@ -36,11 +45,6 @@ spring:
     hibernate:
       ddl-auto: update
 
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: ${DEFAULT_ZONE}
-
 application-rest-service:
-  root: ${APPLICATION_REST_SERVICE}
+  root: http://localhost:8080
   client-role: /applications/clients/{clientId}/users/{authenticationId}
