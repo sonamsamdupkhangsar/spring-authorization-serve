@@ -1,5 +1,6 @@
 package me.sonam.auth.service;
 
+import me.sonam.auth.service.exception.BadCredentialsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,10 +47,10 @@ public class AuthenticationCallout implements AuthenticationProvider {
         final String password = authentication.getCredentials().toString();
         final String clientId = ClientIdUtil.getClientId(requestCache);
         LOG.info("clientId: {}", clientId);
-/*
+
         LOG.info("authorities: {}, details: {}, credentials: {}", authentication.getAuthorities(),
                 authentication.getDetails(), authentication.getCredentials());
-        Mono<UsernamePasswordAuthenticationToken> mono = getAuth(authentication, clientId);
+        /*Mono<UsernamePasswordAuthenticationToken> mono = getAuth(authentication, clientId);
         return mono.flatMap( usernamePasswordAuthenticationToken ->
                 getRoles(authentication.getPrincipal().toString(), clientId))
                 .flatMap(map -> {
@@ -59,8 +60,8 @@ public class AuthenticationCallout implements AuthenticationProvider {
                     LOG.info("returning using custom authenticator");
                     final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
                     return Mono.just(auth);
-                }).block();*/
-
+                }).block();
+*/
         //OAuth2AuthenticatedPrincipal oAuth2AuthenticatedPrincipal = (OAuth2AuthenticatedPrincipal) authentication;
 
         if (name.equals("user1") && password.equals("password")) {
@@ -71,7 +72,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
             final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
             return auth;
         } else {
-            return null;
+            throw new BadCredentialsException("Bad credentials");
         }
     }
 

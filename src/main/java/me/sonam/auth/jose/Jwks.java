@@ -1,5 +1,3 @@
-package me.sonam.auth.jose;
-
 /*
  * Copyright 2020-2021 the original author or authors.
  *
@@ -15,6 +13,7 @@ package me.sonam.auth.jose;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package me.sonam.auth.jose;
 
 import java.security.KeyPair;
 import java.security.interfaces.ECPrivateKey;
@@ -36,40 +35,40 @@ import com.nimbusds.jose.jwk.RSAKey;
  */
 public final class Jwks {
 
-    private Jwks() {
-    }
+	private Jwks() {
+	}
 
-    public static RSAKey generateRsa() {
-        KeyPair keyPair = KeyGeneratorUtils.generateRsaKey();
-        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-        RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-        // @formatter:off
-        return new RSAKey.Builder(publicKey)
-                .privateKey(privateKey)
-                .keyID(UUID.randomUUID().toString())
-                .build();
-        // @formatter:on
-    }
+	public static RSAKey generateRsa() {
+		KeyPair keyPair = KeyGeneratorUtils.generateRsaKey();
+		RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+		RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+		// @formatter:off
+		return new RSAKey.Builder(publicKey)
+				.privateKey(privateKey)
+				.keyID(UUID.randomUUID().toString())
+				.build();
+		// @formatter:on
+	}
 
-    public static ECKey generateEc() {
-        KeyPair keyPair = KeyGeneratorUtils.generateEcKey();
-        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
-        ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
-        Curve curve = Curve.forECParameterSpec(publicKey.getParams());
-        // @formatter:off
-        return new ECKey.Builder(curve, publicKey)
-                .privateKey(privateKey)
-                .keyID(UUID.randomUUID().toString())
-                .build();
-        // @formatter:on
-    }
+	public static ECKey generateEc() {
+		KeyPair keyPair = KeyGeneratorUtils.generateEcKey();
+		ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
+		ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
+		Curve curve = Curve.forECParameterSpec(publicKey.getParams());
+		// @formatter:off
+		return new ECKey.Builder(curve, publicKey)
+				.privateKey(privateKey)
+				.keyID(UUID.randomUUID().toString())
+				.build();
+		// @formatter:on
+	}
 
-    public static OctetSequenceKey generateSecret() {
-        SecretKey secretKey = KeyGeneratorUtils.generateSecretKey();
-        // @formatter:off
-        return new OctetSequenceKey.Builder(secretKey)
-                .keyID(UUID.randomUUID().toString())
-                .build();
-        // @formatter:on
-    }
+	public static OctetSequenceKey generateSecret() {
+		SecretKey secretKey = KeyGeneratorUtils.generateSecretKey();
+		// @formatter:off
+		return new OctetSequenceKey.Builder(secretKey)
+				.keyID(UUID.randomUUID().toString())
+				.build();
+		// @formatter:on
+	}
 }

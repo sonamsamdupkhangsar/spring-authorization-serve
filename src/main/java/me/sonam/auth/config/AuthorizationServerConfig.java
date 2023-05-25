@@ -1,6 +1,5 @@
-package me.sonam.auth.config;
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +13,19 @@ package me.sonam.auth.config;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package me.sonam.auth.config;
+
+import java.util.Arrays;
+import java.util.UUID;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+
+
 import jakarta.annotation.PostConstruct;
 import me.sonam.auth.jose.Jwks;
-import me.sonam.auth.jpa.entity.Client;
-import me.sonam.auth.jpa.repo.ClientRepository;
-import me.sonam.auth.service.JpaRegisteredClientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
@@ -38,7 +44,13 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -53,197 +65,74 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.UUID;
-
+/**
+ * @author Joe Grandja
+ * @since 0.0.1
+ */
 @Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
-    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
+	private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
 
-    @Autowired
-    private JpaRegisteredClientRepository jpaRegisteredClientRepository;
+	@Bean
+	@Order(Ordered.HIGHEST_PRECEDENCE)
+	public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+				.oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
 
-    @Autowired
-    private ClientRepository clientRepository;
+		// @formatter:off
+		http
+			.exceptionHandling(exceptions ->
+				exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+			)
+				.csrf().disable()
+			.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+		// @formatter:on
+		return  http.cors(Customizer.withDefaults()).build();
+	}
 
-    @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-                .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
 
-        // @formatter:off
-        http
-                .exceptionHandling(exceptions ->
-                        exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-                )
-                .csrf().disable()
-                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
-        // @formatter:on
-        return http.cors(Customizer.withDefaults()).build();
-    }
+	@Bean
+	CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration corsConfig = new CorsConfiguration();
+		corsConfig.setAllowedOrigins(Arrays.asList("http://127.0.0.1:8080"));
+		corsConfig.addAllowedMethod("*");
+		corsConfig.addAllowedHeader("*");
+		corsConfig.setAllowCredentials(true);
 
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList("http://127.0.0.1:8080"));
-        corsConfig.addAllowedMethod("*");
-        corsConfig.addAllowedHeader("*");
-        corsConfig.setAllowCredentials(true);
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", corsConfig);
+		return source;
+	}
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfig);
-        return source;
-    }
+	@Bean
+	public RequestCache requestCache() {
+		return new HttpSessionRequestCache();
+	}
 
-    @Bean
-    public RequestCache requestCache() {
-        return new HttpSessionRequestCache();
-    }
+	@Bean
+	public JWKSource<SecurityContext> jwkSource() {
+		RSAKey rsaKey = Jwks.generateRsa();
+		JWKSet jwkSet = new JWKSet(rsaKey);
+		return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
+	}
 
-  //  @PostConstruct
-    private void savePublicRegisteredClient() {
-        final String clientId = "public-client";
-        Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
-        cLientOptional.ifPresent(client -> clientRepository.delete(client));
+	@Bean
+	public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+		return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+	}
 
-        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
-        if (registeredClient != null) {
-            LOG.info("registered public client exists");
-        }
-        else {
-            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId(clientId)
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    //.redirectUri("http://localhost:8080")
-                   // .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
-                    .redirectUri("http://127.0.0.1:8080")
-                    .scope(OidcScopes.OPENID)
-                    .scope(OidcScopes.PROFILE)
-                    .scope("message.read")
-                    .scope("message.write")
-                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true)
-                            .requireProofKey(true).build())
-                    .build();
-            jpaRegisteredClientRepository.save(registeredClient);
+	@Bean
+	public AuthorizationServerSettings authorizationServerSettings() {
+		return AuthorizationServerSettings.builder().build();
+	}
 
-            LOG.info("saved registeredClient");
-        }
-    }
 
-    @PostConstruct
-    private void savePrivateRegisteredClient() {
-        final String clientId = "private-client";
-       // Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
-       // cLientOptional.ifPresent(client -> clientRepository.delete(client));
-
-        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
-        if (registeredClient != null) {
-            LOG.info("registered private client exists");
-        }
-        else {
-            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId(clientId)
-                    .clientSecret("{noop}secret")
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
-                    .redirectUri("http://127.0.0.1:8080/authorized")
-                    //.postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
-                    .scope(OidcScopes.OPENID)
-                    .scope(OidcScopes.PROFILE)
-                    .scope(OidcScopes.EMAIL)
-                    .scope("message.read")
-                    .scope("message.write")
-                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false)
-                            .requireProofKey(true).build())
-                    .build();
-            jpaRegisteredClientRepository.save(registeredClient);
-
-            LOG.info("saved registeredClient");
-        }
-    }
-    //@PostConstruct
-    private void saveClientCredential() {
-        final String clientId = "oauth-client";
-        clientRepository.deleteAll();
-
-        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
-        if (registeredClient != null) {
-            LOG.info("registered client exists");
-        }
-        else {
-            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId(clientId)
-                    .clientSecret("{noop}oauth-secret")
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                    .scope(OidcScopes.OPENID)
-                    .scope(OidcScopes.PROFILE)
-                    .scope(OidcScopes.EMAIL)
-                    .scope("message.read")
-                    .scope("message.write")
-                    .build();
-            jpaRegisteredClientRepository.save(registeredClient);
-
-            LOG.info("save a client-credential");
-        }
-    }
-
-    @Bean
-    public JWKSource<SecurityContext> jwkSource() {
-        RSAKey rsaKey = Jwks.generateRsa();
-        JWKSet jwkSet = new JWKSet(rsaKey);
-        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-    }
-
-    @Bean
-    public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().build();
-    }
-
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> auth2TokenCustomizer() {
-        LOG.info("get authorities");
-        return context -> {
-            context.getClaims().claim("authorities", context.getAuthorizedScopes());
-        };
-    }
-
-    @PostConstruct
-    public void registeredClientRepository() {
-        //clientRepository.deleteAll();
-
-        if (clientRepository.findByClientId("messaging-client") != null) {
-            LOG.info("message-client already exists");
-        }
-        else {
-            RegisteredClient confidentialClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId("messaging-client")
-                    .clientSecret("{noop}secret")
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
-                    .redirectUri("http://127.0.0.1:8080/authorized")
-                    .scope(OidcScopes.OPENID)
-                    .scope(OidcScopes.PROFILE)
-                    .scope("message.read")
-                    .scope("message.write")
-                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(true).build())
-                    .build();
-            jpaRegisteredClientRepository.save(confidentialClient);
-        }
-    }
+	@Bean
+	public OAuth2TokenCustomizer<JwtEncodingContext> auth2TokenCustomizer() {
+		LOG.info("get authorities");
+		return context -> {
+			context.getClaims().claim("authorities", context.getAuthorizedScopes());
+		};
+	}
 }
