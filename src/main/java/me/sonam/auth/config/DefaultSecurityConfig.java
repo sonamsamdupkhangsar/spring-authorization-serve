@@ -1,7 +1,5 @@
-package me.sonam.auth.config;
-
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +13,8 @@ package me.sonam.auth.config;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package me.sonam.auth.config;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -35,41 +31,45 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+/**
+ * @author Joe Grandja
+ * @since 0.1.0
+ */
 @EnableWebSecurity
 @Configuration(proxyBeanMethods = false)
 public class DefaultSecurityConfig {
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultSecurityConfig.class);
 
-    @Bean
-    SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(authorize ->
-                        authorize.anyRequest().authenticated()
-                )
-                .csrf().disable()
-                .formLogin(withDefaults());
-               // .addFilterBefore(getLoginFilter(), UsernamePasswordAuthenticationFilter.class)
-               // .addFilterAfter(getLoginFilter(), UsernamePasswordAuthenticationFilter.class);
-        return http.cors(Customizer.withDefaults()).build();
-    }
-    @Bean
-    UserDetailsService users() {
-        UserDetails user = User.withDefaultPasswordEncoder()
-                .username("user1")
-                .password("password")
-                .roles("USER")
-                .build();
-        return new InMemoryUserDetailsManager(user);
-    }
+	// @formatter:off
+	@Bean
+	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.authorizeHttpRequests(authorize ->
+				authorize.anyRequest().authenticated()
+			)
+				.csrf().disable()
+			.formLogin(withDefaults());
+		return  http.cors(Customizer.withDefaults()).build();
+	}
+	// @formatter:on
 
-    @Bean
-    SessionRegistry sessionRegistry() {
-        return new SessionRegistryImpl();
-    }
+	// @formatter:off
+	@Bean
+	UserDetailsService users() {
+		UserDetails user = User.withDefaultPasswordEncoder()
+				.username("user1")
+				.password("password")
+				.roles("USER")
+				.build();
+		return new InMemoryUserDetailsManager(user);
+	}
+	// @formatter:on
+	@Bean
+	SessionRegistry sessionRegistry() {
+		return new SessionRegistryImpl();
+	}
 
-    @Bean
-    HttpSessionEventPublisher httpSessionEventPublisher() {
-        return new HttpSessionEventPublisher();
-    }
-
+	@Bean
+	HttpSessionEventPublisher httpSessionEventPublisher() {
+		return new HttpSessionEventPublisher();
+	}
 }

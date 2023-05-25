@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @EnableAutoConfiguration
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes=DefaultAuthorizationServerApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes= DefaultAuthorizationServerApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(MockitoExtension.class)
 public class AuthenticatonIntegrationTest {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticatonIntegrationTest.class);

@@ -1,6 +1,5 @@
 package me.sonam.auth.rest;
 
-import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

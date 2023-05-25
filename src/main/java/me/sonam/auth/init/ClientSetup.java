@@ -25,37 +25,32 @@ public class ClientSetup {
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
 
-    @Autowired
+    //@Autowired
     private ClientRepository clientRepository;
 
     @PostConstruct
-    public void registeredClientRepository() {
-       Optional<Client> optionalClient  = clientRepository.findByClientId("messaging-client");
-        if (optionalClient.isPresent()) {
-            LOG.info("delete client: {}", optionalClient.get());
-            clientRepository.delete(optionalClient.get());
-        }
-        if (clientRepository.findByClientId("messaging-client") != null) {
-            LOG.info("message-client already exists");
-        }
-        else {
-            RegisteredClient confidentialClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId("messaging-client")
-                    .clientSecret("{noop}secret")
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
-                    .redirectUri("http://127.0.0.1:8080/authorized")
-                    .scope(OidcScopes.OPENID)
-                    .scope(OidcScopes.PROFILE)
-                    .scope("message.read")
-                    .scope("message.write")
-                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(true).build())
-                    .build();
-            jpaRegisteredClientRepository.save(confidentialClient);
-        }
+    public void saveClient() {
+        RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("messaging-client")
+                .clientSecret("{noop}secret")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
+                .redirectUri("http://127.0.0.1:8080/authorized")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .scope("message.read")
+                .scope("message.write")
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
+                .build();
+
+        // Save registered client in db as if in-memory
+        //JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
+        jpaRegisteredClientRepository.save(registeredClient);
+
+        //	return registeredClientRepository;
     }
 
     //  @PostConstruct
