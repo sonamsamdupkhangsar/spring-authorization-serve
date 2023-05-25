@@ -1,0 +1,46 @@
+server:
+  port: ${SERVER_PORT}
+
+logging:
+  level:
+    root: error
+    me.sonam.auth: info
+#    org.springframework.web: error
+#    org.springframework.security: trace
+    org.springframework.security.oauth2: trace
+#    org.springframework.boot.autoconfigure: DEBUG
+
+spring:
+  application:
+    name: authorization-service
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings.trace: false
+      settings.web-allow-others: false
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_SERVICE}/${POSTGRES_DBNAME}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${DEFAULT_ZONE}
+
+application-rest-service:
+  root: ${APPLICATION_REST_SERVICE}
+  client-role: /applications/clients/{clientId}/users/{authenticationId}
