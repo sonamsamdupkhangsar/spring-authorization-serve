@@ -50,19 +50,7 @@ public class DefaultSecurityConfig {
 			.formLogin(withDefaults());
 		return  http.cors(Customizer.withDefaults()).build();
 	}
-	// @formatter:on
 
-	// @formatter:off
-	@Bean
-	UserDetailsService users() {
-		UserDetails user = User.withDefaultPasswordEncoder()
-				.username("user1")
-				.password("password")
-				.roles("USER")
-				.build();
-		return new InMemoryUserDetailsManager(user);
-	}
-	// @formatter:on
 	@Bean
 	SessionRegistry sessionRegistry() {
 		return new SessionRegistryImpl();
