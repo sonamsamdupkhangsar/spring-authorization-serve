@@ -1,13 +1,33 @@
 server:
-  port: 9000
+  port: ${SERVER_PORT}
 
 logging:
   level:
-    root: INFO
-    org.springframework.web: INFO
-    org.springframework.security: INFO
-    org.springframework.security.oauth2: INFO
-#    org.springframework.boot.autoconfigure: DEBUG
+    root: error
+    me.sonam.auth: info
+    org.springframework.web: info
+    org.springframework.security: info
+    org.springframework.security.oauth2: info
+    org.springframework.boot.autoconfigure: DEBUG
+
+spring:
+  application:
+    name: authorization-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_SERVICE}/${POSTGRES_DBNAME}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: true
+
 eureka:
   client:
     enabled: false
+
+application-rest-service:
+  root: ${APPLICATION_REST_SERVICE}
+  client-role: /applications/clients/{clientId}/users/{authenticationId}

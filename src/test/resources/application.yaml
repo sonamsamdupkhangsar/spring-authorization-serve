@@ -1,0 +1,32 @@
+server:
+  port: 9000
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
+#    org.springframework.boot.autoconfigure: DEBUG
+
+eureka:
+  client:
+    enabled: false
+
+spring:
+  application:
+    name: authorization-service
+  datasource:
+    url: jdbc:hsqldb:mem:testdb
+    username: sa
+    password:
+    driver-class-name: org.hsqldb.jdbc.JDBCDriver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.HSQLDialect
+    generate-ddl: true
+
+application-rest-service:
+  root: http://localhost:8080
+  client-role: /applications/clients/{clientId}/users/{authenticationId}
