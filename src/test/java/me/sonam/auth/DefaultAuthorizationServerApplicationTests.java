@@ -67,7 +67,12 @@ public class DefaultAuthorizationServerApplicationTests {
         this.webClient.getCookieManager().clearCookies();	// log out
     }
 
-    @Test
+   @Test
+    public void hello() {
+        assertThat("hello").isEqualTo("hello");
+    }
+
+ @Test
     public void whenLoginSuccessfulThenDisplayNotFoundError() throws IOException {
         HtmlPage page = this.webClient.getPage("/");
 

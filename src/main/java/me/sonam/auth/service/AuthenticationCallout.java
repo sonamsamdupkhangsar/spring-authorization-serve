@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
+//@Service
 public class AuthenticationCallout implements AuthenticationProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationCallout.class);
 
@@ -46,10 +46,10 @@ public class AuthenticationCallout implements AuthenticationProvider {
         final String password = authentication.getCredentials().toString();
         final String clientId = ClientIdUtil.getClientId(requestCache);
         LOG.info("clientId: {}", clientId);
-/*
+
         LOG.info("authorities: {}, details: {}, credentials: {}", authentication.getAuthorities(),
                 authentication.getDetails(), authentication.getCredentials());
-        Mono<UsernamePasswordAuthenticationToken> mono = getAuth(authentication, clientId);
+        /*Mono<UsernamePasswordAuthenticationToken> mono = getAuth(authentication, clientId);
         return mono.flatMap( usernamePasswordAuthenticationToken ->
                 getRoles(authentication.getPrincipal().toString(), clientId))
                 .flatMap(map -> {
@@ -59,8 +59,8 @@ public class AuthenticationCallout implements AuthenticationProvider {
                     LOG.info("returning using custom authenticator");
                     final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
                     return Mono.just(auth);
-                }).block();*/
-
+                }).block();
+*/
         //OAuth2AuthenticatedPrincipal oAuth2AuthenticatedPrincipal = (OAuth2AuthenticatedPrincipal) authentication;
 
         if (name.equals("user1") && password.equals("password")) {

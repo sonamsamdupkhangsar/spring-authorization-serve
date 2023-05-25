@@ -78,6 +78,12 @@ public class DefaultAuthorizationServerConsentTests {
     }
 
     @Test
+    public void hello() {
+        assertThat("hello").isEqualTo("hello");
+    }
+
+
+    @Test
     @WithMockUser("user")
     public void whenUserConsentsToAllScopesThenReturnAuthorizationCode() throws IOException {
         final HtmlPage consentPage = this.webClient.getPage(this.authorizationRequestUri);

@@ -52,6 +52,15 @@ public class DefaultSecurityConfig {
                // .addFilterAfter(getLoginFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.cors(Customizer.withDefaults()).build();
     }
+    @Bean
+    UserDetailsService users() {
+        UserDetails user = User.withDefaultPasswordEncoder()
+                .username("user1")
+                .password("password")
+                .roles("USER")
+                .build();
+        return new InMemoryUserDetailsManager(user);
+    }
 
     @Bean
     SessionRegistry sessionRegistry() {
