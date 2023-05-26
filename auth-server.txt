@@ -1,153 +1,0 @@
-[INFO] Scanning for projects...
-Downloading from central: https://repo.maven.apache.org/maven2/org/flywaydb/flyway-maven-plugin/9.5.1/flyway-maven-plugin-9.5.1.pom
-Progress (1): 2.7/4.0 kBProgress (1): 4.0 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/flywaydb/flyway-maven-plugin/9.5.1/flyway-maven-plugin-9.5.1.pom (4.0 kB at 14 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/flywaydb/flyway-parent/9.5.1/flyway-parent-9.5.1.pom
-Progress (1): 2.7/31 kBProgress (1): 5.5/31 kBProgress (1): 8.2/31 kBProgress (1): 11/31 kB Progress (1): 14/31 kBProgress (1): 16/31 kBProgress (1): 19/31 kBProgress (1): 22/31 kBProgress (1): 25/31 kBProgress (1): 27/31 kBProgress (1): 30/31 kBProgress (1): 31 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/org/flywaydb/flyway-parent/9.5.1/flyway-parent-9.5.1.pom (31 kB at 360 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/flywaydb/flyway-maven-plugin/9.5.1/flyway-maven-plugin-9.5.1.jar
-Progress (1): 4.1/115 kBProgress (1): 8.2/115 kBProgress (1): 12/115 kB Progress (1): 16/115 kBProgress (1): 20/115 kBProgress (1): 25/115 kBProgress (1): 29/115 kBProgress (1): 33/115 kBProgress (1): 37/115 kBProgress (1): 41/115 kBProgress (1): 45/115 kBProgress (1): 49/115 kBProgress (1): 53/115 kBProgress (1): 57/115 kBProgress (1): 61/115 kBProgress (1): 66/115 kBProgress (1): 70/115 kBProgress (1): 74/115 kBProgress (1): 78/115 kBProgress (1): 82/115 kBProgress (1): 86/115 kBProgress (1): 90/115 kBProgress (1): 94/115 kBProgress (1): 98/115 kBProgress (1): 102/115 kBProgress (1): 106/115 kBProgress (1): 111/115 kBProgress (1): 115/115 kBProgress (1): 115 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/flywaydb/flyway-maven-plugin/9.5.1/flyway-maven-plugin-9.5.1.jar (115 kB at 1.2 MB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/io/github/git-commit-id/git-commit-id-maven-plugin/5.0.0/git-commit-id-maven-plugin-5.0.0.pom
-Progress (1): 4.1/23 kBProgress (1): 8.2/23 kBProgress (1): 12/23 kB Progress (1): 16/23 kBProgress (1): 20/23 kBProgress (1): 23 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/io/github/git-commit-id/git-commit-id-maven-plugin/5.0.0/git-commit-id-maven-plugin-5.0.0.pom (23 kB at 338 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/io/github/git-commit-id/git-commit-id-maven-plugin/5.0.0/git-commit-id-maven-plugin-5.0.0.jar
-Progress (1): 4.1/41 kBProgress (1): 8.2/41 kBProgress (1): 12/41 kB Progress (1): 16/41 kBProgress (1): 20/41 kBProgress (1): 25/41 kBProgress (1): 29/41 kBProgress (1): 33/41 kBProgress (1): 37/41 kBProgress (1): 41/41 kBProgress (1): 41 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/io/github/git-commit-id/git-commit-id-maven-plugin/5.0.0/git-commit-id-maven-plugin-5.0.0.jar (41 kB at 675 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/jooq/jooq-codegen-maven/3.17.8/jooq-codegen-maven-3.17.8.pom
-Progress (1): 4.1/4.5 kBProgress (1): 4.5 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/jooq/jooq-codegen-maven/3.17.8/jooq-codegen-maven-3.17.8.pom (4.5 kB at 57 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/jooq/jooq-parent/3.17.8/jooq-parent-3.17.8.pom
-Progress (1): 4.1/38 kBProgress (1): 8.2/38 kBProgress (1): 12/38 kB Progress (1): 16/38 kBProgress (1): 20/38 kBProgress (1): 25/38 kBProgress (1): 29/38 kBProgress (1): 33/38 kBProgress (1): 37/38 kBProgress (1): 38 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/org/jooq/jooq-parent/3.17.8/jooq-parent-3.17.8.pom (38 kB at 544 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/jooq/jooq-codegen-maven/3.17.8/jooq-codegen-maven-3.17.8.jar
-Progress (1): 4.1/18 kBProgress (1): 8.2/18 kBProgress (1): 12/18 kB Progress (1): 16/18 kBProgress (1): 18 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/org/jooq/jooq-codegen-maven/3.17.8/jooq-codegen-maven-3.17.8.jar (18 kB at 291 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-maven-plugin/1.7.22/kotlin-maven-plugin-1.7.22.pom
-Progress (1): 4.1/5.9 kBProgress (1): 5.9 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-maven-plugin/1.7.22/kotlin-maven-plugin-1.7.22.pom (5.9 kB at 96 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-project/1.7.22/kotlin-project-1.7.22.pom
-Progress (1): 4.1/11 kBProgress (1): 8.2/11 kBProgress (1): 11 kB                       Downloaded from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-project/1.7.22/kotlin-project-1.7.22.pom (11 kB at 171 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-maven-plugin/1.7.22/kotlin-maven-plugin-1.7.22.jar
-Progress (1): 4.1/80 kBProgress (1): 8.2/80 kBProgress (1): 12/80 kB Progress (1): 16/80 kBProgress (1): 20/80 kBProgress (1): 24/80 kBProgress (1): 28/80 kBProgress (1): 32/80 kBProgress (1): 36/80 kBProgress (1): 40/80 kBProgress (1): 45/80 kBProgress (1): 49/80 kBProgress (1): 53/80 kBProgress (1): 57/80 kBProgress (1): 61/80 kBProgress (1): 65/80 kBProgress (1): 69/80 kBProgress (1): 73/80 kBProgress (1): 77/80 kBProgress (1): 80 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-maven-plugin/1.7.22/kotlin-maven-plugin-1.7.22.jar (80 kB at 1.1 MB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/liquibase/liquibase-maven-plugin/4.17.2/liquibase-maven-plugin-4.17.2.pom
-Progress (1): 1.8 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/liquibase/liquibase-maven-plugin/4.17.2/liquibase-maven-plugin-4.17.2.pom (1.8 kB at 25 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/liquibase/liquibase-maven-plugin/4.17.2/liquibase-maven-plugin-4.17.2.jar
-Progress (1): 4.1/147 kBProgress (1): 8.2/147 kBProgress (1): 12/147 kB Progress (1): 16/147 kBProgress (1): 20/147 kBProgress (1): 24/147 kBProgress (1): 28/147 kBProgress (1): 32/147 kBProgress (1): 36/147 kBProgress (1): 40/147 kBProgress (1): 45/147 kBProgress (1): 49/147 kBProgress (1): 53/147 kBProgress (1): 57/147 kBProgress (1): 61/147 kBProgress (1): 65/147 kBProgress (1): 69/147 kBProgress (1): 73/147 kBProgress (1): 77/147 kBProgress (1): 81/147 kBProgress (1): 85/147 kBProgress (1): 90/147 kBProgress (1): 94/147 kBProgress (1): 98/147 kBProgress (1): 102/147 kBProgress (1): 106/147 kBProgress (1): 110/147 kBProgress (1): 114/147 kBProgress (1): 118/147 kBProgress (1): 122/147 kBProgress (1): 126/147 kBProgress (1): 131/147 kBProgress (1): 135/147 kBProgress (1): 139/147 kBProgress (1): 143/147 kBProgress (1): 147 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/liquibase/liquibase-maven-plugin/4.17.2/liquibase-maven-plugin-4.17.2.jar (147 kB at 1.8 MB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-antrun-plugin/3.1.0/maven-antrun-plugin-3.1.0.pom
-Progress (1): 4.1/9.1 kBProgress (1): 8.2/9.1 kBProgress (1): 9.1 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-antrun-plugin/3.1.0/maven-antrun-plugin-3.1.0.pom (9.1 kB at 130 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-antrun-plugin/3.1.0/maven-antrun-plugin-3.1.0.jar
-Progress (1): 4.1/41 kBProgress (1): 8.2/41 kBProgress (1): 12/41 kB Progress (1): 16/41 kBProgress (1): 20/41 kBProgress (1): 24/41 kBProgress (1): 28/41 kBProgress (1): 32/41 kBProgress (1): 36/41 kBProgress (1): 40/41 kBProgress (1): 41 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-antrun-plugin/3.1.0/maven-antrun-plugin-3.1.0.jar (41 kB at 597 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/3.4.2/maven-assembly-plugin-3.4.2.pom
-Progress (1): 4.1/15 kBProgress (1): 8.2/15 kBProgress (1): 12/15 kB Progress (1): 15 kB                      Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/3.4.2/maven-assembly-plugin-3.4.2.pom (15 kB at 260 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/3.4.2/maven-assembly-plugin-3.4.2.jar
-Progress (1): 4.1/255 kBProgress (1): 8.2/255 kBProgress (1): 12/255 kB Progress (1): 16/255 kBProgress (1): 20/255 kBProgress (1): 24/255 kBProgress (1): 28/255 kBProgress (1): 32/255 kBProgress (1): 36/255 kBProgress (1): 40/255 kBProgress (1): 45/255 kBProgress (1): 49/255 kBProgress (1): 53/255 kBProgress (1): 57/255 kBProgress (1): 61/255 kBProgress (1): 65/255 kBProgress (1): 69/255 kBProgress (1): 73/255 kBProgress (1): 77/255 kBProgress (1): 81/255 kBProgress (1): 85/255 kBProgress (1): 90/255 kBProgress (1): 94/255 kBProgress (1): 98/255 kBProgress (1): 102/255 kBProgress (1): 106/255 kBProgress (1): 110/255 kBProgress (1): 114/255 kBProgress (1): 118/255 kBProgress (1): 122/255 kBProgress (1): 126/255 kBProgress (1): 131/255 kBProgress (1): 135/255 kBProgress (1): 139/255 kBProgress (1): 143/255 kBProgress (1): 147/255 kBProgress (1): 151/255 kBProgress (1): 155/255 kBProgress (1): 159/255 kBProgress (1): 163/255 kBProgress (1): 167/255 kBProgress (1): 171/255 kBProgress (1): 176/255 kBProgress (1): 180/255 kBProgress (1): 184/255 kBProgress (1): 188/255 kBProgress (1): 192/255 kBProgress (1): 196/255 kBProgress (1): 200/255 kBProgress (1): 204/255 kBProgress (1): 208/255 kBProgress (1): 212/255 kBProgress (1): 217/255 kBProgress (1): 221/255 kBProgress (1): 225/255 kBProgress (1): 229/255 kBProgress (1): 233/255 kBProgress (1): 237/255 kBProgress (1): 241/255 kBProgress (1): 245/255 kBProgress (1): 249/255 kBProgress (1): 253/255 kBProgress (1): 255 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/3.4.2/maven-assembly-plugin-3.4.2.jar (255 kB at 3.2 MB/s)
-[INFO] 
-[INFO] ---------------------< me.sonam:pkce-auth-server >----------------------
-[INFO] Building pkce-auth-server 0.0.1-SNAPSHOT
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- maven-dependency-plugin:3.3.0:tree (default-cli) @ pkce-auth-server ---
-[INFO] me.sonam:pkce-auth-server:jar:0.0.1-SNAPSHOT
-[INFO] +- org.springframework.boot:spring-boot-starter-web:jar:3.0.4:compile
-[INFO] |  +- org.springframework.boot:spring-boot-starter:jar:3.0.4:compile
-[INFO] |  |  +- org.springframework.boot:spring-boot:jar:3.0.4:compile
-[INFO] |  |  +- org.springframework.boot:spring-boot-autoconfigure:jar:3.0.4:compile
-[INFO] |  |  +- org.springframework.boot:spring-boot-starter-logging:jar:3.0.4:compile
-[INFO] |  |  |  +- ch.qos.logback:logback-classic:jar:1.4.5:compile
-[INFO] |  |  |  |  \- ch.qos.logback:logback-core:jar:1.4.5:compile
-[INFO] |  |  |  +- org.apache.logging.log4j:log4j-to-slf4j:jar:2.19.0:compile
-[INFO] |  |  |  |  \- org.apache.logging.log4j:log4j-api:jar:2.19.0:compile
-[INFO] |  |  |  \- org.slf4j:jul-to-slf4j:jar:2.0.6:compile
-[INFO] |  |  +- jakarta.annotation:jakarta.annotation-api:jar:2.1.1:compile
-[INFO] |  |  \- org.yaml:snakeyaml:jar:1.33:compile
-[INFO] |  +- org.springframework.boot:spring-boot-starter-json:jar:3.0.4:compile
-[INFO] |  |  +- com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.14.2:compile
-[INFO] |  |  +- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.14.2:compile
-[INFO] |  |  \- com.fasterxml.jackson.module:jackson-module-parameter-names:jar:2.14.2:compile
-[INFO] |  +- org.springframework.boot:spring-boot-starter-tomcat:jar:3.0.4:compile
-[INFO] |  |  +- org.apache.tomcat.embed:tomcat-embed-core:jar:10.1.5:compile
-[INFO] |  |  +- org.apache.tomcat.embed:tomcat-embed-el:jar:10.1.5:compile
-[INFO] |  |  \- org.apache.tomcat.embed:tomcat-embed-websocket:jar:10.1.5:compile
-[INFO] |  +- org.springframework:spring-web:jar:6.0.6:compile
-[INFO] |  |  +- org.springframework:spring-beans:jar:6.0.6:compile
-[INFO] |  |  \- io.micrometer:micrometer-observation:jar:1.10.4:compile
-[INFO] |  |     \- io.micrometer:micrometer-commons:jar:1.10.4:compile
-[INFO] |  \- org.springframework:spring-webmvc:jar:6.0.6:compile
-[INFO] |     +- org.springframework:spring-context:jar:6.0.6:compile
-[INFO] |     \- org.springframework:spring-expression:jar:6.0.6:compile
-[INFO] +- org.springframework.boot:spring-boot-starter-security:jar:3.0.4:compile
-[INFO] |  +- org.springframework:spring-aop:jar:6.0.6:compile
-[INFO] |  +- org.springframework.security:spring-security-config:jar:6.0.2:compile
-[INFO] |  \- org.springframework.security:spring-security-web:jar:6.0.2:compile
-[INFO] +- org.springframework.boot:spring-boot-starter-jdbc:jar:3.0.4:compile
-[INFO] |  +- com.zaxxer:HikariCP:jar:5.0.1:compile
-[INFO] |  |  \- org.slf4j:slf4j-api:jar:2.0.6:compile
-[INFO] |  \- org.springframework:spring-jdbc:jar:6.0.6:compile
-[INFO] |     \- org.springframework:spring-tx:jar:6.0.6:compile
-[INFO] +- org.springframework.security:spring-security-oauth2-authorization-server:jar:1.0.2:compile
-[INFO] |  +- org.springframework.security:spring-security-oauth2-core:jar:6.0.2:compile
-[INFO] |  +- org.springframework.security:spring-security-oauth2-jose:jar:6.0.2:compile
-[INFO] |  +- org.springframework.security:spring-security-oauth2-resource-server:jar:6.0.2:compile
-[INFO] |  +- org.springframework:spring-core:jar:6.0.6:compile
-[INFO] |  |  \- org.springframework:spring-jcl:jar:6.0.6:compile
-[INFO] |  +- com.nimbusds:nimbus-jose-jwt:jar:9.24.4:compile
-[INFO] |  |  \- com.github.stephenc.jcip:jcip-annotations:jar:1.0-1:compile
-[INFO] |  \- com.fasterxml.jackson.core:jackson-databind:jar:2.14.2:compile
-[INFO] |     +- com.fasterxml.jackson.core:jackson-annotations:jar:2.14.2:compile
-[INFO] |     \- com.fasterxml.jackson.core:jackson-core:jar:2.14.2:compile
-[INFO] +- com.h2database:h2:jar:2.1.214:compile
-[INFO] +- org.springframework.boot:spring-boot-starter-test:jar:3.0.4:test
-[INFO] |  +- org.springframework.boot:spring-boot-test:jar:3.0.4:test
-[INFO] |  +- org.springframework.boot:spring-boot-test-autoconfigure:jar:3.0.4:test
-[INFO] |  +- com.jayway.jsonpath:json-path:jar:2.7.0:test
-[INFO] |  |  \- net.minidev:json-smart:jar:2.4.8:test
-[INFO] |  |     \- net.minidev:accessors-smart:jar:2.4.8:test
-[INFO] |  |        \- org.ow2.asm:asm:jar:9.1:test
-[INFO] |  +- jakarta.xml.bind:jakarta.xml.bind-api:jar:4.0.0:test
-[INFO] |  |  \- jakarta.activation:jakarta.activation-api:jar:2.1.1:test
-[INFO] |  +- org.assertj:assertj-core:jar:3.23.1:test
-[INFO] |  |  \- net.bytebuddy:byte-buddy:jar:1.12.23:test
-[INFO] |  +- org.hamcrest:hamcrest:jar:2.2:test
-[INFO] |  +- org.mockito:mockito-core:jar:4.8.1:test
-[INFO] |  |  +- net.bytebuddy:byte-buddy-agent:jar:1.12.23:test
-[INFO] |  |  \- org.objenesis:objenesis:jar:3.2:test
-[INFO] |  +- org.mockito:mockito-junit-jupiter:jar:4.8.1:test
-[INFO] |  +- org.skyscreamer:jsonassert:jar:1.5.1:test
-[INFO] |  |  \- com.vaadin.external.google:android-json:jar:0.0.20131108.vaadin1:test
-[INFO] |  +- org.springframework:spring-test:jar:6.0.6:test
-[INFO] |  \- org.xmlunit:xmlunit-core:jar:2.9.1:test
-[INFO] +- org.springframework.security:spring-security-test:jar:6.0.2:test
-[INFO] |  \- org.springframework.security:spring-security-core:jar:6.0.2:compile
-[INFO] |     \- org.springframework.security:spring-security-crypto:jar:6.0.2:compile
-[INFO] +- org.junit.jupiter:junit-jupiter:jar:5.9.2:test
-[INFO] |  +- org.junit.jupiter:junit-jupiter-api:jar:5.9.2:test
-[INFO] |  |  +- org.opentest4j:opentest4j:jar:1.2.0:test
-[INFO] |  |  +- org.junit.platform:junit-platform-commons:jar:1.9.2:test
-[INFO] |  |  \- org.apiguardian:apiguardian-api:jar:1.1.2:test
-[INFO] |  +- org.junit.jupiter:junit-jupiter-params:jar:5.9.2:test
-[INFO] |  \- org.junit.jupiter:junit-jupiter-engine:jar:5.9.2:test
-[INFO] |     \- org.junit.platform:junit-platform-engine:jar:1.9.2:test
-[INFO] +- net.sourceforge.htmlunit:htmlunit:jar:2.65.1:test
-[INFO] |  +- org.apache.httpcomponents:httpmime:jar:4.5.14:test
-[INFO] |  |  \- org.apache.httpcomponents:httpclient:jar:4.5.14:test
-[INFO] |  |     \- org.apache.httpcomponents:httpcore:jar:4.4.16:test
-[INFO] |  +- net.sourceforge.htmlunit:htmlunit-core-js:jar:2.65.0:test
-[INFO] |  +- net.sourceforge.htmlunit:neko-htmlunit:jar:2.65.0:test
-[INFO] |  |  \- xerces:xercesImpl:jar:2.12.2:test
-[INFO] |  |     \- xml-apis:xml-apis:jar:1.4.01:test
-[INFO] |  +- net.sourceforge.htmlunit:htmlunit-cssparser:jar:1.12.0:test
-[INFO] |  +- net.sourceforge.htmlunit:htmlunit-xpath:jar:2.65.0:test
-[INFO] |  +- org.apache.commons:commons-lang3:jar:3.12.0:test
-[INFO] |  +- org.apache.commons:commons-text:jar:1.9:test
-[INFO] |  +- commons-io:commons-io:jar:2.10.0:test
-[INFO] |  +- commons-net:commons-net:jar:3.8.0:test
-[INFO] |  +- commons-codec:commons-codec:jar:1.15:test
-[INFO] |  +- org.brotli:dec:jar:0.1.2:test
-[INFO] |  +- com.shapesecurity:salvation2:jar:3.0.1:test
-[INFO] |  \- org.eclipse.jetty.websocket:websocket-client:jar:9.4.49.v20220914:test
-[INFO] |     +- org.eclipse.jetty:jetty-client:jar:11.0.14:test
-[INFO] |     |  +- org.eclipse.jetty:jetty-http:jar:11.0.14:test
-[INFO] |     |  \- org.eclipse.jetty:jetty-alpn-client:jar:11.0.14:test
-[INFO] |     +- org.eclipse.jetty:jetty-util:jar:11.0.14:test
-[INFO] |     +- org.eclipse.jetty:jetty-io:jar:11.0.14:test
-[INFO] |     \- org.eclipse.jetty.websocket:websocket-common:jar:9.4.49.v20220914:test
-[INFO] |        \- org.eclipse.jetty.websocket:websocket-api:jar:9.4.49.v20220914:test
-[INFO] \- org.projectlombok:lombok:jar:1.18.26:compile
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  2.754 s
-[INFO] Finished at: 2023-04-25T09:17:33-06:00
-[INFO] ------------------------------------------------------------------------

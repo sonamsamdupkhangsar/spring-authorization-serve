@@ -12,7 +12,7 @@ plugins {
 
 group = 'me.sonam'
 version = '1.0'
-description = 'pkce-auth-server'
+description = 'my-spring-authorization-server'
 
 repositories {
     mavenCentral()
