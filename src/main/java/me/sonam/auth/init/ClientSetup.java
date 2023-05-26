@@ -43,7 +43,7 @@ public class ClientSetup {
                 .scope(OidcScopes.PROFILE)
                 .scope("message.read")
                 .scope("message.write")
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
                 .build();
 
         // Save registered client in db as if in-memory

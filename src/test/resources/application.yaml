@@ -30,3 +30,7 @@ spring:
 application-rest-service:
   root: http://localhost:8080
   client-role: /applications/clients/{clientId}/users/{authenticationId}
+
+authentication-rest-service:
+  root: http://localhost:8080
+  authenticate: /authentications/authenticate
