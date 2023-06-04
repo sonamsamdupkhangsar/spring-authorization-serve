@@ -31,3 +31,8 @@ eureka:
 application-rest-service:
   root: ${APPLICATION_REST_SERVICE}
   client-role: /applications/clients/{clientId}/users/{authenticationId}
+
+
+authentication-rest-service:
+  root: ${AUTHENTICATION_REST_SERVICE}
+  authenticate: /authentications/authenticate

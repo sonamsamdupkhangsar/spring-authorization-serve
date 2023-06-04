@@ -15,8 +15,6 @@
  */
 package me.sonam.auth;
 
-import java.io.IOException;
-
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
@@ -24,28 +22,36 @@ import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for the sample Authorization Server.
- *
- * @author Daniel Garnier-Moiroux
- */
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 public class DefaultAuthorizationServerApplicationTests {
+	private static final Logger LOG = LoggerFactory.getLogger(DefaultAuthorizationServerApplicationTests.class);
+
 	private static final String REDIRECT_URI = "http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc";
 
 	private static final String AUTHORIZATION_REQUEST = UriComponentsBuilder
@@ -56,6 +62,28 @@ public class DefaultAuthorizationServerApplicationTests {
 			.queryParam("state", "some-state")
 			.queryParam("redirect_uri", REDIRECT_URI)
 			.toUriString();
+	private static MockWebServer mockWebServer;
+
+	@BeforeAll
+	static void setupMockWebServer() throws IOException {
+		mockWebServer = new MockWebServer();
+		mockWebServer.start();
+
+		LOG.info("host: {}, port: {}", mockWebServer.getHostName(), mockWebServer.getPort());
+	}
+
+	@AfterAll
+	public static void shutdownMockWebServer() throws IOException {
+		LOG.info("shutdown and close mockWebServer");
+		mockWebServer.shutdown();
+		mockWebServer.close();
+	}
+
+	@DynamicPropertySource
+	static void properties(DynamicPropertyRegistry r) throws IOException {
+		r.add("authentication-rest-service.root", () -> "http://localhost:"+mockWebServer.getPort());
+		r.add("application-rest-service.root", () -> "http://localhost:"+mockWebServer.getPort());
+	}
 
 	@Autowired
 	private WebClient webClient;
@@ -68,21 +96,46 @@ public class DefaultAuthorizationServerApplicationTests {
 	}
 
 	@Test
-	public void whenLoginSuccessfulThenDisplayNotFoundError() throws IOException {
+	public void whenLoginSuccessfulThenDisplayNotFoundError() throws IOException, InterruptedException {
+		LOG.info("test whenLoginSuccessfulThenDisplayNotFoundError()");
+
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(200).setBody("authentication valid"));
+
+		final String clientRoleGroups = "{\"userRole\":\"user\",\"groupNames\":\"admin1touser,employee\"}";
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200).setBody(clientRoleGroups));
+
 		HtmlPage page = this.webClient.getPage("/");
 
 		assertLoginPage(page);
 
 		this.webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 		WebResponse signInResponse = signIn(page, "user1", "password").getWebResponse();
+
+		RecordedRequest recordedRequest = mockWebServer.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
+
+		recordedRequest = mockWebServer.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).startsWith("/applications/clients");
+
 		assertThat(signInResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());	// there is no "default" index page
 	}
 
 	@Test
-	public void whenLoginFailsThenDisplayBadCredentials() throws IOException {
+	public void whenLoginFailsThenDisplayBadCredentials() throws IOException, InterruptedException {
+		LOG.info("test whenLoginFailsThenDisplayBadCredentials()");
 		HtmlPage page = this.webClient.getPage("/");
 
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(401).setBody("Bad Credentials"));
+
 		HtmlPage loginErrorPage = signIn(page, "user1", "wrong-password");
+
+		RecordedRequest recordedRequest = mockWebServer.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
 
 		HtmlElement alert = loginErrorPage.querySelector("div[role=\"alert\"]");
 		assertThat(alert).isNotNull();
@@ -91,20 +144,36 @@ public class DefaultAuthorizationServerApplicationTests {
 
 	@Test
 	public void whenNotLoggedInAndRequestingTokenThenRedirectsToLogin() throws IOException {
+		LOG.info("test whenNotLoggedInAndRequestingTokenThenRedirectsToLogin()");
 		HtmlPage page = this.webClient.getPage(AUTHORIZATION_REQUEST);
 
 		assertLoginPage(page);
 	}
 
 	@Test
-	public void whenLoggingInAndRequestingTokenThenRedirectsToClientApplication() throws IOException {
+	public void whenLoggingInAndRequestingTokenThenRedirectsToClientApplication() throws IOException, InterruptedException {
+		LOG.info("test whenLoggingInAndRequestingTokenThenRedirectsToClientApplication()");
 		// Log in
 		this.webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 		this.webClient.getOptions().setRedirectEnabled(false);
+
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(200).setBody("authentication valid"));
+
+		final String clientRoleGroups = "{\"userRole\":\"user\",\"groupNames\":\"admin1touser,employee\"}";
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200).setBody(clientRoleGroups));
+
 		signIn(this.webClient.getPage("/login"), "user1", "password");
 
 		// Request token
 		WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
+		RecordedRequest recordedRequest = mockWebServer.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
+
+		recordedRequest = mockWebServer.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).startsWith("/applications/clients");
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.MOVED_PERMANENTLY.value());
 		String location = response.getResponseHeaderValue("location");

@@ -17,3 +17,4 @@ eureka:
 
 DEFAULT_ZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
 APPLICATION_REST_SERVICE: http://application-rest-service
+AUTHENTICATION_REST_SERVICE: http://authentication-rest-service

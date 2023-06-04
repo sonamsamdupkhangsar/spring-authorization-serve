@@ -23,12 +23,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class is used for making authentication callout to external authentication-rest-service
+ * for authenticating username and password.
+ */
 @Service
 public class AuthenticationCallout implements AuthenticationProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationCallout.class);
 
     @Value("${application-rest-service.root}${application-rest-service.client-role}")
     private String applicationClientRoleService;
+
+    @Value("${authentication-rest-service.root}${authentication-rest-service.authenticate}")
+    private String authenticateEndpoint;
 
     private RequestCache requestCache;
     private WebClient.Builder webClientBuilder;
@@ -50,7 +57,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         LOG.info("authorities: {}, details: {}, credentials: {}", authentication.getAuthorities(),
                 authentication.getDetails(), authentication.getCredentials());
-        /*Mono<UsernamePasswordAuthenticationToken> mono = getAuth(authentication, clientId);
+        Mono<UsernamePasswordAuthenticationToken> mono = getAuth(authentication, clientId);
         return mono.flatMap( usernamePasswordAuthenticationToken ->
                 getRoles(authentication.getPrincipal().toString(), clientId))
                 .flatMap(map -> {
@@ -61,45 +68,35 @@ public class AuthenticationCallout implements AuthenticationProvider {
                     final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
                     return Mono.just(auth);
                 }).block();
-*/
-        //OAuth2AuthenticatedPrincipal oAuth2AuthenticatedPrincipal = (OAuth2AuthenticatedPrincipal) authentication;
-
-        if (name.equals("user1") && password.equals("password")) {
-            final List<GrantedAuthority> grantedAuths = new ArrayList<>();
-            grantedAuths.add(new SimpleGrantedAuthority("ROLE_USER"));
-            final UserDetails principal = new User(name, password, grantedAuths);
-            LOG.info("returning using custom authenticator");
-            final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
-            return auth;
-        } else {
-            throw new BadCredentialsException("Bad credentials");
-        }
     }
 
     private Mono<UsernamePasswordAuthenticationToken> getAuth(Authentication authentication, String clientId) {
         String password = authentication.getCredentials().toString();
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().bodyValue(
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(authenticateEndpoint).bodyValue(
                         Map.of("authenticationId", authentication.getPrincipal().toString(),
                                 "password", password,
                                 "clientId", clientId))
                 .retrieve();
 
-        return responseSpec.bodyToMono(Map.class).flatMap(map -> {
-                    LOG.info("authentication response {}", map);
+        //throws exception on authentication not found return with 401 http status
+        return responseSpec.bodyToMono(String.class).flatMap(string -> {
+                    LOG.info("authentication response: {}", string);
                     return Mono.just(new UsernamePasswordAuthenticationToken(authentication.getPrincipal(),
                             password, new ArrayList<>()));
                 })
                 .onErrorResume(throwable -> {
-            LOG.error("error on authentication-rest-service call {}", throwable);
+            LOG.error("error on authentication-rest-service call {}", throwable.getMessage());
 
             if (throwable instanceof WebClientResponseException) {
                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                 LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-                return Mono.error(new Exception("authentication failed: "+webClientResponseException.getResponseBodyAsString()));
+                //return Mono.error(new Exception("authentication failed: "+webClientResponseException.getResponseBodyAsString()));
+                return Mono.error(new BadCredentialsException("Bad credentials"));
             }
             else {
-                return Mono.error(new Exception("authentication failed with error: " +throwable.getMessage()));
+               // return Mono.error(new Exception("authentication failed with error: " +throwable.getMessage()));
+                return Mono.error(new BadCredentialsException("Bad credentials"));
             }
         });
     }

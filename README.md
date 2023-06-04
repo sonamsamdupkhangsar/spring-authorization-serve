@@ -1,7 +1,15 @@
 # My Customization of Spring Authorization Server
-This is my customization of the Spring Authorization Server which is OAuth2.1 and OpenID Connect 1.0 implementation.
+This is a customization of the Spring Authorization Server which implements OAuth2.1 and OpenID Connect 1.0 specifications.
 
 ## Purpose
-I am working on using OAuth2 workflow authorization and OIDC for authentication in application.  The goal is to use Refresh Token/Access Token to authorize requests to application instead of building my own custom implementation.
+This authorization service will be used for issuing access-token/refresh tokens for services. 
 
-The goal is to use this authorization server with other microservices.
+This application also exposes a rest client for OAuth Client registration at endpoint `clients/`.
+
+This app will communicate with the following two external services:
+`authentication-rest-service` for authenticating user with username and password.
+`application-rest-service` for getting user roles.
+
+## Run
+For running locally using local profile:
+`gradle bootRun --args="--spring.profiles.active=local"`

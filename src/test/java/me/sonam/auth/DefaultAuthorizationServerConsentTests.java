@@ -28,6 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,16 +44,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-/**
- * Consent screen integration tests for the sample Authorization Server.
- *
- * @author Dmitriy Dubson
- */
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 public class DefaultAuthorizationServerConsentTests {
-
+	private static final Logger LOG = LoggerFactory.getLogger(DefaultAuthorizationServerConsentTests.class);
 	@Autowired
 	private WebClient webClient;
 
@@ -80,6 +77,7 @@ public class DefaultAuthorizationServerConsentTests {
 	@Test
 	@WithMockUser("user1")
 	public void whenUserConsentsToAllScopesThenReturnAuthorizationCode() throws IOException {
+		LOG.info("test whenUserConsentsToAllScopesThenReturnAuthorizationCode()");
 		final HtmlPage consentPage = this.webClient.getPage(this.authorizationRequestUri);
 		assertThat(consentPage.getTitleText()).isEqualTo("Consent required");
 
@@ -110,6 +108,7 @@ public class DefaultAuthorizationServerConsentTests {
 	@Test
 	@WithMockUser("user1")
 	public void whenUserCancelsConsentThenReturnAccessDeniedError() throws IOException {
+		LOG.info("test whenUserCancelsConsentThenReturnAccessDeniedError()");
 		final HtmlPage consentPage = this.webClient.getPage(this.authorizationRequestUri);
 		assertThat(consentPage.getTitleText()).isEqualTo("Consent required");
 

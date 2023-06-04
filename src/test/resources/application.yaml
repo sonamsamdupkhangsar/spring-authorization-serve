@@ -5,8 +5,8 @@ logging:
   level:
     root: INFO
     org.springframework.web: INFO
-    org.springframework.security: INFO
-    org.springframework.security.oauth2: INFO
+    org.springframework.security: info
+    org.springframework.security.oauth2: info
 #    org.springframework.boot.autoconfigure: DEBUG
 
 eureka:
@@ -30,3 +30,7 @@ spring:
 application-rest-service:
   root: http://localhost:8080
   client-role: /applications/clients/{clientId}/users/{authenticationId}
+
+authentication-rest-service:
+  root: http://localhost:8080
+  authenticate: /authentications/authenticate

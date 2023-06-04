@@ -1,15 +1,12 @@
 package me.sonam.auth.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import me.sonam.auth.jpa.entity.Client;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.repo.ClientRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -22,8 +19,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.util.*;
+
 @Component
 public class JpaRegisteredClientRepository implements RegisteredClientRepository {
+    private static final Logger LOG = LoggerFactory.getLogger(JpaRegisteredClientRepository.class);
     private final ClientRepository clientRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -45,17 +45,20 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
 
     @Override
     public RegisteredClient findById(String id) {
+        LOG.info("findBy id: {}", id);
         Assert.hasText(id, "id cannot be empty");
         return this.clientRepository.findById(id).map(this::toObject).orElse(null);
     }
 
     @Override
     public RegisteredClient findByClientId(String clientId) {
+        LOG.info("findByClientId: {}", clientId);
         Assert.hasText(clientId, "clientId cannot be empty");
         return this.clientRepository.findByClientId(clientId).map(this::toObject).orElse(null);
     }
 
     private RegisteredClient toObject(Client client) {
+        LOG.info("create RegisteredClient from client");
         Set<String> clientAuthenticationMethods = StringUtils.commaDelimitedListToSet(
                 client.getClientAuthenticationMethods());
         Set<String> authorizationGrantTypes = StringUtils.commaDelimitedListToSet(
@@ -81,6 +84,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
                 .scopes((scopes) -> scopes.addAll(clientScopes));
 
         Map<String, Object> clientSettingsMap = parseMap(client.getClientSettings());
+
         builder.clientSettings(ClientSettings.withSettings(clientSettingsMap).build());
 
         Map<String, Object> tokenSettingsMap = parseMap(client.getTokenSettings());
@@ -115,6 +119,79 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         return entity;
     }
 
+    public RegisteredClient build(Map<String, Object> map) {
+        String id = null;
+        if (map.get("id") != null) {
+            id = (String) map.get("id");
+        }
+        else {
+            id = UUID.randomUUID().toString();
+        }
+
+        Set<String> clientAuthenticationMethods = StringUtils.commaDelimitedListToSet(
+                map.get("clientAuthenticationMethods").toString());
+        Set<String> authorizationGrantTypes = StringUtils.commaDelimitedListToSet(
+                map.get("authorizationGrantTypes").toString());
+        Set<String> redirectUris = StringUtils.commaDelimitedListToSet(
+                map.get("redirectUris").toString());
+        Set<String> clientScopes = StringUtils.commaDelimitedListToSet(
+                map.get("scopes").toString());
+
+        RegisteredClient registeredClient = RegisteredClient.withId(id)
+                .clientId((String)map.get("clientId"))
+                .clientSecret((String)map.get("clientSecret"))
+                .clientName((String)map.get("clientName"))
+                .clientAuthenticationMethods(authenticationMethods ->
+                        clientAuthenticationMethods.forEach(authenticationMethod -> {
+                            ClientAuthenticationMethod cam = resolveClientAuthenticationMethod(authenticationMethod);
+                            LOG.info("cam: {}, cam.value: {}", cam, cam.getValue());
+                            authenticationMethods.add(cam);
+                        }))
+                .authorizationGrantTypes(grantTypes ->
+                        authorizationGrantTypes.forEach(authorizationGrantType -> {
+                            AuthorizationGrantType agt = resolveAuthorizationGrantType(authorizationGrantType);
+                            LOG.info("agt: {}, agt.value: {}", agt, agt.getValue());
+                            grantTypes.add(agt);
+                        })
+                )
+                .redirectUris(uris ->
+                        redirectUris.forEach(redirectUri -> {
+                            uris.add(redirectUri);
+                        })
+                )
+                .scopes(scopes ->
+                        clientScopes.forEach(scope -> {
+                            scopes.add(scope);
+                            LOG.info("add scope: {}", scope);
+                        })
+                )
+                .clientSettings(ClientSettings.withSettings((Map)map.get("clientSettings")).build()).build();
+
+
+        return registeredClient;
+    }
+
+    public Map<String, String> getMap(RegisteredClient registeredClient) {
+        List<String> clientAuthenticationMethods = new ArrayList<>(registeredClient.getClientAuthenticationMethods().size());
+        registeredClient.getClientAuthenticationMethods().forEach(clientAuthenticationMethod ->
+                clientAuthenticationMethods.add(clientAuthenticationMethod.getValue()));
+
+        List<String> authorizationGrantTypes = new ArrayList<>(registeredClient.getAuthorizationGrantTypes().size());
+        registeredClient.getAuthorizationGrantTypes().forEach(authorizationGrantType ->
+                authorizationGrantTypes.add(authorizationGrantType.getValue()));
+
+        Map<String, String> map = Map.of("clientId", registeredClient.getClientId(), "clientSecret", registeredClient.getClientSecret(),
+                "clientName", registeredClient.getClientName(),
+                "clientAuthenticationMethods", StringUtils.collectionToCommaDelimitedString(clientAuthenticationMethods),
+                "authorizationGrantTypes", StringUtils.collectionToCommaDelimitedString(authorizationGrantTypes),
+                "redirectUris", StringUtils.collectionToCommaDelimitedString(registeredClient.getRedirectUris()),
+                "scopes", StringUtils.collectionToCommaDelimitedString(registeredClient.getScopes()),
+                "clientSettings",writeMap(registeredClient.getClientSettings().getSettings()),
+                "tokenSettings", writeMap(registeredClient.getTokenSettings().getSettings()));
+
+        LOG.info("map contains: {}", map);
+        return map;
+    }
     private Map<String, Object> parseMap(String data) {
         try {
             return this.objectMapper.readValue(data, new TypeReference<Map<String, Object>>() {
