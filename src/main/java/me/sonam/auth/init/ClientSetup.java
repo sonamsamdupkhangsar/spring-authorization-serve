@@ -1,6 +1,5 @@
 package me.sonam.auth.init;
 
-import jakarta.annotation.PostConstruct;
 import me.sonam.auth.config.AuthorizationServerConfig;
 import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.repo.ClientRepository;
@@ -17,6 +16,7 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 
 import java.util.Optional;
 import java.util.UUID;
+// not neeed anymore
 
 @Configuration
 public class ClientSetup {
@@ -28,16 +28,44 @@ public class ClientSetup {
     //@Autowired
     private ClientRepository clientRepository;
 
-    @PostConstruct
+    //@PostConstruct
     public void saveClient() {
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId("messaging-client")
                 .clientSecret("{noop}secret")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
+                .redirectUri("http://127.0.0.1:8080/authorized")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .scope("message.read")
+                .scope("message.write")
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
+                .build();
+
+        // Save registered client in db as if in-memory
+        //JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
+        jpaRegisteredClientRepository.save(registeredClient);
+
+        //	return registeredClientRepository;
+    }
+
+  //  @PostConstruct
+    public void saveAnotherClient() {
+        LOG.info("save myclient");
+        RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("myclient")
+                .clientSecret("{noop}secret")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/myclient-oidc")
                 .redirectUri("http://127.0.0.1:8080/authorized")
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
@@ -118,10 +146,10 @@ public class ClientSetup {
             LOG.info("saved registeredClient");
         }
     }
+
     //@PostConstruct
     private void saveClientCredential() {
         final String clientId = "oauth-client";
-        clientRepository.deleteAll();
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
         if (registeredClient != null) {

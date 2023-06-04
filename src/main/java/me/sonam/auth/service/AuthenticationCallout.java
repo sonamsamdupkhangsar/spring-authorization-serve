@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class is used for making authentication callout to external authentication-rest-service
+ * for authenticating username and password.
+ */
 @Service
 public class AuthenticationCallout implements AuthenticationProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationCallout.class);
@@ -64,19 +68,6 @@ public class AuthenticationCallout implements AuthenticationProvider {
                     final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
                     return Mono.just(auth);
                 }).block();
-
-        //OAuth2AuthenticatedPrincipal oAuth2AuthenticatedPrincipal = (OAuth2AuthenticatedPrincipal) authentication;
-
-       /* if (name.equals("user1") && password.equals("password")) {
-            final List<GrantedAuthority> grantedAuths = new ArrayList<>();
-            grantedAuths.add(new SimpleGrantedAuthority("ROLE_USER"));
-            final UserDetails principal = new User(name, password, grantedAuths);
-            LOG.info("returning using custom authenticator");
-            final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
-            return auth;
-        } else {
-            throw new BadCredentialsException("Bad credentials");
-        }*/
     }
 
     private Mono<UsernamePasswordAuthenticationToken> getAuth(Authentication authentication, String clientId) {

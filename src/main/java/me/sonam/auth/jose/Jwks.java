@@ -29,10 +29,6 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetSequenceKey;
 import com.nimbusds.jose.jwk.RSAKey;
 
-/**
- * @author Joe Grandja
- * @since 0.1.0
- */
 public final class Jwks {
 
 	private Jwks() {
