@@ -103,10 +103,15 @@ publishing {
         maven {
             url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/jwt-validator")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") ?: System.getenv("PERSONAL_ACCESS_TOKEN")
+                username = System.getenv("USERNAME")
+                password = System.getenv("PERSONAL_ACCESS_TOKEN")
             }
         }
 
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
     }
 }
