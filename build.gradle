@@ -41,7 +41,7 @@ dependencies {
     testImplementation 'net.sourceforge.htmlunit:htmlunit'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.0.1'
     testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.0.0'
-    testImplementation group: 'me.sonam', name: 'jwt-validator', version:'1.0.3-SNAPSHOT'
+    testImplementation group: 'me.sonam', name: 'jwt-validator', version:'1.0.4-SNAPSHOT'
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
