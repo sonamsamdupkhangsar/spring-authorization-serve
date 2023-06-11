@@ -97,7 +97,7 @@ publishing {
             url = "https://maven.pkg.github.com/sonamsamdupkhangsar/my-spring-authorization-server"
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
+                password = System.getenv("PERSONAL_ACCESS_TOKEN")
             }
         }
         maven {
