@@ -17,6 +17,13 @@ repositories {
     mavenCentral()
     maven { url 'https://repo.spring.io/milestone' }
     mavenLocal()
+    maven {
+        url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/jwt-validator")
+        credentials {
+            username = System.getenv("USERNAME")
+            password = System.getenv("PERSONAL_ACCESS_TOKEN")
+        }
+    }
 }
 
 ext {
@@ -100,14 +107,6 @@ publishing {
                 password = System.getenv("PERSONAL_ACCESS_TOKEN")
             }
         }
-        maven {
-            url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/jwt-validator")
-            credentials {
-                username = System.getenv("USERNAME")
-                password = System.getenv("PERSONAL_ACCESS_TOKEN")
-            }
-        }
-
     }
 
 }
