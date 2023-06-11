@@ -1,5 +1,6 @@
 package me.sonam.auth.init;
 
+import jakarta.annotation.PostConstruct;
 import me.sonam.auth.config.AuthorizationServerConfig;
 import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.repo.ClientRepository;
@@ -112,7 +113,7 @@ public class ClientSetup {
         }
     }
 
-    // @PostConstruct
+     @PostConstruct
     private void savePrivateRegisteredClient() {
         final String clientId = "private-client";
         // Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
@@ -132,7 +133,7 @@ public class ClientSetup {
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
                     .redirectUri("http://127.0.0.1:8080/authorized")
-                    //.postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
+                    .postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
                     .scope(OidcScopes.OPENID)
                     .scope(OidcScopes.PROFILE)
                     .scope(OidcScopes.EMAIL)

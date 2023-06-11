@@ -20,7 +20,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.SecurityFilterChain;
@@ -39,9 +38,9 @@ public class DefaultSecurityConfig {
 			.authorizeHttpRequests(authorize ->
 				authorize.anyRequest().authenticated()
 			)
-				.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
-				.csrf().disable()
-
+				.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
+				.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer ->
+						httpSecurityOAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults()))
 			.formLogin(withDefaults());
 
 		return  http.cors(Customizer.withDefaults()).build();

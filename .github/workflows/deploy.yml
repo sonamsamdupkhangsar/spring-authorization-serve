@@ -1,0 +1,69 @@
+on:
+  push:
+    branches:
+      - feature/*
+      - main
+
+jobs:
+
+  build:
+    name: Build, push, and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Export project name
+        run: export PROJECT_NAME=$(echo ${{ github.repository }} | cut -d / -f2); echo $PROJECT_NAME
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Open JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
+      - name: Publish package
+        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629
+        with:
+          arguments: publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Build Docker image and push to ghcr.io registry
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/sonamsamdupkhangsar/email-rest-service:latest
+          secrets: |
+            GIT_AUTH_TOKEN=${{ secrets.PERSONAL_ACCESS_TOKEN }}
+            PERSONAL_ACCESS_TOKEN=${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Save DigitalOcean kubeconfig with short-lived credentials
+        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.K8CLUSTER_NAME }}
+
+      - name: Deploy to k8 cluster
+        run: |
+          export TAG="latest@${{ steps.docker_build.outputs.digest }}"
+          export PROJECT_NAME=$(echo ${{ github.repository }} | cut -d / -f2)
+          helm repo add sonam https://sonamsamdupkhangsar.github.io/sonam-helm-chart/
+          helm upgrade --install --timeout 5m0s \
+            --set "image.repository=ghcr.io/sonamsamdupkhangsar/$PROJECT_NAME" \
+            --set "image.tag=latest" \
+            --set "project=$PROJECT_NAME" \
+             $PROJECT_NAME \
+            sonam/mychart -f values-backend.yaml --version 0.1.26 --namespace=backend

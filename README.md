@@ -13,3 +13,13 @@ This app will communicate with the following two external services:
 ## Run
 For running locally using local profile:
 `gradle bootRun --args="--spring.profiles.active=local"`
+
+## Build Docker image
+```
+./gradlew bootBuildImage --imageName=name/my-spring-authorization-server
+```
+Pass local profile as argument:
+```
+ docker run -e --spring.profiles.active=local -p 9001:9001 -t myorg/myapp
+
+```
