@@ -46,6 +46,7 @@ jobs:
           push: true
           tags: latest
           labels: ${{ steps.meta.outputs.labels }}
+        env:
           USERNAME: ${{ github.actor }}
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
