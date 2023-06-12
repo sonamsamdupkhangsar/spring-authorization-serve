@@ -20,7 +20,7 @@ repositories {
     maven {
         url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/jwt-validator")
         credentials {
-            username = System.getenv("USERNAME")
+            username = sonamsamdupkhangsar
             password = System.getenv("PERSONAL_ACCESS_TOKEN")
         }
     }
