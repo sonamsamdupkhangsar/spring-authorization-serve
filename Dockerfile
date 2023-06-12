@@ -7,10 +7,10 @@ COPY . /workspace/app
 #RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*-SNAPSHOT.jar)
 
 
-RUN --mount=type=secret,id=USERNAME --mount=type=secret,id=PERSONAL_ACCESS_TOKEN --mount=type=cache,target=/root/.gradle\
-    export USERNAME=$(cat /run/secrets/USERNAME) \
-    export PERSONAL_ACCESS_TOKEN=$(cat /run/secrets/PERSONAL_ACCESS_TOKEN)  \
-     ./gradlew clean build
+RUN --mount=type=secret,id=USERNAME --mount=type=secret,id=PERSONAL_ACCESS_TOKEN\
+    export USERNAME=$(cat /run/secrets/USERNAME)\
+    export PERSONAL_ACCESS_TOKEN=$(cat /run/secrets/PERSONAL_ACCESS_TOKEN)&&\
+    --mount=type=cache,target=/root/.gradle ./gradlew clean build
 #RUN  --mount=type=cache,target=/root/.gradle ./gradlew clean build
 RUN  mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*-SNAPSHOT.jar)
 
