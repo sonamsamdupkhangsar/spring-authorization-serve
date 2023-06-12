@@ -88,6 +88,10 @@ envs:
     value: discovery-service.sonam.cloud
   - name: DEFAULT_ZONE
     value: https://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
+  - name: APPLICATION_REST_SERVICE
+    value: http://application-rest-service
+  - name: AUTHENTICATION_REST_SERVICE
+    value: http://authentication-rest-service
 
 health:
   liveness:
