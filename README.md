@@ -15,9 +15,15 @@ For running locally using local profile:
 `gradle bootRun --args="--spring.profiles.active=local"`
 
 ## Build Docker image
+Gradle build:
 ```
 ./gradlew bootBuildImage --imageName=name/my-spring-authorization-server
 ```
+Docker build passing in username and personal access token varaibles into docker to be used as environment variables in the gradle `build.gradle` file for pulling private maven artifact:
+```
+docker build --secret id=USERNAME,env=USERNAME --secret id=PERSONAL_ACCESS_TOKEN,env=PERSONAL_ACCESS_TOKEN . -t my/auth-servier
+```
+
 Pass local profile as argument:
 ```
  docker run -e --spring.profiles.active=local -p 9001:9001 -t myorg/myapp
