@@ -80,6 +80,8 @@ postgres:
   dbname: authorization-server
 
 envs:
+  - name: SERVER_PORT
+    value: 8080
   - name: EUREKA_CLIENT_ENABLED
     value: true
   - name: EUREKA_HOST
