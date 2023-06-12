@@ -42,9 +42,8 @@ jobs:
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: latest
+          tags: ghcr.io/sonamsamdupkhangsar/my-spring-authorization-server:latest
           secrets: |
             USERNAME=${{ github.actor }}
             PERSONAL_ACCESS_TOKEN=${{ secrets.PERSONAL_ACCESS_TOKEN }}
