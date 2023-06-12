@@ -75,9 +75,9 @@ affinity: {}
 
 postgres:
   port: "5432"
-  service: authorization-server-minimal-cluster
-  secretfile: sonam.authorization-server-minimal-cluster.credentials.postgresql.acid.zalan.do
-  dbname: authorization-server
+  service: authorization-minimal-cluster
+  secretfile: sonam.authorization-minimal-cluster.credentials.postgresql.acid.zalan.do
+  dbname: authorization
 
 envs:
   - name: SERVER_PORT
