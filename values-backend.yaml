@@ -73,7 +73,15 @@ tolerations: []
 
 affinity: {}
 
+postgres:
+  port: "5432"
+  service: authorization-server-minimal-cluster
+  secretfile: sonam.authorization-server-minimal-cluster.credentials.postgresql.acid.zalan.do
+  dbname: authorization-server
+
 envs:
+  - name: EUREKA_CLIENT_ENABLED
+    value: true
   - name: EUREKA_HOST
     value: discovery-service.sonam.cloud
   - name: DEFAULT_ZONE
