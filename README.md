@@ -27,5 +27,4 @@ docker build --secret id=USERNAME,env=USERNAME --secret id=PERSONAL_ACCESS_TOKEN
 Pass local profile as argument:
 ```
  docker run -e --spring.profiles.active=local -p 9001:9001 -t myorg/myapp
-
 ```
