@@ -1,0 +1,116 @@
+# Default values for mychart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: github-regcred
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+#  type: NodePort
+  port: 80
+  targetPort: 8080
+
+istio:
+  enabled: false
+
+ingress:
+  enabled: false
+  ingressClass: nginx
+  hosts:
+    - host: auth-server.sonam.cloud
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: sonam.cloud
+      hosts:
+        - "*.sonam.cloud"
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+#   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+postgres:
+  port: "5432"
+  service: authorization-minimal-cluster
+  secretfile: sonam.authorization-minimal-cluster.credentials.postgresql.acid.zalan.do
+  dbname: authorization
+
+envs:
+  - name: SERVER_PORT
+    value: 8080
+  - name: EUREKA_CLIENT_ENABLED
+    value: true
+  - name: EUREKA_HOST
+    value: discovery-service.sonam.cloud
+  - name: DEFAULT_ZONE
+    value: https://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
+  - name: APPLICATION_REST_SERVICE
+    value: http://application-rest-service
+  - name: AUTHENTICATION_REST_SERVICE
+    value: http://authentication-rest-service
+
+health:
+  liveness:
+    path: /api/health/liveness
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 5
+  readiness:
+    path: /api/health/readiness
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 5
+
+secretFiles:
+  - file: eureka-discovery
+    keys:
+      - key: user
+        name: EUREKA_USER
+      - key: password
+        name: EUREKA_PASSWORD

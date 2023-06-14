@@ -3,11 +3,10 @@
  */
 
 plugins {
-    id 'java-library'
-    id 'maven-publish'
     id "org.springframework.boot" version "3.1.0"
     id "io.spring.dependency-management" version "1.1.0"
     id "java"
+    id "maven-publish"
 }
 
 group = 'me.sonam'
@@ -18,16 +17,30 @@ repositories {
     mavenCentral()
     maven { url 'https://repo.spring.io/milestone' }
     mavenLocal()
+    maven {
+        url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/jwt-validator")
+        credentials {
+            println("username:  "+ System.getenv("USERNAME"))
+            println("personal access token: "+ System.getenv("PERSONAL_ACCESS_TOKEN"))
+            println("env: "+ System.getenv())
+            username = "sonamsamdupkhangsar"//System.getenv("USERNAME")
+            password = System.getenv("PERSONAL_ACCESS_TOKEN")
+        }
+    }
+}
+
+ext {
+    set('springCloudVersion', "2022.0.3")
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.0.6'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa:3.0.6'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.0.1'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.postgresql:postgresql:42.6.0'
     implementation 'com.google.code.gson:gson:2.9.1'
 
@@ -38,11 +51,12 @@ dependencies {
     testImplementation 'net.sourceforge.htmlunit:htmlunit'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.0.1'
     testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.0.0'
-    testImplementation group: 'me.sonam', name: 'jwt-validator', version:'1.0.3-SNAPSHOT'
+    testImplementation group: 'me.sonam', name: 'jwt-validator', version:'1.0.4-SNAPSHOT'
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
 
+/*
 publishing {
     publications {
         maven(MavenPublication) {
@@ -50,6 +64,7 @@ publishing {
         }
     }
 }
+*/
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -76,4 +91,25 @@ test {
         //include all integration tests
         includeTestsMatching "*Test*"
     }
+}
+
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/sonamsamdupkhangsar/my-spring-authorization-server"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+
 }

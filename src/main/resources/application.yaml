@@ -8,11 +8,11 @@ logging:
     org.springframework.web: info
     org.springframework.security: info
     org.springframework.security.oauth2: info
-    org.springframework.boot.autoconfigure: DEBUG
+    org.springframework.boot.autoconfigure: warn
 
 spring:
   application:
-    name: authorization-service
+    name: authorization-server
   datasource:
     url: jdbc:postgresql://${POSTGRES_SERVICE}/${POSTGRES_DBNAME}
     username: ${POSTGRES_USERNAME}
@@ -26,7 +26,9 @@ spring:
 
 eureka:
   client:
-    enabled: false
+    enabled: ${EUREKA_CLIENT_ENABLED}
+    serviceUrl:
+      defaultZone: ${DEFAULT_ZONE}
 
 application-rest-service:
   root: ${APPLICATION_REST_SERVICE}
