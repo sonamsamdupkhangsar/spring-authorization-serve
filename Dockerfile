@@ -20,6 +20,3 @@ COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
 ENTRYPOINT ["java","-cp","app:app/lib/*","me.sonam.auth.DefaultAuthorizationServerApplication"]
 
 LABEL org.opencontainers.image.source https://github.com/sonamsamdupkhangsar/my-spring-authorization-server
-
-#ENTRYPOINT [ "java", "-jar", "/app/email-rest-service.jar"]
-
