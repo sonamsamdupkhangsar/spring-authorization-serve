@@ -36,8 +36,11 @@ public class DefaultSecurityConfig {
 	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 		http
 			.authorizeHttpRequests(authorize ->
-				authorize.anyRequest().authenticated()
+				authorize.requestMatchers("/api/health/liveness").permitAll()
+						.requestMatchers("/api/health/readiness").permitAll()
+						.anyRequest().authenticated()
 			)
+
 				.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
 				.oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer ->
 						httpSecurityOAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults()))

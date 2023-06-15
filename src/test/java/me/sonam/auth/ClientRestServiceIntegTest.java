@@ -154,6 +154,10 @@ public class ClientRestServiceIntegTest {
                 .exchange().expectStatus().isOk();
 
         assertThat(clientResponse.expectBody(Map.class).returnResult().getResponseBody().get("clientName")).isEqualTo("small blog app");
+
+        LOG.info("verify /clients/myclient path requires a accesstoken or jwt");
+        clientResponse = webTestClient.get().uri("/clients/myclient")
+                .exchange().expectStatus().isUnauthorized();
     }
 
 }
