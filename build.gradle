@@ -12,6 +12,7 @@ plugins {
 group = 'me.sonam'
 version = '1.0'
 description = 'my-spring-authorization-server'
+java.sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
@@ -20,10 +21,7 @@ repositories {
     maven {
         url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/jwt-validator")
         credentials {
-            println("username:  "+ System.getenv("USERNAME"))
-            println("personal access token: "+ System.getenv("PERSONAL_ACCESS_TOKEN"))
-            println("env: "+ System.getenv())
-            username = "sonamsamdupkhangsar"//System.getenv("USERNAME")
+            username = System.getenv("USERNAME")
             password = System.getenv("PERSONAL_ACCESS_TOKEN")
         }
     }
@@ -54,18 +52,6 @@ dependencies {
     testImplementation group: 'me.sonam', name: 'jwt-validator', version:'1.0.4-SNAPSHOT'
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-
-/*
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from(components.java)
-        }
-    }
-}
-*/
-
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
@@ -86,13 +72,12 @@ tasks.named('test', Test) {
 test {
     filter {
         //include all tests from package
-        includeTestsMatching "sample"
+        includeTestsMatching "me.sonam.auth"
 
         //include all integration tests
         includeTestsMatching "*Test*"
     }
 }
-
 
 dependencyManagement {
     imports {
