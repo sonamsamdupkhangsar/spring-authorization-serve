@@ -148,7 +148,7 @@ public class ClientSetup {
         }
     }
 
-    //@PostConstruct
+    @PostConstruct
     private void saveClientCredential() {
         final String clientId = "oauth-client";
 

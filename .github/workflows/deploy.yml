@@ -58,6 +58,7 @@ jobs:
 
       - name: Deploy to k8 cluster
         run: |
+          kubectl apply -f sealedsecret/account-rest-service-sealed.yaml
           export TAG="latest@${{ steps.docker_build.outputs.digest }}"
           export PROJECT_NAME=$(echo ${{ github.repository }} | cut -d / -f2)
           helm repo add sonam https://sonamsamdupkhangsar.github.io/sonam-helm-chart/

@@ -103,7 +103,6 @@ public class AuthorizationServerConfig {
 		return AuthorizationServerSettings.builder().build();
 	}
 
-
 	@Bean
 	public OAuth2TokenCustomizer<JwtEncodingContext> auth2TokenCustomizer() {
 		LOG.info("get authorities");
