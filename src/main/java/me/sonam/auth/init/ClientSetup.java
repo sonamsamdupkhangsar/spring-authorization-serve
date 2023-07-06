@@ -8,6 +8,7 @@ import me.sonam.auth.service.JpaRegisteredClientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -26,7 +27,11 @@ public class ClientSetup {
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
 
-    //@Autowired
+
+    @Value("${private-client-url}")
+    private String privateClientUrl;
+
+    @Autowired
     private ClientRepository clientRepository;
 
     //@PostConstruct
@@ -116,8 +121,6 @@ public class ClientSetup {
      @PostConstruct
     private void savePrivateRegisteredClient() {
         final String clientId = "private-client";
-        // Optional<Client> cLientOptional = clientRepository.findByClientId(clientId);
-        // cLientOptional.ifPresent(client -> clientRepository.delete(client));
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
         if (registeredClient != null) {
@@ -131,9 +134,9 @@ public class ClientSetup {
                     .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                     .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/pkce")
-                    .redirectUri("http://127.0.0.1:8080/authorized")
-                    .postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
+                    .redirectUri(privateClientUrl+"/login/oauth2/code/pkce") //+"http://127.0.0.1:8080/login/oauth2/code/pkce")
+                    .redirectUri(privateClientUrl+"/authorized") //http://127.0.0.1:8080/authorized")
+                    .postLogoutRedirectUri(privateClientUrl+"/logged-out") //http://127.0.0.1:8080/logged-out")
                     .scope(OidcScopes.OPENID)
                     .scope(OidcScopes.PROFILE)
                     .scope(OidcScopes.EMAIL)
@@ -145,6 +148,39 @@ public class ClientSetup {
             jpaRegisteredClientRepository.save(registeredClient);
 
             LOG.info("saved registeredClient");
+        }
+    }
+
+    @PostConstruct
+    private void saveArticlesClient() {
+        final String clientId = "articles-client";
+
+        //clientRepository.deleteAll();
+
+        if (jpaRegisteredClientRepository.findByClientId(clientId) != null) {
+            LOG.info("registered articles client exists");
+        }
+        else {
+            ClientSettings clientSettings = ClientSettings.builder()
+                    .requireAuthorizationConsent(true)
+                    .requireProofKey(false)
+                    .build();
+
+            RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientSettings(clientSettings)
+                    .clientId(clientId)
+                    .clientSecret("{noop}secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/articles-client-oidc")
+                    .scope(OidcScopes.OPENID)
+                    .scope("articles.read")
+                    .scope("articles.write")
+                    .build();
+
+            jpaRegisteredClientRepository.save(registeredClient);
+            LOG.info("saved arcticles client oidc");
         }
     }
 

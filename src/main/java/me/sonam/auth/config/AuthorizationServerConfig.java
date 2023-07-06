@@ -22,6 +22,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import me.sonam.auth.jose.Jwks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -48,6 +49,9 @@ import java.util.Arrays;
 public class AuthorizationServerConfig {
 	private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
 
+	@Value("${ISSUER_URL}")
+	private String issuerUrl;
+
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
 	public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -71,7 +75,7 @@ public class AuthorizationServerConfig {
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfig = new CorsConfiguration();
-		corsConfig.setAllowedOrigins(Arrays.asList("http://127.0.0.1:8080"));
+		corsConfig.setAllowedOrigins(Arrays.asList("*"));//"http://127.0.0.1:8080"));
 		corsConfig.addAllowedMethod("*");
 		corsConfig.addAllowedHeader("*");
 		corsConfig.setAllowCredentials(true);
@@ -100,7 +104,7 @@ public class AuthorizationServerConfig {
 
 	@Bean
 	public AuthorizationServerSettings authorizationServerSettings() {
-		return AuthorizationServerSettings.builder().build();
+		return AuthorizationServerSettings.builder().issuer(issuerUrl).build();
 	}
 
 	@Bean

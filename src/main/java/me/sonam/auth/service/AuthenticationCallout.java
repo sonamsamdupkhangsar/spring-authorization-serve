@@ -86,7 +86,8 @@ public class AuthenticationCallout implements AuthenticationProvider {
                             password, new ArrayList<>()));
                 })
                 .onErrorResume(throwable -> {
-            LOG.error("error on authentication-rest-service call {}", throwable.getMessage());
+            LOG.error("error on authentication-rest-service to endpoint '{}' with error: {}", authenticateEndpoint,
+                    throwable.getMessage());
 
             if (throwable instanceof WebClientResponseException) {
                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
@@ -113,7 +114,8 @@ public class AuthenticationCallout implements AuthenticationProvider {
             LOG.info("got role: {}", clientUserRole);
             return clientUserRole;
         }).onErrorResume(throwable -> {
-            LOG.error("application rest call failed: {}", throwable.getMessage());
+            LOG.error("application rest call failed to endpoint '{}' with error {}", applicationClientRoleService,
+                    throwable.getMessage());
             if (throwable instanceof WebClientResponseException) {
                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                 LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());

@@ -58,4 +58,5 @@ public class DefaultSecurityConfig {
 	HttpSessionEventPublisher httpSessionEventPublisher() {
 		return new HttpSessionEventPublisher();
 	}
+
 }

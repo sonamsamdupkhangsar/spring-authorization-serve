@@ -1,5 +1,7 @@
-server:
-  port: 9000
+#server:
+#  port: 9000
+AUTH_SERVER_PORT: 9000
+
 
 logging:
   level:
@@ -15,6 +17,8 @@ eureka:
     enabled: false
 
 spring:
+  profiles:
+    active: localDevTest
   application:
     name: authorization-service
   datasource:
@@ -35,3 +39,6 @@ application-rest-service:
 authentication-rest-service:
   root: http://localhost:8080
   authenticate: /authentications/authenticate
+
+ISSUER_URL: http://my-server:9001
+private-client-url: http://127.0.0.1:8090

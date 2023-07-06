@@ -80,7 +80,7 @@ postgres:
   dbname: authorization
 
 envs:
-  - name: SERVER_PORT
+  - name: SPRING_AUTH_SERVER_PORT
     value: 8080
   - name: EUREKA_CLIENT_ENABLED
     value: true
@@ -92,6 +92,8 @@ envs:
     value: http://application-rest-service
   - name: AUTHENTICATION_REST_SERVICE
     value: http://authentication-rest-service
+  - name: private-client-url
+    value: http://127.0.0.1:8090
 
 health:
   liveness:
