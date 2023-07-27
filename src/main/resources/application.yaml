@@ -5,6 +5,7 @@ logging:
   level:
     root: error
     me.sonam.auth: info
+    me.sonam.auth.config: debug
     org.springframework.web: info
     org.springframework.security: info
     org.springframework.security.oauth2: info
@@ -38,3 +39,22 @@ application-rest-service:
 authentication-rest-service:
   root: ${AUTHENTICATION_REST_SERVICE}
   authenticate: /authentications/authenticate
+
+user-rest-service:
+  root: ${USER_REST_SERVICE}
+  userByAuthid: /users/{authenticationId}
+
+jwtrequest:
+  - in: /*
+    out: /users/*
+    accessToken:
+      option: request
+      scopes: message.read
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+
+# this is used for getting accesstoken by header filter
+auth-server:
+  root: http://authorization-server
+  oauth2token:
+    path: /oauth2/token
+    params: ?grant_type=client_credentials

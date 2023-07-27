@@ -34,6 +34,7 @@ public class ClientSetup {
     @Autowired
     private ClientRepository clientRepository;
 
+    //test cases depend on this
     //@PostConstruct
     public void saveClient() {
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
@@ -60,30 +61,32 @@ public class ClientSetup {
         //	return registeredClientRepository;
     }
 
-  //  @PostConstruct
+    @PostConstruct
     public void saveAnotherClient() {
         LOG.info("save myclient");
-        RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("myclient")
-                .clientSecret("{noop}secret")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/myclient-oidc")
-                .redirectUri("http://127.0.0.1:8080/authorized")
-                .scope(OidcScopes.OPENID)
-                .scope(OidcScopes.PROFILE)
-                .scope("message.read")
-                .scope("message.write")
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
-                .build();
+        final String myclient = "myclient";
+        if (jpaRegisteredClientRepository.findByClientId(myclient) == null) {
+            RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientId(myclient)
+                    .clientSecret("{noop}secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/myclient-oidc")
+                    .redirectUri("http://127.0.0.1:8080/authorized")
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope("message.read")
+                    .scope("message.write")
+                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
+                    .build();
 
-        // Save registered client in db as if in-memory
-        //JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
-        jpaRegisteredClientRepository.save(registeredClient);
-
+            // Save registered client in db as if in-memory
+            //JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
+            jpaRegisteredClientRepository.save(registeredClient);
+        }
         //	return registeredClientRepository;
     }
 
@@ -210,5 +213,40 @@ public class ClientSetup {
         }
     }
 
+    @PostConstruct
+    private void saveNextjsClientCredential() {
+        final String clientId = "nextjs-client";
+
+       // clientRepository.deleteAll();
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
+
+        if (registeredClient != null) {
+            LOG.info("found registered client");
+        }
+        else {
+            ClientSettings clientSettings = ClientSettings.builder()
+                    .requireAuthorizationConsent(true)
+                    .requireProofKey(false)
+                    .build();
+
+            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientSettings(clientSettings)
+                    .clientId(clientId)
+                    .clientSecret("{noop}nextjs-secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .redirectUri("http://localhost:3001/api/auth/callback/myauth")
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope(OidcScopes.EMAIL)
+                    .scope("message.read")
+                    .scope("message.write")
+                    .build();
+            jpaRegisteredClientRepository.save(registeredClient);
+
+            LOG.info("save a client-credential");
+        }
+    }
 
 }

@@ -15,7 +15,7 @@ EUREKA_CLIENT_ENABLED: true
 DEFAULT_ZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
 APPLICATION_REST_SERVICE: http://application-rest-service
 AUTHENTICATION_REST_SERVICE: http://authentication-rest-service
-
+USER_REST_SERVICE: http://user-rest-service
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation
 #ISSUER_URL:  http://10.0.0.28:9001

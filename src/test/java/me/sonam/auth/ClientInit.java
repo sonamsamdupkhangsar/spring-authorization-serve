@@ -1,6 +1,7 @@
 package me.sonam.auth;
 
 import jakarta.annotation.PostConstruct;
+import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +22,17 @@ public class ClientInit {
 
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
+
+    @Autowired
+    private ClientRepository clientRepository;
     private String clientId = "messaging-client";
 
     private String clientSecret = "secret";
 
     @PostConstruct
     public void saveInitialClient() {
+        LOG.info("save messaging client for testing");
+        clientRepository.deleteAll();
         if (jpaRegisteredClientRepository.findByClientId(clientId) == null) {
 
             RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())

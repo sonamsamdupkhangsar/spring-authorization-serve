@@ -45,15 +45,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
-@Configuration(proxyBeanMethods = false)
+//@Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
 	private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
 
 	@Value("${ISSUER_URL}")
 	private String issuerUrl;
 
-	@Bean
-	@Order(Ordered.HIGHEST_PRECEDENCE)
+	//@Bean
+	//@Order(Ordered.HIGHEST_PRECEDENCE)
 	public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)

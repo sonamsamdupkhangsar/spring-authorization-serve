@@ -9,8 +9,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
@@ -19,6 +21,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,20 +31,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EnableAutoConfiguration
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes= DefaultAuthorizationServerApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ExtendWith(MockitoExtension.class)
 public class ClientRestServiceIntegTest {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRestServiceIntegTest.class);
-
     @Autowired
     private WebTestClient webTestClient;
 
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
 
-    private String clientId = "messaging-client";
+    UUID clientId = UUID.randomUUID();
+    private String messageClient = "messaging-client";
 
     private String clientSecret = "secret";
-    private String base64ClientSecret = Base64.getEncoder().encodeToString(new StringBuilder(clientId)
+    private String base64ClientSecret = Base64.getEncoder().encodeToString(new StringBuilder(messageClient)
             .append(":").append(clientSecret).toString().getBytes());
 
     @Test
@@ -94,7 +96,7 @@ public class ClientRestServiceIntegTest {
     }
 
     private void saveClient() {
-        var requestBody = Map.of("clientId", "myclient", "clientSecret", "{noop}secret",
+        var requestBody = Map.of("clientId", clientId, "clientSecret", "{noop}secret",
                 "clientName", "Blog Application",
                 "clientAuthenticationMethods", "client_secret_basic,client_secret_jwt",
                 "authorizationGrantTypes", "authorization_code,refresh_token,client_credentials",
@@ -123,7 +125,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("update registration client by using access_token from this client itself for client credential flow");
 
         saveClient();
-        final String encodedSecret  = Base64.getEncoder().encodeToString("myclient:secret".getBytes());
+        final String encodedSecret  = Base64.getEncoder().encodeToString((clientId.toString()+":secret").getBytes());
         LOG.info("get access token from new client registration");
 
         EntityExchangeResult<Map> entityExchangeResult = webTestClient.post().uri("/oauth2/token?grant_type=client_credentials&scope=message.read message.write")
@@ -135,7 +137,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("access_token: {}", map.get("access_token"));
         final String accessToken = map.get("access_token");
 
-        var requestBody = Map.of("clientId", "myclient", "clientSecret", "{noop}secret",
+        var requestBody = Map.of("clientId", clientId, "clientSecret", "{noop}secret",
                 "clientName", "small blog app",
                 "clientAuthenticationMethods", "client_secret_basic,client_secret_jwt",
                 "authorizationGrantTypes", "authorization_code,refresh_token,client_credentials",
@@ -149,7 +151,7 @@ public class ClientRestServiceIntegTest {
                 .exchange().expectStatus().isOk();
 
         LOG.info("get by clientId and validate name change was updated");
-        WebTestClient.ResponseSpec clientResponse = webTestClient.get().uri("/clients/myclient")
+        WebTestClient.ResponseSpec clientResponse = webTestClient.get().uri("/clients/"+clientId)
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isOk();
 

@@ -14,6 +14,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -63,6 +65,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 .flatMap(map -> {
                     final List<GrantedAuthority> grantedAuths = new ArrayList<>();
                     grantedAuths.add(new SimpleGrantedAuthority("ROLE_USER"));
+
                     final UserDetails principal = new User(name, password, grantedAuths);
                     LOG.info("returning using custom authenticator");
                     final Authentication auth = new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
