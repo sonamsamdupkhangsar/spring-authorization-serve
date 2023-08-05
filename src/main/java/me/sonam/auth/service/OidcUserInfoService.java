@@ -1,19 +1,14 @@
-package me.sonam.auth.config;
+package me.sonam.auth.service;
 
-import jakarta.ws.rs.BadRequestException;
-import me.sonam.auth.service.ClientIdUtil;
 import me.sonam.auth.util.JwtPath;
-import org.bouncycastle.cert.ocsp.Req;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -25,14 +20,6 @@ import java.util.Map;
 @Service
 public class OidcUserInfoService {
     private static final Logger LOG = LoggerFactory.getLogger(OidcUserInfoService.class);
-
-    private final UserInfoRepository userInfoRepository = new UserInfoRepository();
-
-    @Value("${auth-server.root}${auth-server.oauth2token.path}${auth-server.oauth2token.params:}")
-    private String oauth2TokenEndpoint;
-    @Value("${auth-server.oauth2token.path}")
-    private String accessTokenPath;
-
     @Value("${user-rest-service.root}${user-rest-service.userByAuthid}")
     private String userByAuthIdEp;
 
@@ -42,6 +29,9 @@ public class OidcUserInfoService {
     private WebClient.Builder webClientBuilder;
 
     private RequestCache requestCache;
+
+    @Autowired
+    private TokenService tokenService;
 
     public OidcUserInfoService(WebClient.Builder webClientBuilder, RequestCache requestCache) {
         this.webClientBuilder = webClientBuilder;
@@ -58,29 +48,13 @@ public class OidcUserInfoService {
         return oidcUserInfo;
     }
 
-    static class UserInfoRepository {
-
-        private final Map<String, Map<String, Object>> userInfo = new HashMap<>();
-
-        public UserInfoRepository() {
-        }
-
-        public Map<String, Object> findByUsername(String username) {
-            return this.userInfo.get(username);
-        }
-    }
-
-
     private Mono<Map<String, Object>> getOidcUserInfoMap(String authenticationId) {
         final String userInfoEndpoint = userByAuthIdEp.replace("{authenticationId}", authenticationId);
         LOG.info("making a call to user endpoint: {}", userInfoEndpoint);
 
-        final String requestAccessToken = ClientIdUtil.getRequestAccessToken(requestCache);
-        LOG.info("request accesstoken is {}", requestAccessToken);
-
         if (!jwtPath.getJwtRequest().isEmpty()) {
             JwtPath.JwtRequest.AccessToken accessToken = jwtPath.getJwtRequest().get(0).getAccessToken();
-            Mono<String> accessTokenMono = getAccessToken(accessToken);
+            Mono<String> accessTokenMono = tokenService.getSystemAccessTokenUsingClientCredential(accessToken);
 
             return accessTokenMono.flatMap(stringAccessToken -> {
                 LOG.info("using client credential access token: {}", stringAccessToken);
@@ -95,20 +69,10 @@ public class OidcUserInfoService {
 
                         })
                         .onErrorResume(throwable -> {
-                            LOG.error("error on getting user info from user-rest-service endpoint '{}' with error: {}", userInfoEndpoint,
+                            LOG.error("error on getting user info from user-rest-service endpoint '{}' with error: {}",
+                                    userInfoEndpoint,
                                     throwable.getMessage());
                             return Mono.error(new RuntimeException("user info call failed, error: " + throwable.getMessage()));
-
-                    /*if (throwable instanceof WebClientResponseException) {
-                        WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                        LOG.error("user info call error is: {}", webClientResponseException.getResponseBodyAsString());
-
-                        return Mono.error(new RuntimeException("user info call failed, error: "+
-                                webClientResponseException.getResponseBodyAsString()));
-                    }
-                    else {
-                        return Mono.error(new RuntimeException("user info call failed, error: "+ throwable.getMessage()));
-                    }*/
                         });
             });
         }
@@ -118,9 +82,10 @@ public class OidcUserInfoService {
     }
 
     private static Map<String, Object> buildOidcUserInfo(String authenticationId, Map<String, String> map) {
-        return OidcUserInfo.builder()
-                .subject(authenticationId)
-                .name(map.get("firstName"))
+         OidcUserInfo.Builder builder = OidcUserInfo.builder();
+
+         builder.subject(authenticationId)
+                 .name(map.get("firstName"))
                 .givenName(map.get("firstName"))
                 .familyName(map.get("lastName"))
                 .middleName(map.get("middleName"))
@@ -139,46 +104,9 @@ public class OidcUserInfoService {
                 .phoneNumberVerified(Boolean.parseBoolean(map.get("phoneNumberVerified")))
                 .claim("address", map.get("address"))//Collections.singletonMap("formatted", "Champ de Mars\n5 Av. Anatole France\n75007 Paris\nFrance"))
                 .updatedAt(map.get("updatedAt"))//""1970-01-01T00:00:00Z")
-                .build()
-                .getClaims();
+                .build();
+
+         return builder.build().getClaims();
     }
-
-    private Mono<String> getAccessToken(JwtPath.JwtRequest.AccessToken accessToken) {
-        LOG.info("get access token using client credentail");
-        final StringBuilder oauthEndpointWithScope = new StringBuilder(oauth2TokenEndpoint);
-
-        if (accessToken.getScopes() != null && !accessToken.getScopes().trim().isEmpty()) {
-            oauthEndpointWithScope.append("&scope=").append(accessToken.getScopes()).toString();
-        }
-        LOG.info("sending oauth2TokenEndpointWithScopes: {}", oauthEndpointWithScope);
-
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(oauthEndpointWithScope.toString())
-                .headers(httpHeaders -> httpHeaders.setBasicAuth(accessToken.getBase64EncodedClientIdSecret()))
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve();
-
-        return responseSpec.bodyToMono(Map.class).map(map -> {
-            LOG.debug("response for '{}' is in map: {}", oauth2TokenEndpoint, map);
-            if (map.get("access_token") != null) {
-                return map.get("access_token").toString();
-            }
-            else {
-                LOG.error("nothing to return");
-                return "nothing";
-            }
-        }).onErrorResume(throwable -> {
-            LOG.error("client credentials access token rest call failed: {}", throwable.getMessage());
-            String errorMessage = throwable.getMessage();
-
-            if (throwable instanceof WebClientResponseException) {
-                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-                errorMessage = webClientResponseException.getResponseBodyAsString();
-            }
-            return Mono.error(new RuntimeException(errorMessage));
-        });
-    }
-
-
 }
 

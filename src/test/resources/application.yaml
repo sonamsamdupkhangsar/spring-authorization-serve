@@ -61,3 +61,7 @@ auth-server:
   oauth2token:
     path: /oauth2/token
     params: ?grant_type=client_credentials
+
+token-mediator:
+  root: http://localhost:8080
+  clients: /oauth/clients

@@ -44,6 +44,11 @@ user-rest-service:
   root: ${USER_REST_SERVICE}
   userByAuthid: /users/{authenticationId}
 
+
+token-mediator:
+  root: ${TOKEN_MEDIATOR}
+  clients: /oauth/clients
+
 jwtrequest:
   - in: /*
     out: /users/*

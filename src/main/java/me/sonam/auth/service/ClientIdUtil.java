@@ -22,15 +22,6 @@ public class ClientIdUtil {
         return ClientIdUtil.getParameter(savedRequest, OAuth2ParameterNames.CLIENT_ID);
     }
 
-    public static String getRequestAccessToken(RequestCache requestCache) {
-        var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        var request = requestAttributes.getRequest();
-        var response = requestAttributes.getResponse();
-        var savedRequest = requestCache.getRequest(request, response);
-        return request.getHeader(HttpHeaders.AUTHORIZATION);
-        //return ClientIdUtil.getParameter(savedRequest, OAuth2ParameterNames.ACCESS_TOKEN);
-    }
-
     private static String getParameter(SavedRequest savedRequest, String parameterName) {
         if (savedRequest == null) {
             LOG.error("savedRequest is null");
