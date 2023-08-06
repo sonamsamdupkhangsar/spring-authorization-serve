@@ -1,5 +1,7 @@
 package me.sonam.auth;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -206,6 +208,7 @@ public class ClientRestServiceIntegTest {
                 "scopes", "openid,profile,message.read,message.write",
                 "clientSettings", Map.of("settings.client.require-proof-key", "false", "settings.client.require-authorization-consent", "true"));
 
+        convertMapToJson(requestBody);
         LOG.info("update clent");
 
         LOG.info("send a mock accesstoken for making a call to toke-mediator delete call");
@@ -214,7 +217,7 @@ public class ClientRestServiceIntegTest {
 
         LOG.info("mock the delete call from token-mediator call");
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-                .setResponseCode(200).setBody("{\"message\": \"deleted clientId: \""+clientId+"}"));
+                .setResponseCode(200).setBody("{\"message\": \"deleted clientId: "+clientId+"\"}"));
 
         WebTestClient.ResponseSpec responseSpec = webTestClient.put().uri("/clients").bodyValue(requestBody)
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
@@ -242,4 +245,14 @@ public class ClientRestServiceIntegTest {
                 .exchange().expectStatus().isUnauthorized();
     }
 
+    public void convertMapToJson(Map<String, Object> map) {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            String json = objectMapper.writeValueAsString(map);
+            LOG.info("json: {}", json);
+        } catch (JsonProcessingException e) {
+            LOG.error("failed to parse map to json", e);
+        }
+    }
 }

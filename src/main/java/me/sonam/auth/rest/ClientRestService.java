@@ -1,6 +1,7 @@
 package me.sonam.auth.rest;
 
 import jakarta.ws.rs.BadRequestException;
+import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.entity.TokenMediate;
 import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.jpa.repo.TokenMediateRepository;
@@ -71,13 +72,15 @@ public class ClientRestService {
                 tokenMediateRepository.save(tokenMediate);
             }
             LOG.info("call tokenMediator");
-            saveClientInTokenMediator(map.get("clientId").toString(), map.get("clientSecret").toString()).block();
+            saveClientInTokenMediator(map.get("clientId").toString(), map.get("clientSecret").toString())
+                    .block();
         }
         else {
             if (tokenMediateRepository.existsById(clientId)) {
                 LOG.info("delete existing tokenMediate record when not enabled.");
                 tokenMediateRepository.deleteById(clientId);
             }
+            deleteClientFromTokenMediator(map.get("clientId").toString()).block();
         }
         return clientId;
     }
@@ -93,7 +96,7 @@ public class ClientRestService {
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
-    public void update(@RequestBody Map<String, Object> map) {
+    public Map<String, String> update(@RequestBody Map<String, Object> map) {
         RegisteredClient fromDb = jpaRegisteredClientRepository.findByClientId((String)map.get("clientId"));
         map.put("id", fromDb.getId());
 
@@ -109,15 +112,39 @@ public class ClientRestService {
                 TokenMediate tokenMediate = new TokenMediate(clientId);
                 tokenMediateRepository.save(tokenMediate);
             }
-            saveClientInTokenMediator(map.get("clientId").toString(), map.get("clientSecret").toString()).block();
-
+            return saveClientInTokenMediator(map.get("clientId").toString(), map.get("clientSecret").toString())
+                    .flatMap(clientMapResponse -> {
+                        if (clientMapResponse.get("message") != null) {
+                            return Mono.just(Map.of("message", "client updated in authorization server, "
+                                    +clientMapResponse.get("message")));
+                        } else if (clientMapResponse.get("error") != null) {
+                            return Mono.just(Map.of("message", "client updated in authorization-server," +
+                                    " " + clientMapResponse.get("error")));
+                        } else {
+                            return Mono.just(Map.of("message", "no message or error keys found"));
+                        }
+                    })
+                    .block();
         }
         else {
             if (tokenMediateRepository.existsById(clientId)) {
                 LOG.info("delete existing tokenMediate record when not enabled.");
                 tokenMediateRepository.deleteById(clientId);
             }
-            deleteClientFromTokenMediator(map.get("clientId").toString()).block();
+            return deleteClientFromTokenMediator(map.get("clientId").toString())
+                    .flatMap(clientMapResponse -> {
+                        if (clientMapResponse.get("message") != null) {
+                            return Mono.just(Map.of("message", "deleted client in authorization-server," +
+                                    " " + clientMapResponse.get("message")));
+                        } else if (clientMapResponse.get("error") != null) {
+                            return Mono.just(Map.of("message", "deleted client in authorization-server," +
+                                    " " + clientMapResponse.get("error")));
+                        }
+                        else {
+                            return Mono.just(Map.of("message", "no message or error keys found"));
+                        }
+                    }).block();
+
         }
     }
 
@@ -135,7 +162,7 @@ public class ClientRestService {
         }
     }
 
-    private Mono<String> saveClientInTokenMediator(String clientId, String password) {
+    private Mono<Map> saveClientInTokenMediator(String clientId, String password) {
         LOG.info("save client in tokenMediator");
 
         if (!jwtPath.getJwtRequest().isEmpty()) {
@@ -144,23 +171,24 @@ public class ClientRestService {
 
             return accessTokenMono.flatMap(stringAccessToken -> {
                 LOG.info("use the access token: {}", stringAccessToken);
-                return webClientBuilder.build().put().uri(tokenMediatorEndpoint)
+                WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(tokenMediatorEndpoint)
                         .headers(httpHeaders -> httpHeaders.setBearerAuth(stringAccessToken))
+                        .bodyValue(Map.of("clientId", clientId, "clientSecret", password))
                         .accept(MediaType.APPLICATION_JSON)
-                        .retrieve().bodyToMono(String.class).map(s -> {
-                            LOG.info("response from token-mediator client save is {}", s);
-                            return s;
-                        });
-            }).onErrorResume(throwable -> {
-                LOG.error("failed to save clientId and clientSecret in token-mediator");
-                return Mono.error(new RuntimeException(throwable.getMessage()));
+                        .retrieve();
+                return responseSpec.bodyToMono(Map.class).
+                        onErrorResume(throwable -> {
+                    LOG.error("failed to save clientId and clientSecret in token-mediator");
+                    return Mono.just(Map.of("error", "failed to save client in token-mediator"));
+                });
             });
         }
-
-        return Mono.error(new RuntimeException("jwt request map is empty, client-secret not saved in token-mediator"));
+        else{
+            return Mono.just(Map.of("error", "jwt request map is empty, client-secret not saved in token-mediator"));
+        }
     }
 
-    private Mono<String> deleteClientFromTokenMediator(String clientId) {
+    private Mono<Map> deleteClientFromTokenMediator(String clientId) {
         LOG.info("delete client from tokenMediator");
 
         if (!jwtPath.getJwtRequest().isEmpty()) {
@@ -170,19 +198,19 @@ public class ClientRestService {
 
             return accessTokenMono.flatMap(stringAccessToken -> {
                 LOG.info("use the access token: {}", stringAccessToken);
-                return webClientBuilder.build().delete().uri(deleteTokenEndpoint)
+                WebClient.ResponseSpec responseSpec = webClientBuilder.build().delete().uri(deleteTokenEndpoint)
                         .headers(httpHeaders -> httpHeaders.setBearerAuth(stringAccessToken))
                         .accept(MediaType.APPLICATION_JSON)
-                        .retrieve().bodyToMono(String.class).map(s -> {
-                            LOG.info("response from delete token-mediator client is {}", s);
-                            return s;
+                        .retrieve();
+               return responseSpec.bodyToMono(Map.class)
+                        .onErrorResume(throwable -> {
+                            LOG.error("failed to delete clientId in token-mediator: {}", throwable.getMessage());
+                            return Mono.just(Map.of("error", "failed to delete client in token-mediator"));
                         });
-            }).onErrorResume(throwable -> {
-                LOG.error("failed to delete clientId in token-mediator");
-                return Mono.error(new RuntimeException(throwable.getMessage()));
             });
         }
-
-        return Mono.error(new RuntimeException("jwt request map is empty, client delete failed in token-mediator call"));
+        else {
+            return Mono.just(Map.of("error", "jwt request map is empty, not calling token-mediator"));
+        }
     }
 }

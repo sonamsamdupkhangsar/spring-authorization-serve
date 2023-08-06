@@ -1,7 +1,6 @@
 package me.sonam.auth.init;
 
 import jakarta.annotation.PostConstruct;
-import me.sonam.auth.config.AuthorizationServerConfig;
 import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
@@ -18,11 +17,10 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 
 import java.util.Optional;
 import java.util.UUID;
-// not neeed anymore
 
 @Configuration
 public class ClientSetup {
-    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ClientSetup.class);
 
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
