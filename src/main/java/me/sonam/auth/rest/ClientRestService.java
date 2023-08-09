@@ -26,7 +26,7 @@ import java.util.Map;
 public class ClientRestService {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRestService.class);
 
-    @Value("${token-mediator.root}${token-mediator.clients}")
+    @Value("${oauth2-token-mediator.root}${oauth2-token-mediator.clients}")
     private String tokenMediatorEndpoint;
 
     private ClientRepository clientRepository;
@@ -134,7 +134,7 @@ public class ClientRestService {
             return deleteClientFromTokenMediator(map.get("clientId").toString())
                     .flatMap(clientMapResponse -> {
                         if (clientMapResponse.get("message") != null) {
-                            return Mono.just(Map.of("message", "deleted client in authorization-server," +
+                            return Mono.just(Map.of("message", "deleted client in token-mediator repo in authorization-server," +
                                     " " + clientMapResponse.get("message")));
                         } else if (clientMapResponse.get("error") != null) {
                             return Mono.just(Map.of("message", "deleted client in authorization-server," +

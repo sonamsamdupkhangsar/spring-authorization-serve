@@ -82,7 +82,7 @@ public class ClientRestServiceIntegTest {
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry r) throws IOException {
         r.add("auth-server.root", () -> "http://localhost:"+mockWebServer.getPort());
-        r.add("token-mediator.root", () -> "http://localhost:"+mockWebServer.getPort());
+        r.add("oauth2-token-mediator.root", () -> "http://localhost:"+mockWebServer.getPort());
     }
 
     @Test
@@ -135,9 +135,6 @@ public class ClientRestServiceIntegTest {
     }
 
     private void saveClient() throws  Exception {
-
-
-
         LOG.info("request oauth access token first");
         EntityExchangeResult<Map> entityExchangeResult = webTestClient.post()
                 .uri("/oauth2/token?grant_type=client_credentials&scope=message.read message.write")
@@ -179,7 +176,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("take request for mocked response to token-mediator for client save");
         recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("PUT");
-        assertThat(recordedRequest.getPath()).startsWith("/oauth/clients");
+        assertThat(recordedRequest.getPath()).startsWith("/clients");
     }
 
 
@@ -231,7 +228,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("take request for mocked response to token-mediator for client delete");
         recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
-        assertThat(recordedRequest.getPath()).startsWith("/oauth/clients");
+        assertThat(recordedRequest.getPath()).startsWith("/clients");
 
         LOG.info("get by clientId and validate name change was updated");
         WebTestClient.ResponseSpec clientResponse = webTestClient.get().uri("/clients/"+clientId)
