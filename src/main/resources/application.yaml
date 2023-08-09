@@ -47,7 +47,7 @@ user-rest-service:
 
 oauth2-token-mediator:
   root: ${TOKEN_MEDIATOR}
-  clients: /clients
+  clients: /oauth2-token-mediator/clients
 
 jwtrequest:
   - in: /*

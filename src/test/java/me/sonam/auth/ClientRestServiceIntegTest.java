@@ -176,7 +176,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("take request for mocked response to token-mediator for client save");
         recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("PUT");
-        assertThat(recordedRequest.getPath()).startsWith("/clients");
+        assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
     }
 
 
@@ -228,7 +228,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("take request for mocked response to token-mediator for client delete");
         recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
-        assertThat(recordedRequest.getPath()).startsWith("/clients");
+        assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
 
         LOG.info("get by clientId and validate name change was updated");
         WebTestClient.ResponseSpec clientResponse = webTestClient.get().uri("/clients/"+clientId)

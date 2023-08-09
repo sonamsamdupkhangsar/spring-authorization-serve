@@ -64,4 +64,4 @@ auth-server:
 
 oauth2-token-mediator:
   root: http://localhost:8080
-  clients: /clients
+  clients: /oauth2-token-mediator/clients
