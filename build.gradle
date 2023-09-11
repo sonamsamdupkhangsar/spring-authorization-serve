@@ -19,7 +19,7 @@ repositories {
     maven { url 'https://repo.spring.io/milestone' }
     mavenLocal()
     maven {
-        url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/jwt-validator")
+        url = uri("https://maven.pkg.github.com/sonamsamdupkhangsar/token-filter")
         credentials {
             username = System.getenv("USERNAME")
             password = System.getenv("PERSONAL_ACCESS_TOKEN")
