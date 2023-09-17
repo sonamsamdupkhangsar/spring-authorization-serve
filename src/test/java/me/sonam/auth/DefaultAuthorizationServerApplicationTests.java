@@ -82,7 +82,7 @@ public class DefaultAuthorizationServerApplicationTests {
 	@DynamicPropertySource
 	static void properties(DynamicPropertyRegistry r) throws IOException {
 		r.add("authentication-rest-service.root", () -> "http://localhost:"+mockWebServer.getPort());
-		r.add("application-rest-service.root", () -> "http://localhost:"+mockWebServer.getPort());
+		//r.add("application-rest-service.root", () -> "http://localhost:"+mockWebServer.getPort());
 	}
 
 	@Autowired
@@ -100,10 +100,7 @@ public class DefaultAuthorizationServerApplicationTests {
 		LOG.info("test whenLoginSuccessfulThenDisplayNotFoundError()");
 
 		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("authentication valid"));
-
-		final String clientRoleGroups = "{\"userRole\":\"user\",\"groupNames\":\"admin1touser,employee\"}";
-		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200).setBody(clientRoleGroups));
+				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
 
 		HtmlPage page = this.webClient.getPage("/");
 
@@ -115,10 +112,6 @@ public class DefaultAuthorizationServerApplicationTests {
 		RecordedRequest recordedRequest = mockWebServer.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
-
-		recordedRequest = mockWebServer.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
-		assertThat(recordedRequest.getPath()).startsWith("/applications/clients");
 
 		assertThat(signInResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());	// there is no "default" index page
 	}
@@ -158,10 +151,7 @@ public class DefaultAuthorizationServerApplicationTests {
 		this.webClient.getOptions().setRedirectEnabled(false);
 
 		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("authentication valid"));
-
-		final String clientRoleGroups = "{\"userRole\":\"user\",\"groupNames\":\"admin1touser,employee\"}";
-		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200).setBody(clientRoleGroups));
+				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
 
 		signIn(this.webClient.getPage("/login"), "user1", "password");
 
@@ -170,10 +160,6 @@ public class DefaultAuthorizationServerApplicationTests {
 		RecordedRequest recordedRequest = mockWebServer.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
-
-		recordedRequest = mockWebServer.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
-		assertThat(recordedRequest.getPath()).startsWith("/applications/clients");
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.MOVED_PERMANENTLY.value());
 		String location = response.getResponseHeaderValue("location");
