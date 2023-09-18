@@ -1,11 +1,16 @@
 package me.sonam.auth;
 
 import jakarta.annotation.PostConstruct;
+import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -21,12 +26,17 @@ public class ClientInit {
 
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
+
+    @Autowired
+    private ClientRepository clientRepository;
     private String clientId = "messaging-client";
 
     private String clientSecret = "secret";
 
     @PostConstruct
     public void saveInitialClient() {
+        LOG.info("save messaging client for testing");
+        clientRepository.deleteAll();
         if (jpaRegisteredClientRepository.findByClientId(clientId) == null) {
 
             RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())

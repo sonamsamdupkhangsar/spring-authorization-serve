@@ -1,7 +1,6 @@
 package me.sonam.auth.init;
 
 import jakarta.annotation.PostConstruct;
-import me.sonam.auth.config.AuthorizationServerConfig;
 import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
@@ -18,11 +17,10 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 
 import java.util.Optional;
 import java.util.UUID;
-// not neeed anymore
 
 @Configuration
 public class ClientSetup {
-    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ClientSetup.class);
 
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
@@ -34,6 +32,7 @@ public class ClientSetup {
     @Autowired
     private ClientRepository clientRepository;
 
+    //test cases depend on this
     //@PostConstruct
     public void saveClient() {
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
@@ -60,30 +59,32 @@ public class ClientSetup {
         //	return registeredClientRepository;
     }
 
-  //  @PostConstruct
+    //@PostConstruct
     public void saveAnotherClient() {
         LOG.info("save myclient");
-        RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("myclient")
-                .clientSecret("{noop}secret")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/myclient-oidc")
-                .redirectUri("http://127.0.0.1:8080/authorized")
-                .scope(OidcScopes.OPENID)
-                .scope(OidcScopes.PROFILE)
-                .scope("message.read")
-                .scope("message.write")
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
-                .build();
+        final String myclient = "myclient";
+        if (jpaRegisteredClientRepository.findByClientId(myclient) == null) {
+            RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientId(myclient)
+                    .clientSecret("{noop}secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .redirectUri("http://127.0.0.1:8080/login/oauth2/code/myclient-oidc")
+                    .redirectUri("http://127.0.0.1:8080/authorized")
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope("message.read")
+                    .scope("message.write")
+                    .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
+                    .build();
 
-        // Save registered client in db as if in-memory
-        //JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
-        jpaRegisteredClientRepository.save(registeredClient);
-
+            // Save registered client in db as if in-memory
+            //JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
+            jpaRegisteredClientRepository.save(registeredClient);
+        }
         //	return registeredClientRepository;
     }
 
@@ -118,7 +119,7 @@ public class ClientSetup {
         }
     }
 
-     @PostConstruct
+    // @PostConstruct
     private void savePrivateRegisteredClient() {
         final String clientId = "private-client";
 
@@ -151,7 +152,8 @@ public class ClientSetup {
         }
     }
 
-    @PostConstruct
+
+    //@PostConstruct
     private void saveArticlesClient() {
         final String clientId = "articles-client";
 
@@ -184,20 +186,61 @@ public class ClientSetup {
         }
     }
 
-    @PostConstruct
-    private void saveClientCredential() {
-        final String clientId = "oauth-client";
+    //@PostConstruct
+    public void deleteAll() {
+        clientRepository.deleteAll();
+    }
 
-        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
+   @PostConstruct
+    private void saveNextjsClientCredential() {
+       final String oauthClientId = "oauth-client";
+
+       // this client is needed for performing client credential to retrieve access tokens
+       // for internal api calls.
+       RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(oauthClientId);
+
+       if (registeredClient != null) {
+           LOG.info("registered client exists");
+       }
+       else {
+           registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                   .clientId(oauthClientId)
+                   .clientSecret("{noop}oauth-secret")
+                   .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                   .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                   .scope(OidcScopes.OPENID)
+                   .scope(OidcScopes.PROFILE)
+                   .scope(OidcScopes.EMAIL)
+                   .scope("message.read")
+                   .scope("message.write")
+                   .build();
+           jpaRegisteredClientRepository.save(registeredClient);
+
+           LOG.info("save a client-credential");
+       }
+
+        final String nextJsClientId = "nextjs-client";
+
+       registeredClient = jpaRegisteredClientRepository.findByClientId(nextJsClientId);
+
         if (registeredClient != null) {
-            LOG.info("registered client exists");
+            LOG.info("found registered client");
         }
         else {
+            ClientSettings clientSettings = ClientSettings.builder()
+                    .requireAuthorizationConsent(true)
+                    .requireProofKey(false)
+                    .build();
+
             registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId(clientId)
-                    .clientSecret("{noop}oauth-secret")
+                    .clientSettings(clientSettings)
+                    .clientId(nextJsClientId)
+                    .clientSecret("{noop}nextjs-secret")
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .redirectUri("http://localhost:3001/api/auth/callback/myauth")
                     .scope(OidcScopes.OPENID)
                     .scope(OidcScopes.PROFILE)
                     .scope(OidcScopes.EMAIL)
@@ -209,6 +252,5 @@ public class ClientSetup {
             LOG.info("save a client-credential");
         }
     }
-
 
 }
