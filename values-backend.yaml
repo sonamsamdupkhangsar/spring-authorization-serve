@@ -92,8 +92,16 @@ envs:
     value: http://application-rest-service
   - name: AUTHENTICATION_REST_SERVICE
     value: http://authentication-rest-service
+  - name: USER_REST_SERVICE
+    value: http://user-rest-service
   - name: private-client-url
     value: http://127.0.0.1:8090
+  - name: AUTH_SERVER_PORT
+    value: 80
+  - name: TOKEN_MEDIATOR
+    value: http://oauth2-token-mediator
+  - name: ISSUER_URL
+    vaue: http://authorization-server
 
 health:
   liveness:
