@@ -101,7 +101,7 @@ envs:
   - name: TOKEN_MEDIATOR
     value: http://oauth2-token-mediator
   - name: ISSUER_URL
-    vaue: http://authorization-server
+    value: http://authorization-server
 
 health:
   liveness:
