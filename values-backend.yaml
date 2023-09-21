@@ -106,13 +106,13 @@ envs:
 
 health:
   liveness:
-    path: /api/health/liveness
+    path: /issuer/api/health/liveness
     port: 8080
     initialDelaySeconds: 5
     periodSeconds: 5
     failureThreshold: 5
   readiness:
-    path: /api/health/readiness
+    path: /issuer/api/health/readiness
     port: 8080
     initialDelaySeconds: 5
     periodSeconds: 5
