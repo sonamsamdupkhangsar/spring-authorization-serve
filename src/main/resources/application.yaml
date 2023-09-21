@@ -1,5 +1,7 @@
 server:
   port: ${AUTH_SERVER_PORT}
+  servlet:
+    context-path: /issuer
 
 logging:
   level:
@@ -24,6 +26,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     generate-ddl: true
+
+
 
 eureka:
   client:
@@ -63,3 +67,4 @@ auth-server:
   oauth2token:
     path: /oauth2/token
     params: ?grant_type=client_credentials
+
