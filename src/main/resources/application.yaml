@@ -63,7 +63,7 @@ jwtrequest:
 
 # this is used for getting accesstoken by header filter
 auth-server:
-  root: http://authorization-server
+  root: http://authorization-server/issuer
   oauth2token:
     path: /oauth2/token
     params: ?grant_type=client_credentials
