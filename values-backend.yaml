@@ -43,10 +43,10 @@ istio:
   enabled: false
 
 ingress:
-  enabled: false
+  enabled: true
   ingressClass: nginx
   hosts:
-    - host: auth-server.sonam.cloud
+    - host: authorization.sonam.cloud
       paths:
         - path: /
           pathType: Prefix
@@ -101,8 +101,7 @@ envs:
   - name: TOKEN_MEDIATOR
     value: http://oauth2-token-mediator
   - name: ISSUER_URL
-    value: http://api-gateway.sonam.cloud/issuer
-    #http://authorization-server/issuer
+    value: http://authorization.sonam.cloud/issuer
 
 health:
   liveness:

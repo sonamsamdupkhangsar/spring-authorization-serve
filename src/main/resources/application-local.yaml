@@ -20,5 +20,3 @@ TOKEN_MEDIATOR: http://oauth2-token-mediator
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation
 ISSUER_URL: http://api-gateway:9001/issuer
-
-private-client-url: http://127.0.0.1:8090
