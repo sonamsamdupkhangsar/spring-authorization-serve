@@ -8,7 +8,7 @@ RUN --mount=type=secret,id=USERNAME --mount=type=secret,id=PERSONAL_ACCESS_TOKEN
     export USERNAME=$(cat /run/secrets/USERNAME)\
     export PERSONAL_ACCESS_TOKEN=$(cat /run/secrets/PERSONAL_ACCESS_TOKEN) &&\
      ./gradlew clean build
-RUN  mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/my-spring-authorization-server-1.0.jar)
+RUN  mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/authorization-1.0.jar)
 
 FROM eclipse-temurin:17-jdk-alpine
 VOLUME /tmp
@@ -19,4 +19,4 @@ COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
 COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
 ENTRYPOINT ["java","-cp","app:app/lib/*","me.sonam.auth.DefaultAuthorizationServerApplication"]
 
-LABEL org.opencontainers.image.source https://github.com/sonamsamdupkhangsar/my-spring-authorization-server
+LABEL org.opencontainers.image.source https://github.com/sonamsamdupkhangsar/authorization
