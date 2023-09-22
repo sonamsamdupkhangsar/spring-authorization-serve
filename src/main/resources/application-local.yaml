@@ -19,10 +19,6 @@ USER_REST_SERVICE: http://user-rest-service
 TOKEN_MEDIATOR: http://oauth2-token-mediator
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation
-#ISSUER_URL:  http://10.0.0.28:9001
-#ISSUER_URL: http://authorization-server:9001
-#ISSUER_URL: http://127.0.0.1:9001  this works
-#ISSUER_URL: http://my-server:9001
 ISSUER_URL: http://api-gateway:9001/issuer
 
 private-client-url: http://127.0.0.1:8090
