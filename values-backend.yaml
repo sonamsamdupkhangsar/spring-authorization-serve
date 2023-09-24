@@ -101,7 +101,7 @@ envs:
   - name: TOKEN_MEDIATOR
     value: http://oauth2-token-mediator
   - name: ISSUER_URL
-    value: http://authorization.sonam.cloud/issuer
+    value: https://authorization.sonam.cloud/issuer
 
 health:
   liveness:
