@@ -25,10 +25,6 @@ public class ClientSetup {
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
 
-
-    @Value("${private-client-url}")
-    private String privateClientUrl;
-
     @Autowired
     private ClientRepository clientRepository;
 
@@ -120,7 +116,7 @@ public class ClientSetup {
     }
 
     // @PostConstruct
-    private void savePrivateRegisteredClient() {
+  /*  private void savePrivateRegisteredClient() {
         final String clientId = "private-client";
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
@@ -151,7 +147,7 @@ public class ClientSetup {
             LOG.info("saved registeredClient");
         }
     }
-
+*/
 
     //@PostConstruct
     private void saveArticlesClient() {
@@ -191,7 +187,7 @@ public class ClientSetup {
         clientRepository.deleteAll();
     }
 
-   @PostConstruct
+   //@PostConstruct
     private void saveNextjsClientCredential() {
        final String oauthClientId = "oauth-client";
 

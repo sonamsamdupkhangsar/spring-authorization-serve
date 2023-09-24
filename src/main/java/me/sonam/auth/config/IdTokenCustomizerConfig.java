@@ -39,6 +39,8 @@ public class IdTokenCustomizerConfig {
                 });
             }
             else  if (context.getTokenType() == OAuth2TokenType.ACCESS_TOKEN) {
+                LOG.info("principal.name: {}", context.getPrincipal().getName());
+
                 Set<String> authorities = context.getPrincipal().getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet());

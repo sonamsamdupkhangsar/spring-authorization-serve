@@ -2,6 +2,7 @@ package me.sonam.auth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -55,6 +56,9 @@ public class ClientRestServiceIntegTest {
     @Autowired
     private JpaRegisteredClientRepository jpaRegisteredClientRepository;
 
+    @Autowired
+    private HClientUserRepository clientUserRepository;
+
     UUID clientId = UUID.randomUUID();
     private String messageClient = "messaging-client";
 
@@ -90,6 +94,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("create registration client");
 
         saveClient();
+        assertThat(clientUserRepository.existsByClientId(clientId.toString())).isTrue();
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId.toString());
         assertThat(registeredClient.getClientSecret()).isEqualTo("{noop}secret");
@@ -130,11 +135,15 @@ public class ClientRestServiceIntegTest {
 
 
         LOG.info("delete clientId");
-        webTestClient.delete().uri("/clients/myclient").headers(httpHeaders -> httpHeaders.setBearerAuth(map2.get("access_token")))
+        webTestClient.delete().uri("/clients/"+clientId).headers(httpHeaders -> httpHeaders.setBearerAuth(map2.get("access_token")))
                 .exchange().expectStatus().isNoContent();
+
+        assertThat(clientUserRepository.existsByClientId(messageClient)).isFalse();
     }
 
     private void saveClient() throws  Exception {
+        UUID userId = UUID.randomUUID();
+
         LOG.info("request oauth access token first");
         EntityExchangeResult<Map> entityExchangeResult = webTestClient.post()
                 .uri("/oauth2/token?grant_type=client_credentials&scope=message.read message.write")
@@ -154,7 +163,8 @@ public class ClientRestServiceIntegTest {
                 "redirectUris", "http://127.0.0.1:8080/login/oauth2/code/my-client-oidc,http://127.0.0.1:8080/authorized",
                 "scopes", "openid,profile,message.read,message.write",
                 "clientSettings", Map.of("settings.client.require-proof-key", "false", "settings.client.require-authorization-consent", "true"),
-                "mediateToken", "true");
+                "mediateToken", "true",
+        "userId", userId.toString());
 
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody(refreshTokenResource.getContentAsString(StandardCharsets.UTF_8)));

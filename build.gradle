@@ -11,7 +11,7 @@ plugins {
 
 group = 'me.sonam'
 version = '1.0'
-description = 'my-spring-authorization-server'
+description = 'authorization'
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
@@ -88,7 +88,7 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/sonamsamdupkhangsar/my-spring-authorization-server"
+            url = "https://maven.pkg.github.com/sonamsamdupkhangsar/authorization"
             credentials {
                 username = System.getenv("USERNAME")
                 password = System.getenv("PERSONAL_ACCESS_TOKEN")

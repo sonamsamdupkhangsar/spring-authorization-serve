@@ -1,9 +1,12 @@
 package me.sonam.auth.rest;
 
+
 import jakarta.ws.rs.BadRequestException;
 import me.sonam.auth.jpa.entity.Client;
+import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.TokenMediate;
 import me.sonam.auth.jpa.repo.ClientRepository;
+import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.jpa.repo.TokenMediateRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import me.sonam.auth.service.TokenService;
@@ -14,12 +17,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/clients")
@@ -34,6 +44,8 @@ public class ClientRestService {
     @Autowired
     private TokenMediateRepository tokenMediateRepository;
 
+    @Autowired
+    private HClientUserRepository clientUserRepository;
     private WebClient.Builder webClientBuilder;
 
     @Autowired
@@ -59,6 +71,7 @@ public class ClientRestService {
             LOG.error("clientId already exists, do an update");
             throw new BadRequestException("clientId already exists");
         }
+
         RegisteredClient registeredClient = jpaRegisteredClientRepository.build(map);
         LOG.debug("built registeredClient from map: {}", registeredClient);
 
@@ -82,6 +95,11 @@ public class ClientRestService {
             }
             deleteClientFromTokenMediator(map.get("clientId").toString()).block();
         }
+
+        LOG.info("save clientUser relationship");
+        clientUserRepository.save(new ClientUser(map.get("clientId").toString(),
+                UUID.fromString(map.get("userId").toString())));
+
         return clientId;
     }
 
@@ -97,6 +115,10 @@ public class ClientRestService {
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
     public Map<String, String> update(@RequestBody Map<String, Object> map) {
+        LOG.info("check user id of the updater matches the clientId");
+
+        checkClientIdAndLoggedInUser(map.get("clientId").toString());
+
         RegisteredClient fromDb = jpaRegisteredClientRepository.findByClientId((String)map.get("clientId"));
         map.put("id", fromDb.getId());
 
@@ -150,12 +172,19 @@ public class ClientRestService {
 
     @DeleteMapping("/{clientId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
     public void delete(@PathVariable("clientId") String clientId) {
         LOG.info("delete client: {}", clientId);
+
+        checkClientIdAndLoggedInUser(clientId);
+
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
         if (registeredClient != null) {
             LOG.info("deleting by id: {}", registeredClient.getId());
             clientRepository.deleteById(registeredClient.getId());
+
+            long rows = clientUserRepository.deleteByClientId(clientId);
+            LOG.info("delete clientUser by clientId: {} affected rows: {}", clientId, rows);
         }
         else {
             LOG.error("registeredClient not found by clientId: {}", clientId);
@@ -211,6 +240,22 @@ public class ClientRestService {
         }
         else {
             return Mono.just(Map.of("error", "jwt request map is empty, not calling token-mediator"));
+        }
+    }
+
+    private void checkClientIdAndLoggedInUser(String clientId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        final String authId = authentication.getName();
+        LOG.info("checking logged-in user: {} and clientId match: {}", authId.toString(), clientId);
+
+
+        if(authId.equals(clientId)) {
+            LOG.info("logged-in principal name and clientId matches");
+        }
+        else {
+            LOG.error("logged-in principal and clientId does not match");
+            throw new BadRequestException("Logged-in user and clientId must match");
         }
     }
 }
