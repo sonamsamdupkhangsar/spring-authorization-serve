@@ -1,6 +1,7 @@
 # My Customization of Spring Authorization Server
 This is a customization of the Spring Authorization Server which implements OAuth2.1 and OpenID Connect 1.0 specifications.
 
+
 ## Purpose
 This authorization service will be used for issuing access-token/refresh tokens for services. 
 
