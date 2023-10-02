@@ -11,7 +11,7 @@ image:
 imagePullSecrets:
   - name: github-regcred
 nameOverride: ""
-fullnameOverride: ""
+fullnameOverride: "authorization-server"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -82,12 +82,6 @@ postgres:
 envs:
   - name: SPRING_AUTH_SERVER_PORT
     value: 8080
-  - name: EUREKA_CLIENT_ENABLED
-    value: true
-  - name: EUREKA_HOST
-    value: discovery-service.sonam.cloud
-  - name: DEFAULT_ZONE
-    value: https://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
   - name: APPLICATION_REST_SERVICE
     value: http://application-rest-service
   - name: AUTHENTICATION_REST_SERVICE
@@ -116,11 +110,3 @@ health:
     initialDelaySeconds: 5
     periodSeconds: 5
     failureThreshold: 5
-
-secretFiles:
-  - file: eureka-discovery
-    keys:
-      - key: user
-        name: EUREKA_USER
-      - key: password
-        name: EUREKA_PASSWORD
