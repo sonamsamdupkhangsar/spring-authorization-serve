@@ -65,3 +65,6 @@ auth-server:
 oauth2-token-mediator:
   root: http://localhost:8080
   clients: /oauth2-token-mediator/clients
+
+BASE64_CLIENT_ID_SECRET: dXNlcjpzZWNyZXQ=
+REQUEST_SCOPES: cmVhZCB3cml0ZQ==

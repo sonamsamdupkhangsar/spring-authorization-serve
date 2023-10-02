@@ -110,3 +110,9 @@ health:
     initialDelaySeconds: 5
     periodSeconds: 5
     failureThreshold: 5
+
+secretFiles:
+  - file: service-service-client-credential-flow-secret
+    keys:
+      - key: base64EncodedClientIdSecret
+        name: BASE64_CLIENT_ID_SECRET

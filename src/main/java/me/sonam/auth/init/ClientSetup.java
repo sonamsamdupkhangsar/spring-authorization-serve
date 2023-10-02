@@ -15,6 +15,8 @@ import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +29,76 @@ public class ClientSetup {
 
     @Autowired
     private ClientRepository clientRepository;
+
+    @Value("${BASE64_CLIENT_ID_SECRET}")
+    private String base64ClientIdSecret;
+
+    @PostConstruct
+    public void createServiceAccount() {
+        String decodedString = new String(Base64.getDecoder().decode(base64ClientIdSecret));
+        String[] clientIdSecretArray = decodedString.split(":");
+        final String clientId = clientIdSecretArray[0];
+        final String secret = clientIdSecretArray[1];
+
+        LOG.info("clientId: {}, secret: {}", clientId, secret);
+
+        // this client is needed for performing client credential to retrieve access tokens
+        // for internal api calls.
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
+
+        if (registeredClient != null) {
+            LOG.info("registered client exists");
+        }
+        else {
+            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientId(clientId)
+                    .clientSecret("{noop}"+secret)
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope(OidcScopes.EMAIL)
+                    .scope("message.read")
+                    .scope("message.write")
+                    .build();
+
+            jpaRegisteredClientRepository.save(registeredClient);
+            LOG.info("save a client-credential");
+        }
+/*
+        final String nextJsClientId = "nextjs-client";
+
+        registeredClient = jpaRegisteredClientRepository.findByClientId(nextJsClientId);
+
+        if (registeredClient != null) {
+            LOG.info("found registered client");
+        }
+        else {
+            ClientSettings clientSettings = ClientSettings.builder()
+                    .requireAuthorizationConsent(true)
+                    .requireProofKey(false)
+                    .build();
+
+            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientSettings(clientSettings)
+                    .clientId(nextJsClientId)
+                    .clientSecret("{noop}nextjs-secret")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .redirectUri("http://localhost:3001/api/auth/callback/myauth")
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .scope(OidcScopes.EMAIL)
+                    .scope("message.read")
+                    .scope("message.write")
+                    .build();
+            jpaRegisteredClientRepository.save(registeredClient);
+
+            LOG.info("save a client-credential");
+        }*/
+    }
 
     //test cases depend on this
     //@PostConstruct
@@ -188,65 +260,6 @@ public class ClientSetup {
     }
 
    //@PostConstruct
-    private void saveNextjsClientCredential() {
-       final String oauthClientId = "oauth-client";
 
-       // this client is needed for performing client credential to retrieve access tokens
-       // for internal api calls.
-       RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(oauthClientId);
-
-       if (registeredClient != null) {
-           LOG.info("registered client exists");
-       }
-       else {
-           registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                   .clientId(oauthClientId)
-                   .clientSecret("{noop}oauth-secret")
-                   .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                   .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                   .scope(OidcScopes.OPENID)
-                   .scope(OidcScopes.PROFILE)
-                   .scope(OidcScopes.EMAIL)
-                   .scope("message.read")
-                   .scope("message.write")
-                   .build();
-           jpaRegisteredClientRepository.save(registeredClient);
-
-           LOG.info("save a client-credential");
-       }
-
-        final String nextJsClientId = "nextjs-client";
-
-       registeredClient = jpaRegisteredClientRepository.findByClientId(nextJsClientId);
-
-        if (registeredClient != null) {
-            LOG.info("found registered client");
-        }
-        else {
-            ClientSettings clientSettings = ClientSettings.builder()
-                    .requireAuthorizationConsent(true)
-                    .requireProofKey(false)
-                    .build();
-
-            registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientSettings(clientSettings)
-                    .clientId(nextJsClientId)
-                    .clientSecret("{noop}nextjs-secret")
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .redirectUri("http://localhost:3001/api/auth/callback/myauth")
-                    .scope(OidcScopes.OPENID)
-                    .scope(OidcScopes.PROFILE)
-                    .scope(OidcScopes.EMAIL)
-                    .scope("message.read")
-                    .scope("message.write")
-                    .build();
-            jpaRegisteredClientRepository.save(registeredClient);
-
-            LOG.info("save a client-credential");
-        }
-    }
 
 }
