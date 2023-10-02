@@ -50,8 +50,8 @@ jwtrequest:
     out: /users/*
     accessToken:
       option: request
-      scopes: message.read
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
 
 # this is used for getting accesstoken by header filter
 auth-server:

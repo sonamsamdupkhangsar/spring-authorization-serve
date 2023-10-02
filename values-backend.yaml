@@ -116,3 +116,5 @@ secretFiles:
     keys:
       - key: base64EncodedClientIdSecret
         name: BASE64_CLIENT_ID_SECRET
+      - key: scopes
+        name: REQUEST_SCOPES
