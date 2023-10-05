@@ -12,7 +12,12 @@ EUREKA_USER: test
 EUREKA_PASSWORD: test
 EUREKA_CLIENT_ENABLED: true
 
-DEFAULT_ZONE: http://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
+eureka:
+  client:
+    enabled: true
+    serviceUrl:
+      defaultZone: http://${EUREKA_USER}:${EUREKA_PASSWORD}@${EUREKA_HOST}/eureka
+
 APPLICATION_REST_SERVICE: http://application-rest-service
 AUTHENTICATION_REST_SERVICE: http://authentication-rest-service
 USER_REST_SERVICE: http://user-rest-service
@@ -20,3 +25,5 @@ TOKEN_MEDIATOR: http://oauth2-token-mediator
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation
 ISSUER_URL: http://api-gateway:9001/issuer
+REQUEST_SCOPES: message.read message.write
+BASE64_CLIENT_ID_SECRET: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
