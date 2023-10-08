@@ -38,7 +38,7 @@ flowchart TD
  
  subgraph authorization
  Authorization-->authenticate[/authentication/]--> authentication
- authentication -->roles[/User roles for clientId] --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]
+ 
  end
  
  subgraph authentication[authentication-rest-service]
@@ -49,3 +49,5 @@ flowchart TD
    
  end 
 ```
+
+authentication -->roles[/User roles for clientId] --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]
