@@ -36,5 +36,7 @@ Pass local profile as argument:
 flowchart TD
  User[user-request] -->login[/Login with username password/]--> authorization[Authorization]
  
- 
+ subgraph authorization
+ Authorizationa-->authenticate[/authentication/]--> authentication[authentication-rest-service]
+ end 
 ```
