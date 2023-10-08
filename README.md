@@ -34,9 +34,9 @@ Pass local profile as argument:
 ## Authentication process
 ```mermaid
 flowchart TD
- User[user-request] --> login[/Login with username password/] -->Authorization[authorization]
+ User[user-request] --> login[/Login with username password/] --> authorization[Authorization]
  
- subgraph authoriation
+ subgraph authorization
  Authorization-->authenticate[/authentication/]--> authentication[authentication-rest-service]
  authentication --> validateUsernameAndPassword[usernamePasswordValid?]
  validateUsernameAndPassword --|Yes| getUserRoleForClientId[UserRoleForClientId]
