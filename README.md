@@ -37,7 +37,7 @@ flowchart TD
  User[user-request] -->login[/Login with username password/]--> authorization[Authorization]
  
  subgraph authorization
- Authorizationa-->authenticate[/authentication/]--> authentication[authentication-rest-service]
+ Authorization-->authenticate[/authentication/]--> authentication[authentication-rest-service]
  authentication --> validateUsernameAndPassword["usernamePasswordValid?"]
  validateUsernameAndPassword -->|Yes| getUserRoleForClientId[UserRoleForClientId]
  validateUsernameAndPassword -->|No| returnError[return BadRequest 400 error]
