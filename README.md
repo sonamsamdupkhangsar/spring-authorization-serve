@@ -41,6 +41,7 @@ flowchart TD
  authentication --> validateUsernameAndPassword["usernamePasswordValid?"]
  validateUsernameAndPassword -->|Yes| getUserRoleForClientId[UserRoleForClientId]
  validateUsernameAndPassword -->|No| returnError[return BadRequest 400 error]
- getUserRoleForClientId --> role-rest-service
+ getUserRoleForClientId --> role-rest-service--> roles[/UserRolePerClientId/]
+ roles --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]  
  end 
 ```
