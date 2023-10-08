@@ -38,6 +38,7 @@ flowchart TD
  
  subgraph authorization
  Authorization-->authenticate[/authentication/]--> authentication
+ authentication -->roles[/User roles for clientId] --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]
  end
  
  subgraph authentication[authentication-rest-service]
@@ -45,6 +46,6 @@ flowchart TD
  validateUsernameAndPassword -->|Yes| getUserRoleForClientId[/Find UserRoleForClientId/]
  validateUsernameAndPassword -->|No| returnError[return BadRequest 400 error]
  getUserRoleForClientId --> role-rest-service--> roles[/UserRolesPerClientId/]
- roles --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]  
+   
  end 
 ```
