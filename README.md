@@ -34,7 +34,7 @@ Pass local profile as argument:
 ## Authentication process
 ```mermaid
 flowchart TD
- User[user-request] -->login[/Login with username password/]--> authorization[Authorization]
+ User[user-request] -->login[/Login with username password/]--> authorization[authorization]
  authorization-->authenticate[/authenticate user/]--> authentication
  
 
