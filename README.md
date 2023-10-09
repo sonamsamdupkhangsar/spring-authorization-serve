@@ -37,7 +37,7 @@ flowchart TD
  User[user-request] -->login[/Login with username password/]--> authorization[Authorization]
  
  subgraph authorization
- Authorization-->authenticate[/authentication/]--> validateUserNameAndPassword
+ Authorization-->authenticate[/authentication/]--> authentication
  end
  
  subgraph authentication[authentication-rest-service]
