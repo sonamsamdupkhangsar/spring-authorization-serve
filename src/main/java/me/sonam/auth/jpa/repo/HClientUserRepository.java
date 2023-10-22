@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface HClientUserRepository extends JpaRepository<ClientUser, ClientUserId> {
 
     List<ClientUser> findByUserId(UUID userId);
+    List<ClientUser> findByClientId(String clientId);
     Optional<ClientUser> findByClientIdAndUserId(String clientId, UUID userId);
     long deleteByClientId(String clientId);
     boolean existsByClientId(String clientId);

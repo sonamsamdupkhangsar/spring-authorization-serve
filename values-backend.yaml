@@ -86,6 +86,8 @@ envs:
     value: http://application-rest-service
   - name: AUTHENTICATION_REST_SERVICE
     value: http://authentication-rest-service
+  - name: ORGANIZATION_REST_SERVICE
+    value: http://organization-rest-service
   - name: USER_REST_SERVICE
     value: http://user-rest-service
   - name: private-client-url

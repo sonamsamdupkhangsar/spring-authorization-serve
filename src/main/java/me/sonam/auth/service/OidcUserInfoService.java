@@ -20,7 +20,7 @@ import java.util.Map;
 @Service
 public class OidcUserInfoService {
     private static final Logger LOG = LoggerFactory.getLogger(OidcUserInfoService.class);
-    @Value("${user-rest-service.root}${user-rest-service.userByAuthid}")
+    @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
     private String userByAuthIdEp;
 
     @Autowired

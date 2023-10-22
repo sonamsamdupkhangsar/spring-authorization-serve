@@ -21,7 +21,7 @@ public class TokenService {
     @Value("${auth-server.root}${auth-server.oauth2token.path}${auth-server.oauth2token.params:}")
     private String oauth2TokenEndpoint;
 
-    @Value("${user-rest-service.root}${user-rest-service.userByAuthid}")
+    @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
     private String userByAuthIdEp;
 
     @Autowired

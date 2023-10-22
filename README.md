@@ -37,7 +37,9 @@ flowchart TD
  User[user-request] -->login[/Login with username password/]--> authorization[authorization]
  authorization-->authenticate[/authenticate user/]--> authentication
  
-
+ subgraph organization
+ GetOrganizationForClient -->clientId[/clientId/] --> 
+ end
  subgraph authentication[authentication-rest-service]
  validateUsernameAndPassword["usernamePasswordValid?"]
  validateUsernameAndPassword -->|Yes| getUserRoleForClientId[/Find UserRoleForClientId/]

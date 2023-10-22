@@ -18,23 +18,24 @@ package me.sonam.auth;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
-import com.gargoylesoftware.htmlunit.html.*;
-import jakarta.annotation.PostConstruct;
+import com.gargoylesoftware.htmlunit.html.HtmlButton;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import me.sonam.auth.jpa.entity.ClientOrganization;
 import me.sonam.auth.jpa.entity.ClientOrganizationId;
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.ClientUserId;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
-import me.sonam.auth.service.exception.AuthorizationException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -53,21 +53,12 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/**
- * Test cases in the original one does not apply for the use case I have in this implementation.
- * My implementation of the authorization server requires http callouts to user-rest-service
- *  for getting user-id of a person logging, checking if that user-id exists in an organization using
- *  organization-rest-service and then authenticating using authentication-rest-service.
- * My use case requires that there be a client-id always for a user logging-in.  It is multi-tenant in that
- * I want to have multiple organizations using the same authorization server maintaining their own client-ids.
- *
- */
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-public class DefaultAuthorizationServerApplicationTests {
-	private static final Logger LOG = LoggerFactory.getLogger(DefaultAuthorizationServerApplicationTests.class);
+public class AuthorizationServerApplicationUserLoginTests {
+	private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerApplicationUserLoginTests.class);
 
 	private static final String REDIRECT_URI = "http://127.0.0.1:{server.port}/login/oauth2/code/messaging-client-oidc";
 	//private static String REDIRECT_URI = "http://localhost:{server.port}/login";
@@ -85,14 +76,12 @@ public class DefaultAuthorizationServerApplicationTests {
 	@Autowired
 	private HClientUserRepository clientUserRepository;
 
-	//@BeforeEach
 	private void saveClientOrganization(final String clientId, UUID organizationId) {
 		if (!clientOrganizationRepository.existsByClientId(clientId).get()) {
 			clientOrganizationRepository.save(new ClientOrganization(clientId, organizationId));
 			LOG.info("saved clientId {} with organizationId {}", clientId, organizationId);
 		}
 	}
-	//@BeforeEach
 	private void saveClientUser(final String clientId, UUID userId) {
 		if (!clientUserRepository.existsById(new ClientUserId(clientId, userId))) {
 			clientUserRepository.save(new ClientUser(clientId, userId));
@@ -160,61 +149,6 @@ public class DefaultAuthorizationServerApplicationTests {
 		this.webClient.getCookieManager().clearCookies();	// log out
 	}
 
-	//@Test
-	public void whenLoginSuccessfulThenDisplayNotFoundError() throws IOException, InterruptedException {
-		LOG.info("test whenLoginSuccessfulThenDisplayNotFoundError()");
-		UUID organizationId = UUID.randomUUID();
-		saveClientOrganization(clientId, organizationId);	//save client ("messaging-client" with organizationId)
-
-		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("{\"id\":\"cf792fa5-f2e9-4cfa-b099-7f62f2d15b38\", \"firstName\":\"Dommy\"}"));
-
-		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("{\"message\":true}"));
-
-		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
-
-		//HtmlPage page = this.webClient.getPage("/");
-		HtmlPage page = this.webClient.getPage(AUTHORIZATION_REQUEST);//.getWebResponse();
-		assertLoginPage(page);//this.webClient.getPage(webResponse.getResponseHeaderValue("location")));
-
-		this.webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-		WebResponse signInResponse = signIn(page, "user1", "password").getWebResponse();
-
-		RecordedRequest recordedRequest = mockWebServer.takeRequest();
-
-		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
-		assertThat(recordedRequest.getPath()).startsWith("/users/");
-
-		recordedRequest = mockWebServer.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
-		assertThat(recordedRequest.getPath()).startsWith("/organizations/");//userExistsInOrganization http call
-
-		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
-
-		assertThat(signInResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());	// there is no "default" index page
-	}
-
-	//@Test
-	public void whenLoginFailsThenDisplayBadCredentials() throws IOException, InterruptedException {
-		LOG.info("test whenLoginFailsThenDisplayBadCredentials()");
-		HtmlPage page = this.webClient.getPage("/");
-
-		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(401).setBody("Bad Credentials"));
-
-		HtmlPage loginErrorPage = signIn(page, "user1", "wrong-password");
-
-		RecordedRequest recordedRequest = mockWebServer.takeRequest();
-		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
-
-		HtmlElement alert = loginErrorPage.querySelector("div[role=\"alert\"]");
-		assertThat(alert).isNotNull();
-		assertThat(alert.getTextContent()).isEqualTo("Bad credentials");
-	}
 
 	@Test
 	public void whenNotLoggedInAndRequestingTokenThenRedirectsToLogin() throws IOException {
@@ -224,63 +158,160 @@ public class DefaultAuthorizationServerApplicationTests {
 		assertLoginPage(page);
 	}
 
-	//@Test
-	public void whenLoggingInAndRequestingTokenThenRedirectsToClientApplication() throws IOException, InterruptedException {
-		LOG.info("test whenLoggingInAndRequestingTokenThenRedirectsToClientApplication()");
+	/**
+	 * this will send the Authoriation request url with clientid
+	 * then user will sign n with username and password
+	 * a mock response will be returned with the user properties such as id, firstname, lastname, etc
+	 * a mock response will be returned to indicate user exists in organization
+	 * a mock response will be returned with user roles in the client-id and 'Authentication successful' message
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	@Test
+	public void checkClientInOrganizationAndUserExistenceAndUserInOrganization() throws IOException, InterruptedException {
+		LOG.info("test the client organization relationship, user existence in organization");
 		// Log in
 		this.webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 		this.webClient.getOptions().setRedirectEnabled(false);
 
-		//{"error":"user does not exist in organization"} for not in org
+
+		saveClientOrganization(clientId, organizationId);	//save client ("messaging-client" with organizationId)
+
+		WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
+		//this response is for getting user by authenticationId (loginId)
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(200).setBody("{\"id\":\""+userId+"\", \"firstName\":\"Dommy\"}"));
+						//"\"lastName\":'thecat', \"email\":'dommy@cat.email', \"birthDate\":null, \"profilePhoto\":'null', \"genderId\":null, \"newAccount\":false}"));
+
+		// This is for checking user exists in Organization based on the ClientOrganization realtionship
 		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
 				.setResponseCode(200).setBody("{\"message\":true}"));
 
-		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("{id=cf792fa5-f2e9-4cfa-b099-7f62f2d15b38, firstName='Dommy', lastName='thecat', email='dommy@cat.email', birthDate=null, profilePhoto='null', genderId=null, newAccount=false}"));
-
+		//then finally send the  mocked authentication response for callout
 		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
 				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
 
-		//WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
-		/*assertThat(response.getStatusCode()).isEqualTo(HttpStatus.MOVED_PERMANENTLY.value());
-		String location = response.getResponseHeaderValue("location");
-		assertThat(location).startsWith(REDIRECT_URI);
-		assertThat(location).contains("code=");
-*/
-		signIn(this.webClient.getPage("/login"), "user1", "password");
-
-		LOG.info("get page");
-		// Request token
-		WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
-
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.MOVED_PERMANENTLY.value());
-		String location = response.getResponseHeaderValue("location");
-		LOG.info("response location: {}", location);
-		assertThat(location).startsWith(REDIRECT_URI);
-		assertThat(location).contains("code=");
-
-
+		LOG.info("sign-in to the location page");
+		signIn(this.webClient.getPage(response.getResponseHeaderValue("location")), "user1", "password");
 		RecordedRequest recordedRequest = mockWebServer.takeRequest();
-
-/*
-		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
-		assertThat(recordedRequest.getPath()).startsWith("/organizations/");//userExistsInOrganization http call
 
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
 		assertThat(recordedRequest.getPath()).startsWith("/users/");
-*/
 
+		recordedRequest = mockWebServer.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).startsWith("/organizations/");//userExistsInOrganization http call
+
+		recordedRequest = mockWebServer.takeRequest();
 		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
 		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
 
-/*		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.MOVED_PERMANENTLY.value());
-		String location = response.getResponseHeaderValue("location");
-		assertThat(location).startsWith(REDIRECT_URI);
-		assertThat(location).contains("code=");*/
+		//deleteClientFromOrganizaton();
+		//deleteClientUser();
 	}
 
+	/**
+	 * It will return the user information and then fail with
+	 * client not being part of organization and then not in userClient relationship.
+	 * It will throw a exception.
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	@Test
+	public void checkClientInOrganizationAndClientNotFound() throws IOException, InterruptedException {
+		//clientOrganizationRepository.deleteAll();
+		LOG.info("test the client organization relationship, user existence in organization");
+		// Log in
+		this.webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+		this.webClient.getOptions().setRedirectEnabled(false);
+
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(200).setBody("{\"id\":\""+userId+"\", \"firstName\":\"Dommy\"}"));
+
+		WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
+
+		LOG.info("sign-in to the location page");
+
+		assertThrows(Exception.class, ()->signIn(this.webClient.getPage(response
+				.getResponseHeaderValue("location")), "user1", "password"));
+		RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).startsWith("/users/");
+	}
+
+	/**
+     * this will check that on user not found mocked response there will be a exception
+	 * @throws IOException
+     * @throws InterruptedException
+	 */
+	@Test
+	public void checkUserNotExist() throws IOException, InterruptedException {
+		LOG.info("test the client organization relationship, user existence in organization");
+		// Log in
+		this.webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+		this.webClient.getOptions().setRedirectEnabled(false);
+
+		WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
+		//this response is for getting user by authenticationId (loginId)
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(400).setBody("{\"error\":\"user not found\"}"));
+
+		LOG.info("sign-in to the location page will throw Exception because user does not exist in the http callout");
+		assertThrows(Exception.class, ()->signIn(this.webClient.getPage(response
+				.getResponseHeaderValue("location")), "user1", "password"));
+
+		RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).startsWith("/users/");
+	}
+
+    /**
+	 * this will test when user is not in organization but in ClientUser
+	 *
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+
+	@Test
+	public void checkClientInOrganizationAndClientFoundInClientUser() throws IOException, InterruptedException {
+		LOG.info("test the client organization relationship, user existence in organization");
+		//clear out userOrganization relationship if there was any from prior relationship
 
 
+		// Log in
+		this.webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+		this.webClient.getOptions().setRedirectEnabled(false);
+
+
+		//save User uuid with clientId
+		saveClientUser(clientId, userId);
+		//mock response for user-id http callout
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(200).setBody("{\"id\":\""+userId+"\", \"firstName\":\"Dommy\"}"));
+
+		// user will be found from clientUser relationship
+		//mock role names for authentication http callout
+		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
+
+		WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
+
+		LOG.info("sign-in to the location page");
+
+		//login should work for client as client should be found in ClientUser relationship
+		signIn(this.webClient.getPage(response
+				.getResponseHeaderValue("location")), "user1", "password");
+		RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+		assertThat(recordedRequest.getPath()).startsWith("/users/");
+
+		recordedRequest = mockWebServer.takeRequest();
+		assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+		assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
+	}
 
 	private static <P extends Page> P signIn(HtmlPage page, String username, String password) throws IOException {
 		//LOG.info("page: {}, done end", page.toString());
