@@ -95,10 +95,15 @@ public class AuthenticationCallout implements AuthenticationProvider {
         final String authenticationId = authentication.getName();
 
         return getUserId(authenticationId).onErrorResume(throwable -> {
-                    LOG.error("user not found with authenticationId: {}", authenticationId);
-                    return Mono.error(new AuthorizationException("user not found with authenticationId: "+ authenticationId));
-                }
-                ).flatMap(userId ->
+            LOG.error("failed to make get user by authId call: {}", throwable.getMessage());
+            if (throwable instanceof WebClientResponseException) {
+                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
+                LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
+            }
+            LOG.error("user not found with authenticationId: {}", authenticationId);
+            return Mono.error(new AuthorizationException("user not found with authenticationId: "+ authenticationId));
+        }
+        ).flatMap(userId ->
                     checkClientInOrganization(authentication, userId, clientId)
                     .onErrorResume(throwable ->    {
                         LOG.info("clientId is not associated to a organization-id, check if user owns the client-id");
