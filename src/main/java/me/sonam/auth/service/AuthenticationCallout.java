@@ -75,7 +75,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
          String clientId = ClientIdUtil.getClientId(requestCache);
         LOG.info("clientId: {}", clientId);
-        if (clientId == null) {
+        if (clientId == null || clientId.trim().equals("")) {
             clientId = "nextjs-client";
             LOG.info("hardcode clientid to be {}", clientId);
         }
