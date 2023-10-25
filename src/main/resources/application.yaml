@@ -49,7 +49,25 @@ oauth2-token-mediator:
 
 jwtrequest:
   - in: /*
-    out: /users/*
+    out: /users/(.)*
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  - in: /*
+    out: /organizations/(.)*/users/(.)*
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  - in: /*
+    out: /oauth2-token-mediator/clients
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  - in: /*
+    out: /oauth2-token-mediator/clients/(.)*
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
