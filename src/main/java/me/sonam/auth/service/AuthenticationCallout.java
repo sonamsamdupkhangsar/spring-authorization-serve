@@ -101,22 +101,22 @@ public class AuthenticationCallout implements AuthenticationProvider {
                         LOG.info("clientId is not associated to a organization-id, check if user owns the client-id");
 
                         return checkClientUserRelationship(userId, clientId, authentication);
-                }));//.block();
+                }));
     }
 
     private Mono<UsernamePasswordAuthenticationToken> checkClientUserRelationship(final UUID userId, final String clientId, final Authentication authentication) {
-        LOG.info("checking client in ClientUser relationship");
-                Optional<ClientUser> clientUserOptional = clientUserRepository.findByClientIdAndUserId(clientId, userId);
+        LOG.info("checking userId {} and clientId {} in ClientUser relationship", userId, clientId);
 
+        Optional<ClientUser> clientUserOptional = clientUserRepository.findByClientIdAndUserId(clientId, userId);
 
-                    if (clientUserOptional.isPresent()) {
-                        LOG.info("user has clientId relationship");
-                        return getAuth(authentication, clientId);
-                    }
-                    else {
-                        LOG.info("client is not found in ClientUser");
-                        return Mono.error(new AuthorizationException("there is no client-id association with this user-id"));
-                    }
+        if (clientUserOptional.isPresent()) {
+            LOG.info("user has clientId relationship");
+            return getAuth(authentication, clientId);
+        }
+        else {
+            LOG.info("client is not found in ClientUser");
+            return Mono.error(new AuthorizationException("there is no client-id association with this user-id"));
+        }
     }
 
     private Mono<UsernamePasswordAuthenticationToken> checkClientInOrganization(Authentication authentication, UUID userId, String clientId) {
