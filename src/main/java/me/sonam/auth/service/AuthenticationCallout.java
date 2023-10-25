@@ -6,6 +6,7 @@ import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.service.exception.AuthorizationException;
 import me.sonam.auth.service.exception.BadCredentialsException;
+import me.sonam.auth.util.JwtPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -54,11 +53,16 @@ public class AuthenticationCallout implements AuthenticationProvider {
     @Autowired
     private HClientUserRepository clientUserRepository;
 
+    @Autowired
+    private JwtPath jwtPath;
+
+    @Autowired
+    private TokenFilter tokenFilter;
+
     public AuthenticationCallout(WebClient.Builder webClientBuilder, RequestCache requestCache) {
         this.webClientBuilder = webClientBuilder;
         this.requestCache = requestCache;
     }
-
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -74,25 +78,13 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         LOG.info("authorities: {}, details: {}, credentials: {}", authentication.getAuthorities(),
                 authentication.getDetails(), authentication.getCredentials());
-        //return getAuth(authentication, clientId).block();
-
-        return checkUserAndClient(authentication, clientId);
-
-      /*  return
-                clientOrganizationRepository.findByClientId(clientId)
-                //.switchIfEmpty(Mono.error(new AuthorizationException("clientId not in organziation")))
-                        .flatMap(clientOrganization -> getUserId(name, clientId).zipWith(Mono.just(clientOrganization))
-                                        .flatMap(objects -> userExistInOrganization(objects.getT1(), objects.getT2().getOrganizationId()))
-                                        .filter(aBoolean -> aBoolean)
-                                        .switchIfEmpty(Mono.error(new AuthorizationException("user does not exists in organization")))
-
-                                        .flatMap(aBoolean -> getAuth(authentication, clientId))).block();
-*/
+        return checkUserAndClient(authentication, clientId).block();
 
     }
 
-    private UsernamePasswordAuthenticationToken checkUserAndClient(Authentication authentication, String clientId) {
+    private Mono<UsernamePasswordAuthenticationToken> checkUserAndClient(Authentication authentication, String clientId) {
         final String authenticationId = authentication.getName();
+        LOG.info("get usernameAndPasswordAuthentication token");
 
         return getUserId(authenticationId).onErrorResume(throwable -> {
             LOG.error("failed to make get user by authId call: {}", throwable.getMessage());
@@ -109,38 +101,10 @@ public class AuthenticationCallout implements AuthenticationProvider {
                         LOG.info("clientId is not associated to a organization-id, check if user owns the client-id");
 
                         return checkClientUserRelationship(userId, clientId, authentication);
-                })).block();
-
-        /*
-         return checkClientInOrganization(authentication, clientId)
-                .onErrorResume(throwable -> {
-                    LOG.info("clientId is not associated to a organization-id, check if user owns the client-id");
-
-                    return getUserId(authenticationId)
-                            .onErrorResume(throwable1 -> {
-                                LOG.error("user does not exist with authenticationId: {}", throwable.getMessage());
-                                return Mono.error(new AuthorizationException("user does not exists with authenticationId: "+ authenticationId));
-                            })
-                            .flatMap(userId -> Mono.just(clientUserRepository.findByClientIdAndUserId(clientId, userId)))
-                            .flatMap(clientUserOptional -> {
-                                if (clientUserOptional.isPresent()) {
-                                   ClientUser clientUser = clientUserOptional.get();
-                                   return getAuth(authentication, clientId);
-                                }
-                                else {
-                                   return Mono.error(new AuthorizationException("there is no client-id association with this user-id"));
-                                }
-                            });
-                }).block();
-         */
+                }));//.block();
     }
 
     private Mono<UsernamePasswordAuthenticationToken> checkClientUserRelationship(final UUID userId, final String clientId, final Authentication authentication) {
-        /*return getUserId(authenticationId)
-                .onErrorResume(throwable -> {
-                    LOG.error("user does not exist with authenticationId: {}", throwable.getMessage());
-                    return Mono.error(new AuthorizationException("user does not exists with authenticationId: "+ authenticationId));
-                })*/
         LOG.info("checking client in ClientUser relationship");
                 Optional<ClientUser> clientUserOptional = clientUserRepository.findByClientIdAndUserId(clientId, userId);
 
@@ -153,7 +117,6 @@ public class AuthenticationCallout implements AuthenticationProvider {
                         LOG.info("client is not found in ClientUser");
                         return Mono.error(new AuthorizationException("there is no client-id association with this user-id"));
                     }
-
     }
 
     private Mono<UsernamePasswordAuthenticationToken> checkClientInOrganization(Authentication authentication, UUID userId, String clientId) {
@@ -168,11 +131,6 @@ public class AuthenticationCallout implements AuthenticationProvider {
         }
 
         ClientOrganization clientOrganization = optionalClientOrganization.get();
-
-        //return optionalClientOrganization.map(clientOrganization1 ->
-        /*return /*getUserId(authenticationId)
-                .flatMap(userId -> */
-                //.flatMap(clientOrganizationMono ->
                 return userExistInOrganization(userId, clientOrganization.getOrganizationId())
 
                 .filter(aBoolean -> aBoolean)
@@ -236,25 +194,25 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         LOG.info("make user call out to endpoint: {}", userByAuthId);
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(userByAuthId.toString()).retrieve();
+            WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(userByAuthId.toString())
+                .retrieve();
 
-        //throws exception on authentication not found return with 401 http status
-        return responseSpec.bodyToMono(Map.class).map(map -> {
-            LOG.info("user found: {}", map);
-            return UUID.fromString(map.get("id").toString());
-        }).onErrorResume(throwable -> {
-            LOG.error("error on get user by authId to endpoint '{}' with error: {}", userByAuthId,
-                    throwable.getMessage());
+            //throws exception on authentication not found return with 401 http status
+            return responseSpec.bodyToMono(Map.class).map(map -> {
+                LOG.info("user found: {}", map);
+                return UUID.fromString(map.get("id").toString());
+            }).onErrorResume(throwable -> {
+                LOG.error("error on get user by authId to endpoint '{}' with error: {}", userByAuthId,
+                        throwable.getMessage());
 
-            if (throwable instanceof WebClientResponseException) {
-                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-                return Mono.error(new AuthorizationException("Failed to get user by authId"));
-            }
-            else {
-                return Mono.error(new AuthorizationException("Failed to get user by authId"));
-            }
-        });
+                if (throwable instanceof WebClientResponseException) {
+                    WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
+                    LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
+                    return Mono.error(new AuthorizationException("Failed to get user by authId"));
+                } else {
+                    return Mono.error(new AuthorizationException("Failed to get user by authId"));
+                }
+            });
     }
 
 
@@ -295,33 +253,6 @@ public class AuthenticationCallout implements AuthenticationProvider {
             }
         });
     }
-
-   /* private Mono<Map> getRolesOld(String authenticationId, String clientId) {
-        LOG.info("get roles from application-rest-service for authenticationId: {}, clientId: {}",
-            authenticationId, clientId);
-
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(
-                        applicationClientRoleService.replace("{clientId}", clientId)
-                                .replace("{authenticationId}", authenticationId))
-                .retrieve();
-        return responseSpec.bodyToMono(Map.class).map(clientUserRole -> {
-            LOG.info("got role: {}", clientUserRole);
-            return clientUserRole;
-        }).onErrorResume(throwable -> {
-            LOG.error("application rest call failed to endpoint '{}' with error {}", applicationClientRoleService,
-                    throwable.getMessage());
-            if (throwable instanceof WebClientResponseException) {
-                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-            }
-            Map<String, Object> map = new HashMap<>();
-            map.put("userRole", "");
-            map.put("groupNames", "");
-            return Mono.just(map);
-        });
-    }
-*/
-
 
     @Override
     public boolean supports(Class<?> authentication) {

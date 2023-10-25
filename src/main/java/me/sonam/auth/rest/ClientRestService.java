@@ -2,14 +2,12 @@ package me.sonam.auth.rest;
 
 
 import jakarta.ws.rs.BadRequestException;
-import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.TokenMediate;
 import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.jpa.repo.TokenMediateRepository;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
-import me.sonam.auth.service.TokenService;
 import me.sonam.auth.util.JwtPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -50,8 +45,6 @@ public class ClientRestService {
 
     @Autowired
     private JwtPath jwtPath;
-    @Autowired
-    private TokenService tokenService;
 
     public ClientRestService(WebClient.Builder webClientBuilder,
                              JpaRegisteredClientRepository jpaRegisteredClientRepository,
@@ -193,54 +186,28 @@ public class ClientRestService {
 
     private Mono<Map> saveClientInTokenMediator(String clientId, String password) {
         LOG.info("save client in tokenMediator");
-
-        if (!jwtPath.getJwtRequest().isEmpty()) {
-            JwtPath.JwtRequest.AccessToken accessToken = jwtPath.getJwtRequest().get(0).getAccessToken();
-            Mono<String> accessTokenMono = tokenService.getSystemAccessTokenUsingClientCredential(accessToken);
-
-            return accessTokenMono.flatMap(stringAccessToken -> {
-                LOG.info("use the access token: {}", stringAccessToken);
-                WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(tokenMediatorEndpoint)
-                        .headers(httpHeaders -> httpHeaders.setBearerAuth(stringAccessToken))
-                        .bodyValue(Map.of("clientId", clientId, "clientSecret", password))
-                        .accept(MediaType.APPLICATION_JSON)
-                        .retrieve();
-                return responseSpec.bodyToMono(Map.class).
-                        onErrorResume(throwable -> {
-                    LOG.error("failed to save clientId and clientSecret in token-mediator");
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(tokenMediatorEndpoint)
+                .bodyValue(Map.of("clientId", clientId, "clientSecret", password))
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve();
+        return responseSpec.bodyToMono(Map.class).
+                onErrorResume(throwable -> {LOG.error("failed to save clientId and clientSecret in token-mediator");
                     return Mono.just(Map.of("error", "failed to save client in token-mediator"));
                 });
-            });
-        }
-        else{
-            return Mono.just(Map.of("error", "jwt request map is empty, client-secret not saved in token-mediator"));
-        }
     }
 
     private Mono<Map> deleteClientFromTokenMediator(String clientId) {
         LOG.info("delete client from tokenMediator");
+        String deleteTokenEndpoint = new StringBuilder(tokenMediatorEndpoint).append("/").append(clientId).toString();
 
-        if (!jwtPath.getJwtRequest().isEmpty()) {
-            JwtPath.JwtRequest.AccessToken accessToken = jwtPath.getJwtRequest().get(0).getAccessToken();
-            Mono<String> accessTokenMono = tokenService.getSystemAccessTokenUsingClientCredential(accessToken);
-            String deleteTokenEndpoint = new StringBuilder(tokenMediatorEndpoint).append("/").append(clientId).toString();
-
-            return accessTokenMono.flatMap(stringAccessToken -> {
-                LOG.info("use the access token: {}", stringAccessToken);
-                WebClient.ResponseSpec responseSpec = webClientBuilder.build().delete().uri(deleteTokenEndpoint)
-                        .headers(httpHeaders -> httpHeaders.setBearerAuth(stringAccessToken))
-                        .accept(MediaType.APPLICATION_JSON)
-                        .retrieve();
-               return responseSpec.bodyToMono(Map.class)
-                        .onErrorResume(throwable -> {
-                            LOG.error("failed to delete clientId in token-mediator: {}", throwable.getMessage());
-                            return Mono.just(Map.of("error", "failed to delete client in token-mediator"));
-                        });
-            });
-        }
-        else {
-            return Mono.just(Map.of("error", "jwt request map is empty, not calling token-mediator"));
-        }
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().delete().uri(deleteTokenEndpoint)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve();
+        return responseSpec.bodyToMono(Map.class)
+                .onErrorResume(throwable -> {
+                    LOG.error("failed to delete clientId in token-mediator: {}", throwable.getMessage());
+                    return Mono.just(Map.of("error", "failed to delete client in token-mediator"));
+                });
     }
 
     private void checkClientIdAndLoggedInUser(String clientId) {
