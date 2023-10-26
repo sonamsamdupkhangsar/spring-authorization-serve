@@ -29,3 +29,23 @@ Pass local profile as argument:
 ```
  docker run -e --spring.profiles.active=local -p 9001:9001 -t myorg/myapp
 ```
+
+
+## Authentication process
+```mermaid
+flowchart TD
+ User[user-request] -->login[/Login with username password/]--> authorization[authorization]
+ authorization-->authenticate[/authenticate user/]--> authentication
+ 
+ subgraph organization
+ GetOrganizationForClient -->clientId[/clientId/] --> 
+ end
+ subgraph authentication[authentication-rest-service]
+ validateUsernameAndPassword["usernamePasswordValid?"]
+ validateUsernameAndPassword -->|Yes| getUserRoleForClientId[/Find UserRoleForClientId/]
+ validateUsernameAndPassword -->|No| returnError[return BadRequest 400 error]
+ getUserRoleForClientId --> role-rest-service--> roles[/UserRolesPerClientId/]   
+ end 
+```
+
+authentication -->roles[/User roles for clientId] --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]

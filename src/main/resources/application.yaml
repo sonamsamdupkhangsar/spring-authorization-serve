@@ -31,15 +31,17 @@ application-rest-service:
   root: ${APPLICATION_REST_SERVICE}
   client-role: /applications/clients/{clientId}/users/{authenticationId}
 
-
 authentication-rest-service:
   root: ${AUTHENTICATION_REST_SERVICE}
   authenticate: /authentications/authenticate
 
 user-rest-service:
   root: ${USER_REST_SERVICE}
-  userByAuthid: /users/{authenticationId}
+  userByAuthId: /users/{authenticationId}
 
+organization-rest-service:
+  root: ${ORGANIZATION_REST_SERVICE}
+  userExistsInOrganization: /organizations/{organizationId}/users/{userId}
 
 oauth2-token-mediator:
   root: ${TOKEN_MEDIATOR}
@@ -47,7 +49,25 @@ oauth2-token-mediator:
 
 jwtrequest:
   - in: /*
-    out: /users/*
+    out: /users/(.)*
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  - in: /*
+    out: /organizations/(.)*/users/(.)*
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  - in: /*
+    out: /oauth2-token-mediator/clients
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  - in: /*
+    out: /oauth2-token-mediator/clients/(.)*
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}

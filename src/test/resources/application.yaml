@@ -42,17 +42,39 @@ authentication-rest-service:
 
 user-rest-service:
   root: http://localhost:8080
-  userByAuthid: /users/{authenticationId}
+  userByAuthId: /users/{authenticationId}
+
+organization-rest-service:
+  root: http://localhost:8080
+  userExistsInOrganization: /organizations/{organizationId}/users/{userId}
 
 ISSUER_URL: http://my-server:9001
 private-client-url: http://127.0.0.1:8090
 
 jwtrequest:
   - in: /*
-    out: /users/*
+    out: /users/(.)*
     accessToken:
       option: request
       scopes: message.read
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - in: /*
+    out: /organizations/(.)*/users/(.)*
+    accessToken:
+      option: request
+      scopes: message.read
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - in: /*
+    out: /oauth2-token-mediator/clients
+    accessToken:
+      option: request
+      scopes: message.write
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - in: /*
+    out: /oauth2-token-mediator/clients/(.)*
+    accessToken:
+      option: request
+      scopes: message.write
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
 
 # this is used for getting accesstoken by header filter

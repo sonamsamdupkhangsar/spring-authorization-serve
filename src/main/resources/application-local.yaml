@@ -21,6 +21,7 @@ eureka:
 APPLICATION_REST_SERVICE: http://application-rest-service
 AUTHENTICATION_REST_SERVICE: http://authentication-rest-service
 USER_REST_SERVICE: http://user-rest-service
+ORGANIZATION_REST_SERVICE: http://organization-rest-service
 TOKEN_MEDIATOR: http://oauth2-token-mediator
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation
