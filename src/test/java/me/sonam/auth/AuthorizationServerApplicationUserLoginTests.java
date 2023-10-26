@@ -268,9 +268,8 @@ public class AuthorizationServerApplicationUserLoginTests {
 	}
 
 	/**
-     * this will check that on user not found mocked response there will be a exception
-	 * @throws IOException
-     * @throws InterruptedException
+     * this will check that on user not found no exception is thrown
+
 	 */
 	@Test
 	public void checkUserNotExist() throws IOException, InterruptedException {
@@ -290,9 +289,9 @@ public class AuthorizationServerApplicationUserLoginTests {
 		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
 				.setResponseCode(400).setBody("{\"error\":\"user not found\"}"));
 
-		LOG.info("sign-in to the location page will throw Exception because user does not exist in the http callout");
-		assertThrows(Exception.class, ()->signIn(this.webClient.getPage(response
-				.getResponseHeaderValue("location")), "user1", "password"));
+
+		signIn(this.webClient.getPage(response
+				.getResponseHeaderValue("location")), "user1", "password");
 
 		LOG.info("take request");
 		RecordedRequest recordedRequest = mockWebServer.takeRequest();

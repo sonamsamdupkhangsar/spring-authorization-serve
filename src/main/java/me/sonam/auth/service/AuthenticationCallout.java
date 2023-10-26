@@ -97,7 +97,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
             }
             LOG.error("user not found with authenticationId: {}", authenticationId);
-            return Mono.error(new AuthorizationException("user not found with authenticationId: "+ authenticationId));
+            return Mono.error(new BadCredentialsException("user not found with authenticationId: "+ authenticationId));
         }
         ).flatMap(userId ->
                     checkClientInOrganization(authentication, userId, clientId)
@@ -138,7 +138,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 return userExistInOrganization(userId, clientOrganization.getOrganizationId())
 
                 .filter(aBoolean -> aBoolean)
-                .switchIfEmpty(Mono.error(new AuthorizationException("user does not exists in organization")))
+                .switchIfEmpty(Mono.error(new BadCredentialsException("user does not exists in organization")))
                 .flatMap(aBoolean -> getAuth(authentication, clientId));//.block();
     }
 
@@ -212,9 +212,9 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 if (throwable instanceof WebClientResponseException) {
                     WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                     LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-                    return Mono.error(new AuthorizationException("Failed to get user by authId"));
+                    return Mono.error(new BadCredentialsException("Failed to get user by authId"));
                 } else {
-                    return Mono.error(new AuthorizationException("Failed to get user by authId"));
+                    return Mono.error(new BadCredentialsException("Failed to get user by authId"));
                 }
             });
     }
