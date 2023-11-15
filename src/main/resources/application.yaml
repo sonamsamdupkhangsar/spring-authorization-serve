@@ -80,3 +80,6 @@ auth-server:
     path: /oauth2/token
     params: ?grant_type=client_credentials
 
+client:
+  url: ${client-app}
+  forgot-username-password: /forgot

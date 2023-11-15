@@ -28,3 +28,5 @@ TOKEN_MEDIATOR: http://oauth2-token-mediator
 ISSUER_URL: http://api-gateway:9001/issuer
 REQUEST_SCOPES: message.read message.write
 BASE64_CLIENT_ID_SECRET: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+
+client-app: http://10.0.0.28:3000
