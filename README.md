@@ -40,7 +40,7 @@ flowchart TD
  findUserId -->|No, userId not found|returnError[BadCredentialException]
  checkClientInOrg -->|Yes| userExistsInOrg[(user with id exists in Organization)]
 
- userExistsInOrg --get userId and orgId-->organizationRestService["organization-rest-service"'
+ userExistsInOrg --get userId and orgId-->organizationRestService["organization-rest-service"]
  organizationRestService -->|Found, user in org|authenticate["call authentication-rest-service"]
  organizationRestService -->|Not found, user not in org| returnError
  authenticate --> getRoles
