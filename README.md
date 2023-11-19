@@ -34,10 +34,10 @@ Pass local profile as argument:
 ## Authentication process
 ```mermaid
 flowchart TD
- User[user-request] -->login[/Login with username password/]
- login --> findUserId[find user id with login-id]
- findUserId -->|Yes, found userId|checkClientInOrg[(clients exists in a organization)]
- findUserId -->|No, userId not found|returnError[BadCredentialException]
+ User -->login[/Login with username password/]
+ login --> getUserId{is there a userId with this login-id}
+ getUserId -->|Yes, found userId|checkClientInOrg[(clients exists in a organization)]
+ getUserId -->|No, userId not found|returnError[BadCredentialException]
  checkClientInOrg -->|Yes| userExistsInOrg[(user with id exists in Organization)]
 
  userExistsInOrg --get userId and orgId-->organizationRestService["organization-rest-service"]
