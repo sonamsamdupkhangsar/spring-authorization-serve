@@ -39,7 +39,7 @@ flowchart TD
  userRestService --> getUserId{is there a userId with this login-id}
  getUserId -->|Yes, found userId|checkClientInOrg{client id exists in a organization?}
  getUserId -->|No, userId not found|returnError[BadCredentialException]
- checkClientInOrg --> clientOrganizationTable[(clientOrganization)]
+ checkClientInOrg --check clientOrganization repository--> clientOrganizationTable[(clientOrganization)]
  clientOrganizationTable -->|Yes| userExistsInOrg{user with id exists in a Organization?}
  clientOrganizationTable -->|No| returnError
  
