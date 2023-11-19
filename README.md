@@ -35,7 +35,7 @@ Pass local profile as argument:
 ```mermaid
 flowchart TD
  User -->login[/Login with username password/]
- login --> getUserId{is there a userId with this login-id}
+ login --"call user-rest-service"--> getUserId{is there a userId with this login-id}
  getUserId -->|Yes, found userId|checkClientInOrg[(clients exists in a organization)]
  getUserId -->|No, userId not found|returnError[BadCredentialException]
  checkClientInOrg -->|Yes| userExistsInOrg[(user with id exists in Organization)]
