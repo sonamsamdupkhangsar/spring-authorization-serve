@@ -22,7 +22,9 @@ APPLICATION_REST_SERVICE: http://application-rest-service
 AUTHENTICATION_REST_SERVICE: http://authentication-rest-service
 USER_REST_SERVICE: http://user-rest-service
 ORGANIZATION_REST_SERVICE: http://organization-rest-service
+ACCOUNT_REST_SERVICE: http://account-rest-service
 TOKEN_MEDIATOR: http://oauth2-token-mediator
+API_GATEWAY: http://api-gateway:8080
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation
 ISSUER_URL: http://api-gateway:9001/issuer
@@ -30,3 +32,5 @@ REQUEST_SCOPES: message.read message.write
 BASE64_CLIENT_ID_SECRET: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
 
 client-app: http://10.0.0.28:3000
+changePassword: /issuer/forgot/changePassword #@{/forgot/changePassword} use for local
+allowedOrigins: 10.0.0.28, localhost, 127.0.0.1

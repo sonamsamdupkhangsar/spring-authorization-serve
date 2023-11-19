@@ -43,6 +43,11 @@ organization-rest-service:
   root: ${ORGANIZATION_REST_SERVICE}
   userExistsInOrganization: /organizations/{organizationId}/users/{userId}
 
+account-rest-service:
+  root: ${ACCOUNT_REST_SERVICE}
+  emailUsername: /accounts/email/authenticationId/{email}
+  emailMySecret: /accounts/emailmysecret/{authenticationId}
+
 oauth2-token-mediator:
   root: ${TOKEN_MEDIATOR}
   clients: /oauth2-token-mediator/clients

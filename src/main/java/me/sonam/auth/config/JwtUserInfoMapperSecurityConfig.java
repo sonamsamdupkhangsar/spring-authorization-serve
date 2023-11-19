@@ -41,8 +41,10 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -52,6 +54,10 @@ public class JwtUserInfoMapperSecurityConfig {
 
     @Value("${ISSUER_URL}")
     private String issuerUrl;
+
+    @Value("${allowedOrigins}")
+    private String allowedOrigins; //csv allow origins
+
 
     @Bean
     @Order(1)
@@ -162,7 +168,10 @@ public class JwtUserInfoMapperSecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList("10.0.0.28", "localhost", "127.0.0.1"));//"http://127.0.0.1:8080"));
+        List<String> list = Arrays.asList(allowedOrigins.split(","));
+        LOG.info("adding allowedOrigins: {}", list);
+
+        corsConfig.setAllowedOrigins(list);
         corsConfig.addAllowedMethod("*");
         corsConfig.addAllowedHeader("*");
         corsConfig.setAllowCredentials(true);
