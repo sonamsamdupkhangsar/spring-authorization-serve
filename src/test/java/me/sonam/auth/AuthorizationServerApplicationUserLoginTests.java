@@ -16,11 +16,13 @@
 package me.sonam.auth;
 
 import com.gargoylesoftware.htmlunit.Page;
+import com.gargoylesoftware.htmlunit.TextPage;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.parser.HTMLParser;
 import me.sonam.auth.jpa.entity.ClientOrganization;
 import me.sonam.auth.jpa.entity.ClientOrganizationId;
 import me.sonam.auth.jpa.entity.ClientUser;
@@ -65,7 +67,7 @@ public class AuthorizationServerApplicationUserLoginTests {
 	static final String clientId = "messaging-client";
 	private static UUID userId = UUID.randomUUID();
 	private static UUID organizationId = UUID.randomUUID();
-	private static String AUTHORIZATION_REQUEST = "";
+	private static String AUTHORIZATION_REQUEST; //this is set in {@properties method}
 	private static MockWebServer mockWebServer;
 
 	@Autowired
@@ -252,10 +254,23 @@ public class AuthorizationServerApplicationUserLoginTests {
 
 		WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();
 
-		LOG.info("sign-in to the location page");
+		final String loginPage = response.getResponseHeaderValue("location");
 
-		assertThrows(Exception.class, ()->signIn(this.webClient.getPage(response
-				.getResponseHeaderValue("location")), "user1", "password"));
+		LOG.info("sign-in to the location page: {}", response
+				.getResponseHeaderValue("location"));
+
+		Page page = signIn(this.webClient.getPage(response
+				.getResponseHeaderValue("location")), "user1", "password");
+		//HTMLParser htmlParser = HTMLParser
+
+		//LOG.info("textPage: {}", page.getUrl());
+
+		LOG.info("assert we get back the same login page when client not found");
+		//in future look for the error message in the htmlPage
+		LOG.info("is html page: {}, url: {}, content: {}", page.isHtmlPage(), page.getUrl(), page.getWebResponse().getContentAsString());
+
+		LOG.info("assert we got back the login page when clientId is not found");
+		assertThat(page.getUrl().toString()).isEqualTo(loginPage);
 
 		RecordedRequest recordedRequest = mockWebServer.takeRequest();
 		LOG.info("should be acesstoken path for recordedRequest: {}", recordedRequest.getPath());

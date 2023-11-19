@@ -48,6 +48,11 @@ organization-rest-service:
   root: http://localhost:8080
   userExistsInOrganization: /organizations/{organizationId}/users/{userId}
 
+account-rest-service:
+  root:  http://localhost:8080
+  emailUsername: /accounts/email/authenticationId/{email}
+  emailMySecret: /accounts/emailmysecret/{authenticationId}
+
 ISSUER_URL: http://my-server:9001
 private-client-url: http://127.0.0.1:8090
 
@@ -90,3 +95,5 @@ oauth2-token-mediator:
 
 BASE64_CLIENT_ID_SECRET: dXNlcjpzZWNyZXQ=
 REQUEST_SCOPES: cmVhZCB3cml0ZQ==
+
+allowedOrigins: 10.0.0.28, localhost, 127.0.0.1

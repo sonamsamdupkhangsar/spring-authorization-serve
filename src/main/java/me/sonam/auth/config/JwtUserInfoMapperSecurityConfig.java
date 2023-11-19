@@ -41,8 +41,10 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -52,6 +54,10 @@ public class JwtUserInfoMapperSecurityConfig {
 
     @Value("${ISSUER_URL}")
     private String issuerUrl;
+
+    @Value("${allowedOrigins}")
+    private String allowedOrigins; //csv allow origins
+
 
     @Bean
     @Order(1)
@@ -101,6 +107,10 @@ public class JwtUserInfoMapperSecurityConfig {
                 .authorizeHttpRequests((authorize) ->
                         authorize.requestMatchers("/api/health/liveness").permitAll()
                                 .requestMatchers("/api/health/readiness").permitAll()
+                                .requestMatchers("/forgotUsername").permitAll()
+                                .requestMatchers("/forgotPassword").permitAll()
+                                .requestMatchers("/forgot/emailUsername").permitAll()
+                                .requestMatchers("/forgot/changePassword").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
@@ -108,7 +118,10 @@ public class JwtUserInfoMapperSecurityConfig {
                         httpSecurityOAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults()))
                 .formLogin(Customizer.withDefaults());
 
-        return http.cors(Customizer.withDefaults()).build();
+
+       // return http.cors(Customizer.withDefaults()).build();
+        return http.cors(Customizer.withDefaults()).formLogin(formLogin ->
+                formLogin.loginPage("/login").permitAll()).build();
     }
 
     @Bean
@@ -155,7 +168,10 @@ public class JwtUserInfoMapperSecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList("*"));//"http://127.0.0.1:8080"));
+        List<String> list = Arrays.asList(allowedOrigins.split(","));
+        LOG.info("adding allowedOrigins: {}", list);
+
+        corsConfig.setAllowedOrigins(list);
         corsConfig.addAllowedMethod("*");
         corsConfig.addAllowedHeader("*");
         corsConfig.setAllowCredentials(true);

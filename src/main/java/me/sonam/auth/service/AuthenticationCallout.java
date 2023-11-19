@@ -4,7 +4,6 @@ import me.sonam.auth.jpa.entity.ClientOrganization;
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
-import me.sonam.auth.service.exception.AuthorizationException;
 import me.sonam.auth.service.exception.BadCredentialsException;
 import me.sonam.auth.util.JwtPath;
 import org.slf4j.Logger;
@@ -75,6 +74,9 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
          String clientId = ClientIdUtil.getClientId(requestCache);
          LOG.info("clientId: {}", clientId);
+         if (clientId == null || clientId.equals("")) {
+             throw new BadCredentialsException("clientId not found in request cache");
+         }
 
         LOG.info("authorities: {}, details: {}, credentials: {}", authentication.getAuthorities(),
                 authentication.getDetails(), authentication.getCredentials());
@@ -115,7 +117,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
         }
         else {
             LOG.info("client is not found in ClientUser");
-            return Mono.error(new AuthorizationException("there is no client-id association with this user-id"));
+            return Mono.error(new BadCredentialsException("there is no client-id association with this user-id"));
         }
     }
 
@@ -127,7 +129,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         if (optionalClientOrganization.isEmpty()) {
             LOG.error("client-id {} not found in clientOrganization", clientId);
-           return Mono.error(new AuthorizationException("no clientId " + clientId + " found in ClientOrganization"));
+           return Mono.error(new BadCredentialsException("no clientId " + clientId + " found in ClientOrganization"));
         }
 
         ClientOrganization clientOrganization = optionalClientOrganization.get();

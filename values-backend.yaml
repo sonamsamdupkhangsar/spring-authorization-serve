@@ -90,6 +90,8 @@ envs:
     value: http://organization-rest-service
   - name: USER_REST_SERVICE
     value: http://user-rest-service
+  - name: ACCOUNT_REST_SERVICE
+    value: http://account-rest-service
   - name: private-client-url
     value: http://127.0.0.1:8090
   - name: AUTH_SERVER_PORT

@@ -34,18 +34,24 @@ Pass local profile as argument:
 ## Authentication process
 ```mermaid
 flowchart TD
- User[user-request] -->login[/Login with username password/]--> authorization[authorization]
- authorization-->authenticate[/authenticate user/]--> authentication
+ User -->login[/Login with username password/]
+ login --get userId for loginId--> userRestService["user-rest-service"]
+ userRestService --> getUserId{is there a userId with this login-id}
+ getUserId -->|Yes, found userId|checkClientInOrg{client id exists in a organization?}
+ getUserId -->|No, userId not found|returnError[BadCredentialException]
+ checkClientInOrg --check clientOrganization repository--> clientOrganizationTable[(clientOrganization)]
+ clientOrganizationTable --call--> organizationRestService["organization-rest-service"]
+ organizationRestService --> checkUserExistsInOrg{Does user Exists in a org?}
  
- subgraph organization
- GetOrganizationForClient -->clientId[/clientId/] --> 
- end
- subgraph authentication[authentication-rest-service]
- validateUsernameAndPassword["usernamePasswordValid?"]
- validateUsernameAndPassword -->|Yes| getUserRoleForClientId[/Find UserRoleForClientId/]
- validateUsernameAndPassword -->|No| returnError[return BadRequest 400 error]
- getUserRoleForClientId --> role-rest-service--> roles[/UserRolesPerClientId/]   
- end 
+ checkUserExistsInOrg -->|Yes| userExistsInOrg{user with id exists in a Organization?}
+ checkUserExistsInOrg -->|No| returnError
+ 
+ 
+ userExistsInOrg -->|Yes, get userId and orgId|organizationRestService["organization-rest-service"]
+ userExistsInOrg -->|No|checkClientUserAssociation{client id is associated to a user only?}
+ checkClientUserAssociation -->|Yes| authenticate
+ checkClientUserAssociation -->|No| returnError
+ organizationRestService -->|Found, user in org|authenticate["call authentication-rest-service"]
+ organizationRestService -->|Not found, user not in org| returnError
+ authenticate --> getRoles
 ```
-
-authentication -->roles[/User roles for clientId] --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]
