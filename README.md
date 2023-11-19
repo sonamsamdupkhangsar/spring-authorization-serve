@@ -36,11 +36,8 @@ Pass local profile as argument:
 flowchart TD
  User[user-request] -->login[/Login with username password/]
  login --> findUserId[find user id with login-id]
- findUserId -->|Yes, found userId| checkClientInOrg[(clients exists in a organization)]
- findUserId -->|No, userId not found| returnError[BadCredentialException]
+ findUserId -->|Yes, found userId|checkClientInOrg[(clients exists in a organization)]
+ findUserId -->|No, userId not found|returnError[BadCredentialException]
  checkClientInOrg -->|Yes| userExistsInOrg[(user with id exists in Organization)]
- userExistsInOrg --call userId and orgId-->organization-rest-service
- organization-rest-service -->|Found, user in org|authenticate[call authentication-rest-service]
- organization-rest-service -->|Not found, user not in org| returnError
- authenticate --> getRoles
+
 ```
