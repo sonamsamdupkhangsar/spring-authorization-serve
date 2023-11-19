@@ -34,18 +34,13 @@ Pass local profile as argument:
 ## Authentication process
 ```mermaid
 flowchart TD
- User[user-request] -->login[/Login with username password/]--> authorization[authorization]
- authorization-->authenticate[/authenticate user/]--> authentication
- 
- subgraph organization
- GetOrganizationForClient -->clientId[/clientId/] --> 
- end
- subgraph authentication[authentication-rest-service]
- validateUsernameAndPassword["usernamePasswordValid?"]
- validateUsernameAndPassword -->|Yes| getUserRoleForClientId[/Find UserRoleForClientId/]
- validateUsernameAndPassword -->|No| returnError[return BadRequest 400 error]
- getUserRoleForClientId --> role-rest-service--> roles[/UserRolesPerClientId/]   
- end 
+ User[user-request] -->login[/Login with username password/]
+ login --> findUserId[find user id with login-id]
+ findUserId -->|Yes, found userId| checkClientInOrg[(clients exists in a organization)]
+ findUserId -->|No, userId not found| returnError[BadCredentialException]
+ checkClientInOrg -->|Yes| userExistsInOrg[(user with id exists in Organization)]
+ userExistsInOrg --call userId and orgId-->organization-rest-service
+ organization-rest-service -->|Found, user in org|authenticate[call authentication-rest-service]
+ organization-rest-service -->|Not found, user not in org| returnError
+ authenticate --> getRoles
 ```
-
-authentication -->roles[/User roles for clientId] --> populateGrantedAuths[/set grantedAuths in UsernamePasswordAuthenticationToken/]
