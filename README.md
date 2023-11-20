@@ -37,15 +37,15 @@ flowchart TD
  User -->login[/Login with username password/]
  login --get userId for loginId from--> userRestService["user-rest-service"]
  userRestService --> getUserId{is there a userId with this login-id}
- getUserId -->|Yes, found userId|checkClientInOrg{is client id associated to a organization?}
+ getUserId--|Yes, check clientOrganization repository|--> clientOrganizationRepo[(clientOrganization)]
+ clientOrganizationRepo -->checkClientInOrg{is client id associated to a organization?}
  getUserId -->|No, userId not found|returnError[BadCredentialException]
  checkClientInOrg --check clientOrganization repository--> clientOrganizationRepo[(clientOrganization)]
  
  checkClientInOrg -->|Yes|clientIsInOrg[client is associated to org]
  checkClientInOrg -->|No|checkClientUserRelationship["check if client is associated to user only?"]
  clientIsInOrg --call--> orgRestService["organization-rest-service"]
- orgRestService --> checkUserExistsInOrg{does user Exists in a org?}
- checkUserExistsInOrg --call--> organizationRestService["organization-rest-service"]
+ orgRestService --> checkUserExistsInOrg{does user Exists in a org?} 
  checkUserExistsInOrg -->|Yes|authenticate["authentication-rest-service"]
  
  checkUserExistsInOrg -->|No| checkClientInUserRelationship 
