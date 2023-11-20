@@ -37,7 +37,7 @@ flowchart TD
  User -->login[/Login with username password/]
  login --get userId for loginId from--> userRestService["user-rest-service"]
  userRestService --> getUserId{is there a userId with this login-id}
- getUserId--|Yes, check clientOrganization repository|--> clientOrganizationRepo[(clientOrganization)]
+ getUserId-->|Yes, check clientOrganization repository|--> clientOrganizationRepo[(clientOrganization)]
  clientOrganizationRepo -->checkClientInOrg{is client id associated to a organization?}
  getUserId -->|No, userId not found|returnError[BadCredentialException]
  checkClientInOrg --check clientOrganization repository--> clientOrganizationRepo[(clientOrganization)]
