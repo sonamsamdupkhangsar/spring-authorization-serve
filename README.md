@@ -57,14 +57,3 @@ flowchart TD
  clientAssociatedToUser -->|No|returnError
  
 ```
-
-
-
-
-userExistsInOrg -->|Yes, get userId and orgId|organizationRestService["organization-rest-service"]
-userExistsInOrg -->|No|checkClientUserAssociation{client id is associated to a user only?}
-checkClientUserAssociation -->|Yes| authenticate
-checkClientUserAssociation -->|No| returnError
-organizationRestService -->|Found, user in org|authenticate["call authentication-rest-service"]
-organizationRestService -->|Not found, user not in org| returnError
-authenticate --> getRoles
