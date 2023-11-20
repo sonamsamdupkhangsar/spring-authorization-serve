@@ -35,23 +35,29 @@ Pass local profile as argument:
 ```mermaid
 flowchart TD
  User -->login[/Login with username password/]
- login --get userId for loginId--> userRestService["user-rest-service"]
+ login --get userId for loginId from--> userRestService["user-rest-service"]
  userRestService --> getUserId{is there a userId with this login-id}
- getUserId -->|Yes, found userId|checkClientInOrg{client id exists in a organization?}
+ getUserId -->|Yes, found userId|checkClientInOrg{is client id associated to a organization?}
  getUserId -->|No, userId not found|returnError[BadCredentialException]
- checkClientInOrg --check clientOrganization repository--> clientOrganizationTable[(clientOrganization)]
- clientOrganizationTable --call--> organizationRestService["organization-rest-service"]
- organizationRestService --> checkUserExistsInOrg{Does user Exists in a org?}
+ checkClientInOrg --check clientOrganization repository--> clientOrganizationRepo[(clientOrganization)]
  
- checkUserExistsInOrg -->|Yes| userExistsInOrg{user with id exists in a Organization?}
- checkUserExistsInOrg -->|No| returnError
- 
- 
- userExistsInOrg -->|Yes, get userId and orgId|organizationRestService["organization-rest-service"]
- userExistsInOrg -->|No|checkClientUserAssociation{client id is associated to a user only?}
- checkClientUserAssociation -->|Yes| authenticate
- checkClientUserAssociation -->|No| returnError
- organizationRestService -->|Found, user in org|authenticate["call authentication-rest-service"]
- organizationRestService -->|Not found, user not in org| returnError
- authenticate --> getRoles
+ checkClientInOrg -->|Yes|clientIsInOrg[client is associated to org]
+ checkClientInOrg -->|No|checkClientInUserRelationship{is client associated to User only?}
+ clientIsInOrg --> checkUserExistsInOrg{does user Exists in a org?}
+ checkUserExistsInOrg --call--> organizationRestService["organization-rest-service"]
+ checkUserExistsInOrg -->|Yes| userExistsInOrg{user exists in a Organization?}
+ checkUserExistsInOrg -->|No| checkClientInUserRelationship 
+ userExistsInOrg -->|Yes| authenticate["call authentication-rest-service"]
+ authenticate --> getRoles[get roles for user]
 ```
+
+
+
+
+userExistsInOrg -->|Yes, get userId and orgId|organizationRestService["organization-rest-service"]
+userExistsInOrg -->|No|checkClientUserAssociation{client id is associated to a user only?}
+checkClientUserAssociation -->|Yes| authenticate
+checkClientUserAssociation -->|No| returnError
+organizationRestService -->|Found, user in org|authenticate["call authentication-rest-service"]
+organizationRestService -->|Not found, user not in org| returnError
+authenticate --> getRoles
