@@ -51,6 +51,10 @@ flowchart TD
  checkUserExistsInOrg -->|No|checkClientInUserRelationship 
  
  authenticate --> receiveRoles[receive roles for user]
+ checkClientInUserRelationship -->clientUserRepo[(clientUser)]
+ clientUserRepo --> clientAssociatedToUser{is client associated to user?}
+ clientAssociatedToUser -->|Yes|authenticate
+ clientAssociatedToUser -->|No|returnError
  
 ```
 
