@@ -45,11 +45,12 @@ flowchart TD
  checkClientInOrg -->|No|checkClientUserRelationship["check if client is associated to user only?"]
  clientIsInOrg --> checkUserExistsInOrg{does user Exists in a org?}
  checkUserExistsInOrg --call--> organizationRestService["organization-rest-service"]
- checkUserExistsInOrg -->|Yes| userExistsInOrg{user exists in a Organization?}
+ checkUserExistsInOrg -->|Yes|authenticate["authentication-rest-service"]
+ 
  checkUserExistsInOrg -->|No| checkClientInUserRelationship 
- userExistsInOrg -->|Yes| authenticate["call authentication-rest-service"]
+ 
  authenticate --> getRoles[get roles for user]
- userExistsInOrg -->|No| checkClientUserRelationship
+ 
 ```
 
 
