@@ -50,7 +50,7 @@ flowchart TD
  
  checkUserExistsInOrg -->|No| checkClientInUserRelationship 
  
- authenticate --> getRoles[get roles for user]
+ authenticate --> receiveRoles[receive roles for user]
  
 ```
 
