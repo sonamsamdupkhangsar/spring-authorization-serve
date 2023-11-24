@@ -35,23 +35,25 @@ Pass local profile as argument:
 ```mermaid
 flowchart TD
  User -->login[/Login with username password/]
- login --get userId for loginId--> userRestService["user-rest-service"]
- userRestService --> getUserId{is there a userId with this login-id}
- getUserId -->|Yes, found userId|checkClientInOrg{client id exists in a organization?}
+ login --get userId for loginId from--> userRestService["user-rest-service"]
+ userRestService --> getUserId{is there a userId with this login-id?}
+ getUserId-->|Yes|clientOrganizationRepo[(clientOrganization)]
+ clientOrganizationRepo --get organization for clientid-->checkClientInOrg{is client id associated to a organization?}
  getUserId -->|No, userId not found|returnError[BadCredentialException]
- checkClientInOrg --check clientOrganization repository--> clientOrganizationTable[(clientOrganization)]
- clientOrganizationTable --call--> organizationRestService["organization-rest-service"]
- organizationRestService --> checkUserExistsInOrg{Does user Exists in a org?}
- 
- checkUserExistsInOrg -->|Yes| userExistsInOrg{user with id exists in a Organization?}
- checkUserExistsInOrg -->|No| returnError
  
  
- userExistsInOrg -->|Yes, get userId and orgId|organizationRestService["organization-rest-service"]
- userExistsInOrg -->|No|checkClientUserAssociation{client id is associated to a user only?}
- checkClientUserAssociation -->|Yes| authenticate
- checkClientUserAssociation -->|No| returnError
- organizationRestService -->|Found, user in org|authenticate["call authentication-rest-service"]
- organizationRestService -->|Not found, user not in org| returnError
- authenticate --> getRoles
+ checkClientInOrg -->|Yes|clientIsInOrg[client is associated to org]
+ checkClientInOrg -->|No|checkClientInUserRelationship["check if client is associated to user only"]
+ clientIsInOrg --call--> orgRestService["organization-rest-service"]
+ orgRestService --> checkUserExistsInOrg{does user Exists in a org?} 
+ checkUserExistsInOrg -->|Yes|authenticate["authentication-rest-service"]
+ 
+ checkUserExistsInOrg -->|No|checkClientInUserRelationship 
+ 
+ authenticate --> receiveRoles[receive roles for user]
+ checkClientInUserRelationship -->clientUserRepo[(clientUser)]
+ clientUserRepo --> clientAssociatedToUser{is client associated to user?}
+ clientAssociatedToUser -->|Yes|authenticate
+ clientAssociatedToUser -->|No|returnError
+ 
 ```
