@@ -33,4 +33,4 @@ BASE64_CLIENT_ID_SECRET: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
 
 client-app: http://10.0.0.28:3000
 changePassword: /issuer/forgot/changePassword #@{/forgot/changePassword} use for local
-allowedOrigins: 10.0.0.28, localhost, 127.0.0.1, api-gateway, *, api-gateway:8080, 10.0.0.28:8080, 127.0.0.1. http://api-gateway:8080
+allowedOrigins: http://api-gateway:8080, 10.0.0.28, localhost, 127.0.0.1, api-gateway, *, api-gateway:8080, 10.0.0.28:8080, 127.0.0.1. http://api-gateway:8080

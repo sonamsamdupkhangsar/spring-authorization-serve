@@ -172,7 +172,8 @@ public class JwtUserInfoMapperSecurityConfig {
         LOG.info("adding allowedOrigins: {}", list);
 
         corsConfig.setAllowedOrigins(list);
-        corsConfig.addAllowedMethod("*");
+        //corsConfig.addAllowedMethod("*");
+        corsConfig.setAllowedMethods(Arrays.asList("GET", "PUT", "POST", "OPTIONS"));
         corsConfig.addAllowedHeader("*");
         corsConfig.setAllowCredentials(true);
 

@@ -5,7 +5,7 @@
             by default -->
         <encoder>
             <pattern>
-                requestId: '%X{requestId}', [%thread], %-5level %logger{36} - %msg%n
+                %d{yyyy-MM-dd_HH:mm:ss.SSS} %X{requestId} [%thread] %-5level %logger{36} - %msg%n
             </pattern>
         </encoder>
     </appender>

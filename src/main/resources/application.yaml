@@ -5,9 +5,13 @@ server:
 
 logging:
   level:
-    root: trace
+    root: warn
     org.apache.tomcat: error
-#    me.sonam.auth: debug
+    org.apache.coyote.http11: trace
+    org.springframework.security.web: trace
+    org.springframework.web.cors: trace
+    org.springframework.security: trace
+    me.sonam.auth: debug
 #    me.sonam.auth.config: debug
 #    org.springframework.web: info
 #    org.springframework.security: info
