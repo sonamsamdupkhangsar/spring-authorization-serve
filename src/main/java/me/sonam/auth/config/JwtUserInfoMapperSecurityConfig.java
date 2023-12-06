@@ -168,6 +168,8 @@ public class JwtUserInfoMapperSecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
+
+        allowedOrigins = allowedOrigins.replace(" ", ""); //remove whitespaces between csv
         List<String> list = Arrays.asList(allowedOrigins.split(","));
         LOG.info("adding allowedOrigins: {}", list);
 
