@@ -43,7 +43,7 @@ istio:
   enabled: false
 
 ingress:
-  enabled: true
+  enabled: false
   ingressClass: nginx
   hosts:
     - host: authorization.sonam.cloud
@@ -99,7 +99,8 @@ envs:
   - name: TOKEN_MEDIATOR
     value: http://oauth2-token-mediator
   - name: ISSUER_URL
-    value: https://authorization.sonam.cloud/issuer
+    value: https://api-gateway.sonam.cloud/issuer
+#   value: https://authorization.sonam.cloud/issuer
   - name: ALLOWED_ORIGINS
     value: https://api-gateway.sonam.cloud
 
