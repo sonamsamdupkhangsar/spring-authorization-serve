@@ -53,7 +53,7 @@ account-rest-service:
   emailUsername: /accounts/email/authenticationId/{email}
   emailMySecret: /accounts/emailmysecret/{authenticationId}
 
-ISSUER_URL: http://my-server:9001
+ISSUER_URI: http://my-server:9001
 private-client-url: http://127.0.0.1:8090
 
 jwtrequest:

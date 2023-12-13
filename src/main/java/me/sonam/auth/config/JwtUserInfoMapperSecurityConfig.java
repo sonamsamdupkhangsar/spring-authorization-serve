@@ -44,7 +44,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -52,8 +51,8 @@ public class JwtUserInfoMapperSecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(JwtUserInfoMapperSecurityConfig.class);
 
-    @Value("${ISSUER_URL}")
-    private String issuerUrl;
+    @Value("${ISSUER_URI}")
+    private String issuerUri;
 
     @Value("${allowedOrigins}")
     private String allowedOrigins; //csv allow origins
@@ -157,7 +156,7 @@ public class JwtUserInfoMapperSecurityConfig {
 
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().issuer(issuerUrl).build();
+        return AuthorizationServerSettings.builder().issuer(issuerUri).build();
     }
 
     @Bean

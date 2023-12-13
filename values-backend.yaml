@@ -98,9 +98,8 @@ envs:
     value: 8080
   - name: TOKEN_MEDIATOR
     value: http://oauth2-token-mediator
-  - name: ISSUER_URL
-    value: https://api-gateway.sonam.cloud/issuer
-#   value: https://authorization.sonam.cloud/issuer
+  - name: ISSUER_URI
+    value: https://authorization.sonam.cloud/issuer
   - name: ALLOWED_ORIGINS
     value: https://api-gateway.sonam.cloud
 
