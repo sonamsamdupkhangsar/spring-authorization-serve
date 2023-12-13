@@ -43,7 +43,7 @@ istio:
   enabled: false
 
 ingress:
-  enabled: false
+  enabled: true
   ingressClass: nginx
   hosts:
     - host: authorization.sonam.cloud
