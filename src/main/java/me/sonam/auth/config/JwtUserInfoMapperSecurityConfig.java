@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,11 +13,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationDetailsSource;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -25,8 +35,10 @@ import org.springframework.security.oauth2.server.authorization.oidc.authenticat
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
@@ -40,6 +52,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -79,8 +92,8 @@ public class JwtUserInfoMapperSecurityConfig {
                                 .userInfoMapper(userInfoMapper)
 				)
 			);
-        http
-                .securityMatcher(endpointsMatcher)
+
+        http.securityMatcher(endpointsMatcher)
                 .authorizeHttpRequests((authorize) -> authorize
                         .anyRequest().authenticated()
                 )
@@ -90,7 +103,7 @@ public class JwtUserInfoMapperSecurityConfig {
 			)
 			.exceptionHandling((exceptions) -> exceptions
                 .defaultAuthenticationEntryPointFor(
-                        new LoginUrlAuthenticationEntryPoint("/login"),
+                        new LoginUrlAuthenticationEntryPoint("/"),
                         new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                 )
         )
@@ -109,18 +122,23 @@ public class JwtUserInfoMapperSecurityConfig {
                                 .requestMatchers("/forgotUsername").permitAll()
                                 .requestMatchers("/forgotPassword").permitAll()
                                 .requestMatchers("/forgot/emailUsername").permitAll()
-                                .requestMatchers("/forgot/changePassword").permitAll()
-                        .anyRequest().authenticated()
+                            .requestMatchers("/forgot/changePassword").permitAll()
+
+                .anyRequest().authenticated()
                 )
                 .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
                 .oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer ->
                         httpSecurityOAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults()))
-                .formLogin(Customizer.withDefaults());
+                .formLogin(httpSecurityFormLoginConfigurer ->
+                        httpSecurityFormLoginConfigurer.loginPage("/").loginProcessingUrl("/")
+                )
+                .formLogin(httpSecurityFormLoginConfigurer ->
+                        httpSecurityFormLoginConfigurer.loginPage("/manage/login")
+                              //  .loginProcessingUrl("/manage/client")
+                                .defaultSuccessUrl("/admin/dashboard"));
 
-
-       // return http.cors(Customizer.withDefaults()).build();
-        return http.cors(Customizer.withDefaults()).formLogin(formLogin ->
-                formLogin.loginPage("/login").permitAll()).build();
+      return http.cors(Customizer.withDefaults()).formLogin(formLogin ->
+              formLogin.loginPage("/").permitAll().loginPage("/manage/login").permitAll()).build();
     }
 
     @Bean

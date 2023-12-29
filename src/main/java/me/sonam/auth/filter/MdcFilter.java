@@ -18,7 +18,7 @@ public class MdcFilter implements Filter {
     private static final String REQUEST_ID = "requestId";
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        LOG.info("add MDC to request");
+        LOG.info("checking MDC filter for request");
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 
@@ -27,7 +27,6 @@ public class MdcFilter implements Filter {
             LOG.info("add requestId to MDC: {}", requestId);
             MDC.put(REQUEST_ID, requestId);
         }
-
 
         chain.doFilter(request, response);
         LOG.info("remove MDC {}", REQUEST_ID);

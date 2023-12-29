@@ -20,6 +20,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -67,6 +69,21 @@ public class AuthenticationCallout implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         LOG.info("authenticate with username and password");
 
+        var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        var request = requestAttributes.getRequest();
+        enum LoginType {
+            OAUTH_LOGIN, CLIENT_MANAGE_LOGIN
+        }
+
+        var loginType =  requestAttributes.getRequest().getParameter("manage");
+        LOG.info("manage request value: {}", loginType);
+        LOG.info("request getRequestURI info: {}", request.getRequestURI());
+
+        if (loginType != null && loginType.equals(LoginType.CLIENT_MANAGE_LOGIN.name())) {
+            LOG.info("do a clientManageLogin when value is {}", LoginType.CLIENT_MANAGE_LOGIN);
+            return clientManageLogin(authentication);
+        }
+
         final String authenticationId = authentication.getName();
         final String password = authentication.getCredentials().toString();
 
@@ -82,6 +99,15 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 authentication.getDetails(), authentication.getCredentials());
         return checkUserAndClient(authentication, clientId).block();
 
+    }
+
+    private Authentication clientManageLogin(Authentication authentication) {
+        LOG.info("clientManage login, return dummy authentication object");
+        final List<GrantedAuthority> grantedAuths = new ArrayList<>();
+        final UserDetails principal = new User(authentication.getName(), authentication.getCredentials().toString(), grantedAuths);
+
+        LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
+        return new UsernamePasswordAuthenticationToken(principal, authentication.getCredentials().toString(), grantedAuths);
     }
 
     private Mono<UsernamePasswordAuthenticationToken> checkUserAndClient(Authentication authentication, String clientId) {

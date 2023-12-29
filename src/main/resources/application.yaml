@@ -5,9 +5,9 @@ server:
 
 logging:
   level:
-    root: warn
-    org.apache.tomcat: error
-    org.apache.coyote.http11: error
+    root: debug
+#    org.apache.tomcat: error
+#    org.apache.coyote.http11: deug
 #    org.springframework.security.web: trace
 #    org.springframework.web.cors: trace
 #    org.springframework.security: trace
