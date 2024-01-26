@@ -18,13 +18,16 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/clients")
@@ -103,6 +106,18 @@ public class ClientRestService {
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
         return jpaRegisteredClientRepository.getMap(registeredClient);
+    }
+
+
+    @GetMapping("{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<String> getClientIdsByUser(@PathVariable("userId") UUID userId) {
+        LOG.info("get clientIds for userId: {}", userId);
+
+
+        List<ClientUser> clientUserList =clientUserRepository.findByUserId(userId).stream()
+                .toList();
+        return clientUserList.stream().map(ClientUser::getClientId).toList();
     }
 
     @PutMapping

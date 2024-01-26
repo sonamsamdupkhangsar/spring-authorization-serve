@@ -5,17 +5,19 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import jakarta.servlet.http.HttpServletRequest;
+import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
+import me.sonam.auth.jpa.repo.HClientUserRepository;
+import me.sonam.auth.service.AuthenticationCallout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationDetailsSource;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -47,6 +49,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -69,6 +72,23 @@ public class JwtUserInfoMapperSecurityConfig {
 
     @Value("${allowedOrigins}")
     private String allowedOrigins; //csv allow origins
+    @Value("${authentication-rest-service.root}${authentication-rest-service.authenticate}")
+    private String authenticateEndpoint;
+
+    @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
+    private String userEndpoint;
+
+    @Value("${organization-rest-service.root}${organization-rest-service.userExistsInOrganization}")
+    private String organizationEndpoint;
+
+    private RequestCache requestCache;
+    private WebClient.Builder webClientBuilder;
+
+    @Autowired
+    private ClientOrganizationRepository clientOrganizationRepository;
+
+    @Autowired
+    private HClientUserRepository clientUserRepository;
 
 
     @Bean
@@ -122,7 +142,7 @@ public class JwtUserInfoMapperSecurityConfig {
                                 .requestMatchers("/forgotUsername").permitAll()
                                 .requestMatchers("/forgotPassword").permitAll()
                                 .requestMatchers("/forgot/emailUsername").permitAll()
-                            .requestMatchers("/forgot/changePassword").permitAll()
+                                .requestMatchers("/forgot/changePassword").permitAll()
 
                 .anyRequest().authenticated()
                 )
@@ -130,15 +150,21 @@ public class JwtUserInfoMapperSecurityConfig {
                 .oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer ->
                         httpSecurityOAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults()))
                 .formLogin(httpSecurityFormLoginConfigurer ->
-                        httpSecurityFormLoginConfigurer.loginPage("/").loginProcessingUrl("/")
+                        httpSecurityFormLoginConfigurer.loginPage("/")
                 )
-                .formLogin(httpSecurityFormLoginConfigurer ->
-                        httpSecurityFormLoginConfigurer.loginPage("/manage/login")
-                              //  .loginProcessingUrl("/manage/client")
-                                .defaultSuccessUrl("/admin/dashboard"));
-
+                .authenticationManager(authenticationManager());
       return http.cors(Customizer.withDefaults()).formLogin(formLogin ->
-              formLogin.loginPage("/").permitAll().loginPage("/manage/login").permitAll()).build();
+              formLogin.loginPage("/").permitAll()).build();
+    }
+
+    private AuthenticationManager authenticationManager() {
+        AuthenticationCallout callout = new AuthenticationCallout(authenticateEndpoint, userEndpoint,
+                organizationEndpoint, requestCache, webClientBuilder, clientOrganizationRepository,
+                clientUserRepository) ;
+
+        ProviderManager providerManager = new ProviderManager(callout);
+        providerManager.setEraseCredentialsAfterAuthentication(false);
+        return providerManager;
     }
 
     @Bean

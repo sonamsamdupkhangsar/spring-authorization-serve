@@ -154,6 +154,7 @@ public class ClientRestServiceIntegTest {
 
         final Map<String, String> map = entityExchangeResult.getResponseBody();
         assertThat(map.get("access_token")).isNotNull();
+        LOG.info("access_token: {}", map.get("access_token"));
 
         LOG.info("now make a request to create a client");
         var requestBody = Map.of("clientId", clientId, "clientSecret", "{noop}secret",

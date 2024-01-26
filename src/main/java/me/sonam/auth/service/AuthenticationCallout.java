@@ -5,7 +5,6 @@ import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.service.exception.BadCredentialsException;
-import me.sonam.auth.util.JwtPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +18,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.savedrequest.RequestCache;
-import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -32,7 +30,7 @@ import java.util.*;
  * This class is used for making authentication callout to external authentication-rest-service
  * for authenticating username and password.
  */
-@Service
+
 public class AuthenticationCallout implements AuthenticationProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationCallout.class);
 
@@ -54,15 +52,17 @@ public class AuthenticationCallout implements AuthenticationProvider {
     @Autowired
     private HClientUserRepository clientUserRepository;
 
-    @Autowired
-    private JwtPath jwtPath;
-
-    @Autowired
-    private TokenFilter tokenFilter;
-
-    public AuthenticationCallout(WebClient.Builder webClientBuilder, RequestCache requestCache) {
-        this.webClientBuilder = webClientBuilder;
+    public AuthenticationCallout(String authenticateEndpoint, String userEndpoint, String organizationEndpoint,
+                                 RequestCache requestCache, WebClient.Builder webClientBuilder,
+                                 ClientOrganizationRepository clientOrganizationRepository,
+                                 HClientUserRepository clientUserRepository) {
+        this.authenticateEndpoint = authenticateEndpoint;
+        this.userEndpoint = userEndpoint;
+        this.organizationEndpoint = organizationEndpoint;
         this.requestCache = requestCache;
+        this.webClientBuilder = webClientBuilder;
+        this.clientOrganizationRepository = clientOrganizationRepository;
+        this.clientUserRepository = clientUserRepository;
     }
 
     @Override
