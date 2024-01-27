@@ -109,72 +109,6 @@ public class JwtUserInfoMapperSecurityConfig {
                 .oidc((oidc) -> oidc
                         .userInfoEndpoint((userInfo) -> userInfo
                                 .userInfoMapper(userInfoMapper)
-                        )
-                );
-        http
-                .securityMatcher(endpointsMatcher)
-                .authorizeHttpRequests((authorize) -> authorize
-                        .anyRequest().authenticated()
-                )
-                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
-                .oauth2ResourceServer(resourceServer -> resourceServer
-                        .jwt(Customizer.withDefaults())
-                )
-                .exceptionHandling((exceptions) -> exceptions
-                        .defaultAuthenticationEntryPointFor(
-                                new LoginUrlAuthenticationEntryPoint("/login"),
-                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                        )
-                )
-                .apply(authorizationServerConfigurer);
-
-        return http.cors(Customizer.withDefaults()).build();
-    }
-
-    @Bean
-    @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests((authorize) ->
-                        authorize.requestMatchers("/api/health/liveness").permitAll()
-                                .requestMatchers("/api/health/readiness").permitAll()
-                                .requestMatchers("/forgotUsername").permitAll()
-                                .requestMatchers("/forgotPassword").permitAll()
-                                .requestMatchers("/forgot/emailUsername").permitAll()
-                                .requestMatchers("/forgot/changePassword").permitAll()
-                                .anyRequest().authenticated()
-                )
-                .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
-                .oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer ->
-                        httpSecurityOAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults()))
-                .formLogin(Customizer.withDefaults())
-                .authenticationManager(authenticationManager());
-
-
-        // return http.cors(Customizer.withDefaults()).build();
-        return http.cors(Customizer.withDefaults()).formLogin(formLogin ->
-                formLogin.loginPage("/login").permitAll()).build();
-    }
-
-/*    @Bean
-    @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                new OAuth2AuthorizationServerConfigurer();
-        RequestMatcher endpointsMatcher = authorizationServerConfigurer
-                .getEndpointsMatcher();
-
-        Function<OidcUserInfoAuthenticationContext, OidcUserInfo> userInfoMapper = (context) -> {
-            OidcUserInfoAuthenticationToken authentication = context.getAuthentication();
-            JwtAuthenticationToken principal = (JwtAuthenticationToken) authentication.getPrincipal();
-
-            return new OidcUserInfo(principal.getToken().getClaims());
-        };
-
-        authorizationServerConfigurer
-                .oidc((oidc) -> oidc
-                        .userInfoEndpoint((userInfo) -> userInfo
-                                .userInfoMapper(userInfoMapper)
 				)
 			);
 
@@ -220,7 +154,7 @@ public class JwtUserInfoMapperSecurityConfig {
                 .authenticationManager(authenticationManager());
       return http.cors(Customizer.withDefaults()).formLogin(formLogin ->
               formLogin.loginPage("/").permitAll()).build();
-    }*/
+    }
 
     private AuthenticationManager authenticationManager() {
         AuthenticationCallout callout = new AuthenticationCallout(authenticateEndpoint, userEndpoint,
