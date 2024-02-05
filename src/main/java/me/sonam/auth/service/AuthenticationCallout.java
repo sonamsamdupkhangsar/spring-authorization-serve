@@ -18,6 +18,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -30,7 +31,7 @@ import java.util.*;
  * This class is used for making authentication callout to external authentication-rest-service
  * for authenticating username and password.
  */
-
+@Service
 public class AuthenticationCallout implements AuthenticationProvider {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationCallout.class);
 
@@ -52,7 +53,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
     @Autowired
     private HClientUserRepository clientUserRepository;
 
-    public AuthenticationCallout(String authenticateEndpoint, String userEndpoint, String organizationEndpoint,
+  /*  public AuthenticationCallout(String authenticateEndpoint, String userEndpoint, String organizationEndpoint,
                                  RequestCache requestCache, WebClient.Builder webClientBuilder,
                                  ClientOrganizationRepository clientOrganizationRepository,
                                  HClientUserRepository clientUserRepository) {
@@ -63,6 +64,11 @@ public class AuthenticationCallout implements AuthenticationProvider {
         this.webClientBuilder = webClientBuilder;
         this.clientOrganizationRepository = clientOrganizationRepository;
         this.clientUserRepository = clientUserRepository;
+    }*/
+
+    public AuthenticationCallout(WebClient.Builder webClientBuilder, RequestCache requestCache) {
+        this.webClientBuilder = webClientBuilder;
+        this.requestCache = requestCache;
     }
 
     @Override

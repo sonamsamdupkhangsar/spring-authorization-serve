@@ -72,7 +72,7 @@ public class JwtUserInfoMapperSecurityConfig {
 
     @Value("${allowedOrigins}")
     private String allowedOrigins; //csv allow origins
-    @Value("${authentication-rest-service.root}${authentication-rest-service.authenticate}")
+/*    @Value("${authentication-rest-service.root}${authentication-rest-service.authenticate}")
     private String authenticateEndpoint;
 
     @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
@@ -88,7 +88,7 @@ public class JwtUserInfoMapperSecurityConfig {
     private ClientOrganizationRepository clientOrganizationRepository;
 
     @Autowired
-    private HClientUserRepository clientUserRepository;
+    private HClientUserRepository clientUserRepository;*/
 
     @Bean
     @Order(1)
@@ -150,13 +150,13 @@ public class JwtUserInfoMapperSecurityConfig {
                         httpSecurityOAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults()))
                 .formLogin(httpSecurityFormLoginConfigurer ->
                         httpSecurityFormLoginConfigurer.loginPage("/")
-                )
-                .authenticationManager(authenticationManager());
+                );
+                //.authenticationManager(authenticationManager());
       return http.cors(Customizer.withDefaults()).formLogin(formLogin ->
               formLogin.loginPage("/").permitAll()).build();
     }
 
-    private AuthenticationManager authenticationManager() {
+   /* private AuthenticationManager authenticationManager() {
         AuthenticationCallout callout = new AuthenticationCallout(authenticateEndpoint, userEndpoint,
                 organizationEndpoint, requestCache, webClientBuilder, clientOrganizationRepository,
                 clientUserRepository) ;
@@ -164,7 +164,7 @@ public class JwtUserInfoMapperSecurityConfig {
         ProviderManager providerManager = new ProviderManager(callout);
         providerManager.setEraseCredentialsAfterAuthentication(false);
         return providerManager;
-    }
+    }*/
 
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {

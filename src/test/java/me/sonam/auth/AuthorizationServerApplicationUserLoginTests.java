@@ -391,7 +391,7 @@ public class AuthorizationServerApplicationUserLoginTests {
 	}
 
 	private static void assertLoginPage(HtmlPage page) {
-		assertThat(page.getUrl().toString()).endsWith("/login");
+		assertThat(page.getUrl().toString()).endsWith("/");
 
 		HtmlInput usernameInput = page.querySelector("input[name=\"username\"]");
 		HtmlInput passwordInput = page.querySelector("input[name=\"password\"]");

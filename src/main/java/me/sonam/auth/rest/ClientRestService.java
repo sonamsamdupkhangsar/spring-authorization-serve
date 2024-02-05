@@ -109,7 +109,7 @@ public class ClientRestService {
     }
 
 
-    @GetMapping("{userId}")
+    @GetMapping("/user/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public List<String> getClientIdsByUser(@PathVariable("userId") UUID userId) {
         LOG.info("get clientIds for userId: {}", userId);

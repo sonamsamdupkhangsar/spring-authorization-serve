@@ -102,6 +102,8 @@ envs:
     value: https://authorization.sonam.cloud/issuer
   - name: ALLOWED_ORIGINS
     value: https://api-gateway.sonam.cloud
+  - name: NEW_RELIC_ENABLED
+    value: false
 
 health:
   liveness:
