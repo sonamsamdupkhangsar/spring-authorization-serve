@@ -60,7 +60,7 @@ public class ClientRestService {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public String createNew(@RequestBody Map<String, Object> map ) {
+    public Map<String, String> createNew(@RequestBody Map<String, Object> map ) {
         LOG.info("create new client");
 
         if (jpaRegisteredClientRepository.findByClientId(map.get("clientId").toString()) != null) {
@@ -72,7 +72,10 @@ public class ClientRestService {
         LOG.debug("built registeredClient from map: {}", registeredClient);
 
         jpaRegisteredClientRepository.save(registeredClient);
-        LOG.info("saved registeredClient.id: {}", registeredClient.getClientId());
+        RegisteredClient savedRedisteredClient = jpaRegisteredClientRepository.findById(registeredClient.getId());
+        LOG.info("saved registeredClient: {}", savedRedisteredClient);
+
+        LOG.info("saved registeredClient.id: {}", registeredClient.getId());
         String clientId = registeredClient.getClientId();
 
         if (map.get("mediateToken") != null && Boolean.parseBoolean(map.get("mediateToken").toString()) == true) {
@@ -96,7 +99,7 @@ public class ClientRestService {
         clientUserRepository.save(new ClientUser(map.get("clientId").toString(),
                 UUID.fromString(map.get("userId").toString())));
 
-        return clientId;
+        return jpaRegisteredClientRepository.getMap(registeredClient);
     }
 
     @GetMapping("{clientId}")

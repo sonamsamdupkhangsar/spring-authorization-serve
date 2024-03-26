@@ -142,6 +142,7 @@ public class JwtUserInfoMapperSecurityConfig {
                                 .requestMatchers("/forgotPassword").permitAll()
                                 .requestMatchers("/forgot/emailUsername").permitAll()
                                 .requestMatchers("/forgot/changePassword").permitAll()
+                                .requestMatchers("/myauthenticate").permitAll()
 
                 .anyRequest().authenticated()
                 )

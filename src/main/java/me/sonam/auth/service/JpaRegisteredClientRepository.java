@@ -123,9 +123,11 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         String id = null;
         if (map.get("id") != null) {
             id = (String) map.get("id");
+            LOG.info("access id from map: {}", id);
         }
         else {
             id = UUID.randomUUID().toString();
+            LOG.info("generate id for RegisteredClient: {}", id);
         }
 
         Set<String> clientAuthenticationMethods = StringUtils.commaDelimitedListToSet(
@@ -180,7 +182,8 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         registeredClient.getAuthorizationGrantTypes().forEach(authorizationGrantType ->
                 authorizationGrantTypes.add(authorizationGrantType.getValue()));
 
-        Map<String, String> map = Map.of("clientId", registeredClient.getClientId(), "clientSecret", registeredClient.getClientSecret(),
+        Map<String, String> map = Map.of("id", registeredClient.getId(),
+                "clientId", registeredClient.getClientId(), "clientSecret", registeredClient.getClientSecret(),
                 "clientName", registeredClient.getClientName(),
                 "clientAuthenticationMethods", StringUtils.collectionToCommaDelimitedString(clientAuthenticationMethods),
                 "authorizationGrantTypes", StringUtils.collectionToCommaDelimitedString(authorizationGrantTypes),

@@ -52,6 +52,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
     @Autowired
     private HClientUserRepository clientUserRepository;
+    final String ROLES = "roles";
 
   /*  public AuthenticationCallout(String authenticateEndpoint, String userEndpoint, String organizationEndpoint,
                                  RequestCache requestCache, WebClient.Builder webClientBuilder,
@@ -185,12 +186,12 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         //throws exception on authentication not found return with 401 http status
         return responseSpec.bodyToMono(Map.class).map(map -> {
-            LOG.info("authentication response for roles: {}", map);
+            LOG.info("authentication response contains: {}", map);
 
             final List<GrantedAuthority> grantedAuths = new ArrayList<>();
 
-            if (map.get("roleNames") != null) {
-               String roleList = map.get("roleNames").toString();
+            if (map.get(ROLES) != null) {
+               String roleList = map.get(ROLES).toString();
                roleList = roleList.replace("[", "");
                roleList = roleList.replace("]", "");
 
@@ -219,6 +220,68 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 return Mono.error(new BadCredentialsException("Bad credentials"));
             }
         });
+    }
+
+    /**
+     * this is used by the {#AuthenticateRestController}
+     * @param authentication
+     * @return
+     */
+    public UsernamePasswordAuthenticationToken restAuth(Authentication authentication) {
+        String password = authentication.getCredentials().toString();
+
+        LOG.info("make authentication call out to endpoint: {}", authenticateEndpoint);
+
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(authenticateEndpoint).bodyValue(
+                        Map.of("authenticationId", authentication.getPrincipal().toString(),
+                                "password", password,
+                "clientId", "-1"))
+                .retrieve();
+
+        //throws exception on authentication not found return with 401 http status
+        return responseSpec.bodyToMono(Map.class).map(map -> {
+            LOG.info("authentication response contains: {}", map);
+
+            final List<GrantedAuthority> grantedAuths = new ArrayList<>();
+
+            LOG.info("map.get('roles'): {}", map.get(ROLES));
+
+            if (map.get(ROLES) != null) {
+                String roleList = map.get(ROLES).toString();
+                roleList = roleList.replace("[", "");
+                roleList = roleList.replace("]", "");
+
+                LOG.info("go thru each ROLES from list and add to grantedAuths: {}", roleList);
+                String[] roles = roleList.split(",");
+                for(String role: roles) {
+                    LOG.info("add role: {}", role);
+                    if (!role.trim().isEmpty()) {
+                        grantedAuths.add(new SimpleGrantedAuthority(role));
+                    }
+                    else {
+                        LOG.info("role string is empty: '{}'", role);
+                    }
+                }
+            }
+            final UserDetails principal = new User(authentication.getName(), password, grantedAuths);
+
+            LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
+
+            return new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
+
+        }).onErrorResume(throwable -> {
+            LOG.error("error on authentication-rest-service to endpoint '{}' with error: {}", authenticateEndpoint,
+                    throwable.getMessage());
+
+            if (throwable instanceof WebClientResponseException) {
+                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
+                LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
+                return Mono.error(new BadCredentialsException("Bad credentials"));
+            }
+            else {
+                return Mono.error(new BadCredentialsException("Bad credentials"));
+            }
+        }).block();
     }
 
 
@@ -269,7 +332,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 return true;
             }
             else {
-                LOG.info("returni false");
+                LOG.info("return false");
                 return false;
             }
 

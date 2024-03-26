@@ -29,6 +29,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -167,6 +169,8 @@ public class ClientRestServiceIntegTest {
                 "mediateToken", "true",
         "userId", userId.toString());
 
+        LOG.info("requestBody: {}", requestBody);
+
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody(refreshTokenResource.getContentAsString(StandardCharsets.UTF_8)));
 
@@ -174,10 +178,15 @@ public class ClientRestServiceIntegTest {
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"saved client, count of client by clientId: 1\"}"));
 
-        WebTestClient.ResponseSpec responseSpec = webTestClient.post().uri("/clients").bodyValue(requestBody)
+        Mono<Map> mapMono = webTestClient.post().uri("/clients").bodyValue(requestBody)
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(map.get("access_token")))
-                .exchange().expectStatus().isCreated();
-        assertThat(responseSpec.expectBody(String.class).returnResult().getResponseBody()).isNotEmpty();
+                .exchange().expectStatus().isCreated().returnResult(Map.class).getResponseBody().single();
+
+        StepVerifier.create(mapMono).assertNext(map1 -> {
+            LOG.info("map: {}", map1);
+            assertThat(map1.get("id")).isNotNull();
+            LOG.info("map1.id: {}", map1.get("id"));
+        }).verifyComplete();
 
         // take request for mocked response of access token
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
