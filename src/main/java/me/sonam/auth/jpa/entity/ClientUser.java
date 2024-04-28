@@ -17,11 +17,11 @@ import java.util.UUID;
 public class ClientUser {
     private static final Logger LOG = LoggerFactory.getLogger(ClientUser.class);
     @Id
-    private String clientId;
+    private UUID clientId; //this is the client.id field, not Client.clientId
     @Id
     private UUID userId;
 
-    public ClientUser(String clientId, UUID userId) {
+    public ClientUser(UUID clientId, UUID userId) {
         this.clientId = clientId;
         this.userId = userId;
     }
@@ -29,7 +29,7 @@ public class ClientUser {
     public ClientUser() {
 
     }
-    public String getClientId() {
+    public UUID getClientId() {
         return this.clientId;
     }
 

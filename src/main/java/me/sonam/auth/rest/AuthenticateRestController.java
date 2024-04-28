@@ -1,6 +1,7 @@
 package me.sonam.auth.rest;
 
 import me.sonam.auth.service.AuthenticationCallout;
+import me.sonam.auth.util.UserId;
 import okhttp3.Response;
 import org.apache.catalina.User;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class AuthenticateRestController {
 
         try {
             Authentication authentication = authenticationCallout.restAuth(new
-                    UsernamePasswordAuthenticationToken(map.get("username"), map.get("password")));
+                    UsernamePasswordAuthenticationToken(map.get("username"), map.get("password")), map.get("clientId"));
             StringBuilder stringBuilder = new StringBuilder();
             if (authentication != null) {
                 authentication.getAuthorities().forEach(grantedAuthority ->
@@ -49,9 +50,12 @@ public class AuthenticateRestController {
             }
 
             LOG.info("returning roles: {}", stringBuilder);
+            UserId userId = (UserId) authentication.getPrincipal();
+            LOG.info("userId: {}", userId.getUserId());
+
             return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "authentication success",
                     "roles", stringBuilder.toString(),
-                        "userId", UUID.randomUUID().toString()));
+                        "userId", userId.getUserId().toString()));
         }
         catch (Exception e) {
             LOG.error("exception occured in authentication: {}", e.getMessage());

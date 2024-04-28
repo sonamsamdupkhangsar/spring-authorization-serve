@@ -5,16 +5,16 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class ClientOrganizationId implements Serializable {
-    private String clientId;
+    private UUID clientId;
     private UUID organizationId;
 
-    public ClientOrganizationId(String clientId, UUID organizationId) {
+    public ClientOrganizationId(UUID clientId, UUID organizationId) {
         this.clientId = clientId;
         this.organizationId = organizationId;
     }
 
     public ClientOrganizationId() {}
-    public String getClientId() {
+    public UUID getClientId() {
         return clientId;
     }
 

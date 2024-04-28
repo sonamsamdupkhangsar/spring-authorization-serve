@@ -58,7 +58,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
     }
 
     private RegisteredClient toObject(Client client) {
-        LOG.info("create RegisteredClient from client");
+        LOG.info("build RegisteredClient from client.id {}", client.getId());
         Set<String> clientAuthenticationMethods = StringUtils.commaDelimitedListToSet(
                 client.getClientAuthenticationMethods());
         Set<String> authorizationGrantTypes = StringUtils.commaDelimitedListToSet(
@@ -120,8 +120,8 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
     }
 
     public RegisteredClient build(Map<String, Object> map) {
-        String id = null;
-        if (map.get("id") != null) {
+        String id;
+        if (map.get("id") != null && !map.get("id").toString().trim().isEmpty()) {
             id = (String) map.get("id");
             LOG.info("access id from map: {}", id);
         }
@@ -139,7 +139,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         Set<String> clientScopes = StringUtils.commaDelimitedListToSet(
                 map.get("scopes").toString());
 
-        RegisteredClient registeredClient = RegisteredClient.withId(id)
+        return RegisteredClient.withId(id)
                 .clientId((String)map.get("clientId"))
                 .clientSecret((String)map.get("clientSecret"))
                 .clientName((String)map.get("clientName"))
@@ -167,10 +167,9 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
                             LOG.info("add scope: {}", scope);
                         })
                 )
-                .clientSettings(ClientSettings.withSettings((Map)map.get("clientSettings")).build()).build();
 
-
-        return registeredClient;
+                .clientSettings(ClientSettings.withSettings(parseMap(map.get("clientSettings").toString())).build())
+                .tokenSettings(TokenSettings.withSettings(parseMap(map.get("tokenSettings").toString())).build()).build();
     }
 
     public Map<String, String> getMap(RegisteredClient registeredClient) {
@@ -182,20 +181,49 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         registeredClient.getAuthorizationGrantTypes().forEach(authorizationGrantType ->
                 authorizationGrantTypes.add(authorizationGrantType.getValue()));
 
-        Map<String, String> map = Map.of("id", registeredClient.getId(),
-                "clientId", registeredClient.getClientId(), "clientSecret", registeredClient.getClientSecret(),
-                "clientName", registeredClient.getClientName(),
-                "clientAuthenticationMethods", StringUtils.collectionToCommaDelimitedString(clientAuthenticationMethods),
-                "authorizationGrantTypes", StringUtils.collectionToCommaDelimitedString(authorizationGrantTypes),
-                "redirectUris", StringUtils.collectionToCommaDelimitedString(registeredClient.getRedirectUris()),
-                "scopes", StringUtils.collectionToCommaDelimitedString(registeredClient.getScopes()),
-                "clientSettings",writeMap(registeredClient.getClientSettings().getSettings()),
-                "tokenSettings", writeMap(registeredClient.getTokenSettings().getSettings()));
+        Map<String, String> map = new HashMap<>();
+        map.put("id", registeredClient.getId());
+        map.put("clientId", registeredClient.getClientId());
+        map.put("clientSecret", registeredClient.getClientSecret());
+        map.put("clientName", registeredClient.getClientName());
+        map.put("clientAuthenticationMethods", StringUtils.collectionToCommaDelimitedString(clientAuthenticationMethods));
+        map.put("authorizationGrantTypes", StringUtils.collectionToCommaDelimitedString(authorizationGrantTypes));
+        map.put("redirectUris", StringUtils.collectionToCommaDelimitedString(registeredClient.getRedirectUris()));
+        map.put("scopes", StringUtils.collectionToCommaDelimitedString(registeredClient.getScopes()));
+        map.put("clientSettings",writeMap(registeredClient.getClientSettings().getSettings()));
+        map.put("tokenSettings", writeMap(registeredClient.getTokenSettings().getSettings()));
 
         LOG.info("map contains: {}", map);
         return map;
     }
-    private Map<String, Object> parseMap(String data) {
+
+    public Map<String, Object> getMapObject(RegisteredClient registeredClient, Boolean mediateToken) {
+        List<String> clientAuthenticationMethods = new ArrayList<>(registeredClient.getClientAuthenticationMethods().size());
+        registeredClient.getClientAuthenticationMethods().forEach(clientAuthenticationMethod ->
+                clientAuthenticationMethods.add(clientAuthenticationMethod.getValue()));
+
+        List<String> authorizationGrantTypes = new ArrayList<>(registeredClient.getAuthorizationGrantTypes().size());
+        registeredClient.getAuthorizationGrantTypes().forEach(authorizationGrantType ->
+                authorizationGrantTypes.add(authorizationGrantType.getValue()));
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", registeredClient.getId());
+        map.put("clientId", registeredClient.getClientId());
+        map.put("clientSecret", registeredClient.getClientSecret());
+        map.put("clientName", registeredClient.getClientName());
+        map.put("clientAuthenticationMethods", StringUtils.collectionToCommaDelimitedString(clientAuthenticationMethods));
+        map.put("authorizationGrantTypes", StringUtils.collectionToCommaDelimitedString(authorizationGrantTypes));
+        map.put("redirectUris", StringUtils.collectionToCommaDelimitedString(registeredClient.getRedirectUris()));
+        map.put("scopes", StringUtils.collectionToCommaDelimitedString(registeredClient.getScopes()));
+        map.put("clientSettings", writeMap(registeredClient.getClientSettings().getSettings()));
+        map.put("tokenSettings", writeMap(registeredClient.getTokenSettings().getSettings()));
+        map.put("mediateToken", mediateToken);
+
+        LOG.info("map contains: {}", map);
+        return map;
+    }
+
+    public Map<String, Object> parseMap(String data) {
         try {
             return this.objectMapper.readValue(data, new TypeReference<Map<String, Object>>() {
             });
@@ -206,7 +234,9 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
 
     private String writeMap(Map<String, Object> data) {
         try {
-            return this.objectMapper.writeValueAsString(data);
+            String  string =  this.objectMapper.writeValueAsString(data);
+            LOG.info("data: {}, string: {}", data, string);
+            return string;
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex.getMessage(), ex);
         }

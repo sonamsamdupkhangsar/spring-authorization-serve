@@ -15,4 +15,6 @@ public class CharacterAtIndexTest {
         LOG.info("character at index {} is `{}`, -1 is {}", index, string.charAt(index), string.charAt(index-1));
         LOG.info("character at index {} is `{}`, -1 is {}", index, string.charAt(index), string.charAt(index-1));
     }
+
+
 }

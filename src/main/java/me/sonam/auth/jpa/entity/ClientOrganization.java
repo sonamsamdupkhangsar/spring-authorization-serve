@@ -16,11 +16,11 @@ import java.util.UUID;
 public class ClientOrganization {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOrganization.class);
     @Id
-    private String clientId;
+    private UUID clientId; // this is client.id, not client.clientId
     @Id
     private UUID organizationId;
 
-    public ClientOrganization(String clientId, UUID organizationId) {
+    public ClientOrganization(UUID clientId, UUID organizationId) {
         this.clientId = clientId;
         this.organizationId = organizationId;
     }
@@ -28,7 +28,7 @@ public class ClientOrganization {
     public ClientOrganization() {
 
     }
-    public String getClientId() {
+    public UUID getClientId() {
         return this.clientId;
     }
 

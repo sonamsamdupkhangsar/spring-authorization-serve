@@ -34,7 +34,8 @@ public class ClientUserRepoTest {
     public void save() {
         LOG.info("create a clientUser and save it");
         UUID userId = UUID.randomUUID();
-        final String clientId = "nextjs-client";
+        //final String clientClientId = "nextjs-client";
+        final UUID clientId = UUID.randomUUID();
 
         ClientUser clientUser = new ClientUser(clientId, userId);
         ClientUser clientUser1 = clientUserRepository.save(clientUser);
@@ -50,7 +51,8 @@ public class ClientUserRepoTest {
     public void deleteByClientId() {
         LOG.info("create a clientUser and save it");
         UUID userId = UUID.randomUUID();
-        final String clientId = "nextjs-client";
+        final String clientClientId = "nextjs-client";
+        final UUID clientId = UUID.randomUUID();
 
         ClientUser clientUser = new ClientUser(clientId, userId);
         ClientUser clientUser1 = clientUserRepository.save(clientUser);
@@ -65,7 +67,8 @@ public class ClientUserRepoTest {
     public void saveMultiple() {
         LOG.info("create multiple clientUser with different clientNames");
         UUID userId = UUID.randomUUID();
-        final String clientId = "nextjs-client";
+        //final String clientId = "nextjs-client";
+        final UUID clientId = UUID.randomUUID();
 
         ClientUser clientUser = new ClientUser(clientId, userId);
         ClientUser clientUser1 = clientUserRepository.save(clientUser);
@@ -79,31 +82,33 @@ public class ClientUserRepoTest {
     @Test
     public void getByUserId() {
         UUID userId = UUID.randomUUID();
-        String clientId = "nextjs-client";
+      //  String clientId = "nextjs-client";
+         UUID clientId1 = UUID.randomUUID();
 
-        ClientUser clientUser = new ClientUser(clientId, userId);
+        ClientUser clientUser = new ClientUser(clientId1, userId);
         ClientUser clientUser1 = clientUserRepository.save(clientUser);
         LOG.info("saved clientUser1: {}", clientUser1);
 
 
-        clientId = "another-client";
+        UUID clientId2 = UUID.randomUUID(); //"another-client";
 
-        clientUser = new ClientUser(clientId, userId);
+        clientUser = new ClientUser(clientId2, userId);
         clientUserRepository.save(clientUser);
 
 
         LOG.info("get clientUser list by userId: {}", userId);
         List<ClientUser> list = clientUserRepository.findByUserId(userId);
         LOG.info("found {} clientUsers for userId", list.size());
-        assertThat(list.contains(new ClientUser("nextjs-client", userId))).isTrue();
-        assertThat(list.contains(new ClientUser("another-client", userId))).isTrue();
+        assertThat(list.contains(new ClientUser(clientId1, userId))).isTrue();
+        assertThat(list.contains(new ClientUser(clientId2, userId))).isTrue();
     }
 
     //this should fail for same composite ids
     @Test
     public void trySaving2IdenticalClientUser() {
         UUID userId = UUID.randomUUID();
-        String clientId = "nextjs-client";
+        //String clientId = "nextjs-client";
+        UUID clientId = UUID.randomUUID();
 
         LOG.info("save once");
         ClientUser clientUser1 = clientUserRepository.save(new ClientUser(clientId, userId));

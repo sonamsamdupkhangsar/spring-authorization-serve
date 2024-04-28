@@ -5,10 +5,15 @@ import me.sonam.auth.jpa.entity.ClientOrganizationId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface ClientOrganizationRepository extends JpaRepository<ClientOrganization, ClientOrganizationId> {
-    Optional<ClientOrganization> findByClientId(String clientId);
-    Optional<Boolean> existsByClientId(String clientId);
+    Optional<ClientOrganization> findByClientId(UUID clientId);//client.id field which is UUID type but stored as String
+    Optional<Boolean> existsByClientId(UUID clientId);
+    Optional<Long> deleteByClientId(UUID clientId);
+    Optional<Boolean> existsByClientIdAndOrganizationId(UUID clientId, UUID organizationId);
+    Optional<ClientOrganization> findByClientIdAndOrganizationIdIn(UUID clientId, List<UUID> organizationIds);
+    Optional<Long> deleteByClientIdAndOrganizationId(UUID clientId, UUID organizationId);
 }

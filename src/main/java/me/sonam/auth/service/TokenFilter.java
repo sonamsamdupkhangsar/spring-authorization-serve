@@ -58,29 +58,34 @@ public class TokenFilter {
                 LOG.info("going thru jwt request ") ;
                 for (JwtPath.JwtRequest jwt : jwtPath.getJwtRequest()) {
                     LOG.debug("jwt.out: {}", jwt.getOut());
-                    if (request.url().getPath().matches(jwt.getOut())) {
-                        LOG.info("path {} matches with outbound request matches: {}",
-                                jwt.getOut(), request.url().getPath());
-                        LOG.info("make a token request");
+                    String[] outMatches = jwt.getOut().split(",");
+                    for (String outPath : outMatches) {
+                        LOG.info("outPath: {}", outPath);
+                        if (request.url().getPath().matches(outPath.trim())) {
+                            LOG.info("path {} matches with outbound request matches: {}",
+                                    outPath, request.url().getPath());
+                            LOG.info("make a token request");
 
-                        final StringBuilder oauthEndpointWithScope = new StringBuilder(oauth2TokenEndpoint);
+                            final StringBuilder oauthEndpointWithScope = new StringBuilder(oauth2TokenEndpoint);
 
-                        if (jwt.getAccessToken().getScopes() != null && !jwt.getAccessToken().getScopes().trim().isEmpty()) {
-                            oauthEndpointWithScope.append("&scope=").append(jwt.getAccessToken().getScopes()).toString();
+                            if (jwt.getAccessToken().getScopes() != null && !jwt.getAccessToken().getScopes().trim().isEmpty()) {
+                                oauthEndpointWithScope.append("&scope=").append(jwt.getAccessToken().getScopes());
+                            }
+
+
+                            return getAccessToken(oauthEndpointWithScope.toString(), jwt.getAccessToken().getBase64EncodedClientIdSecret())
+                                    .flatMap(accessToken -> {
+
+                                        LOG.info("get accessToken: {}", accessToken);
+                                        ClientRequest clientRequest = ClientRequest.from(request)
+                                                .headers(headers -> {
+                                                    headers.set(HttpHeaders.ORIGIN, request.headers().getFirst(HttpHeaders.ORIGIN));
+                                                    headers.setBearerAuth(accessToken);
+                                                    LOG.info("added access-token to http header");
+                                                }).build();
+                                        return Mono.just(clientRequest);
+                                    }).flatMap(clientRequest -> next.exchange(clientRequest));
                         }
-                        return getAccessToken(oauth2TokenEndpoint.toString(), jwt.getAccessToken().getBase64EncodedClientIdSecret())
-                                .flatMap(accessToken -> {
-
-                                    LOG.info("get accessToken: {}", accessToken);
-                                    ClientRequest clientRequest = ClientRequest.from(request)
-                                            .headers(headers -> {
-                                                headers.set(HttpHeaders.ORIGIN, request.headers().getFirst(HttpHeaders.ORIGIN));
-                                                headers.setBearerAuth(accessToken);
-                                                LOG.info("added access-token to http header");
-                                            }).build();
-                                    return Mono.just(clientRequest);
-                                }).flatMap(clientRequest ->  next.exchange(clientRequest));
-                        //return next.exchange(clientRequest);
                     }
                 }
 

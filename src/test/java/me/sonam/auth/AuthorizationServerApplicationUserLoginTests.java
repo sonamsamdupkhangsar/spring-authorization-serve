@@ -64,7 +64,8 @@ public class AuthorizationServerApplicationUserLoginTests {
 	private static final String REDIRECT_URI = "http://127.0.0.1:{server.port}/login/oauth2/code/messaging-client-oidc";
 	//private static String REDIRECT_URI = "http://localhost:{server.port}/login";
 
-	static final String clientId = "messaging-client";
+	static final String clientsClientId = "messaging-client";
+	static final UUID clientId = UUID.randomUUID();// = "messaging-client";
 	private static UUID userId = UUID.randomUUID();
 	private static UUID organizationId = UUID.randomUUID();
 	private static String AUTHORIZATION_REQUEST; //this is set in {@properties method}
@@ -76,13 +77,13 @@ public class AuthorizationServerApplicationUserLoginTests {
 	@Autowired
 	private HClientUserRepository clientUserRepository;
 
-	private void saveClientOrganization(final String clientId, UUID organizationId) {
+	private void saveClientOrganization(final UUID clientId, UUID organizationId) {
 		if (!clientOrganizationRepository.existsByClientId(clientId).get()) {
 			clientOrganizationRepository.save(new ClientOrganization(clientId, organizationId));
 			LOG.info("saved clientId {} with organizationId {}", clientId, organizationId);
 		}
 	}
-	private void saveClientUser(final String clientId, UUID userId) {
+	private void saveClientUser(final UUID clientId, UUID userId) {
 		if (!clientUserRepository.existsById(new ClientUserId(clientId, userId))) {
 			clientUserRepository.save(new ClientUser(clientId, userId));
 			LOG.info("saved clientUser");

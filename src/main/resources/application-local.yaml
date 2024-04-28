@@ -39,3 +39,4 @@ changePassword: /issuer/forgot/changePassword #@{/forgot/changePassword} use for
 allowedOrigins: http://api-gateway, 10.0.0.28, localhost, 127.0.0.1, api-gateway, 10.0.0.28:8080, 127.0.0.1
 
 NEW_RELIC_ENABLED: false
+authzmanager: http://localhost:9093

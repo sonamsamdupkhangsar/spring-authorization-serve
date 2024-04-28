@@ -5,6 +5,7 @@ import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.service.exception.BadCredentialsException;
+import me.sonam.auth.util.UserId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -52,6 +55,10 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
     @Autowired
     private HClientUserRepository clientUserRepository;
+
+    @Autowired
+    private RegisteredClientRepository registeredClientRepository;
+
     final String ROLES = "roles";
 
   /*  public AuthenticationCallout(String authenticateEndpoint, String userEndpoint, String organizationEndpoint,
@@ -72,11 +79,27 @@ public class AuthenticationCallout implements AuthenticationProvider {
         this.requestCache = requestCache;
     }
 
+    private Authentication dummy(Authentication authentication) {
+        final List<GrantedAuthority> grantedAuths = new ArrayList<>();
+
+        if(grantedAuths.isEmpty()) {
+            LOG.info("roles is empty, add a default one for now.");
+            grantedAuths.add(new SimpleGrantedAuthority("USER_ROLE"));
+        }
+        LOG.info("return credentails as password: {}", authentication.getCredentials().toString());
+        final UserDetails principal = new User(authentication.getName(), authentication.getCredentials().toString(), grantedAuths);
+
+        LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
+        return new UsernamePasswordAuthenticationToken(principal, authentication.getCredentials(), grantedAuths);
+    }
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         LOG.info("authenticate with username and password");
 
         var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        LOG.info("requestAttributes: {}", requestAttributes);
+
         var request = requestAttributes.getRequest();
         enum LoginType {
             OAUTH_LOGIN, CLIENT_MANAGE_LOGIN
@@ -99,12 +122,15 @@ public class AuthenticationCallout implements AuthenticationProvider {
          String clientId = ClientIdUtil.getClientId(requestCache);
          LOG.info("clientId: {}", clientId);
          if (clientId == null || clientId.equals("")) {
+             LOG.error("client id not found");
              throw new BadCredentialsException("clientId not found in request cache");
          }
 
         LOG.info("authorities: {}, details: {}, credentials: {}", authentication.getAuthorities(),
                 authentication.getDetails(), authentication.getCredentials());
-        return checkUserAndClient(authentication, clientId).block();
+         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
+         UUID clientUuidId = UUID.fromString(registeredClient.getId());
+        return checkUserAndClient(authentication, clientUuidId).block();
 
     }
 
@@ -117,7 +143,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
         return new UsernamePasswordAuthenticationToken(principal, authentication.getCredentials().toString(), grantedAuths);
     }
 
-    private Mono<UsernamePasswordAuthenticationToken> checkUserAndClient(Authentication authentication, String clientId) {
+    private Mono<UsernamePasswordAuthenticationToken> checkUserAndClient(Authentication authentication, UUID clientId) {
         final String authenticationId = authentication.getName();
         LOG.info("get usernameAndPasswordAuthentication token");
 
@@ -127,7 +153,8 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                 LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
             }
-            LOG.error("user not found with authenticationId: {}", authenticationId);
+
+            LOG.error("user not found with authenticationId: {}", authenticationId, throwable);
             return Mono.error(new BadCredentialsException("user not found with authenticationId: "+ authenticationId));
         }
         ).flatMap(userId ->
@@ -139,7 +166,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 }));
     }
 
-    private Mono<UsernamePasswordAuthenticationToken> checkClientUserRelationship(final UUID userId, final String clientId, final Authentication authentication) {
+    private Mono<UsernamePasswordAuthenticationToken> checkClientUserRelationship(final UUID userId, final UUID clientId, final Authentication authentication) {
         LOG.info("checking userId {} and clientId {} in ClientUser relationship", userId, clientId);
 
         Optional<ClientUser> clientUserOptional = clientUserRepository.findByClientIdAndUserId(clientId, userId);
@@ -154,7 +181,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
         }
     }
 
-    private Mono<UsernamePasswordAuthenticationToken> checkClientInOrganization(Authentication authentication, UUID userId, String clientId) {
+    private Mono<UsernamePasswordAuthenticationToken> checkClientInOrganization(Authentication authentication, UUID userId, UUID clientId) {
         LOG.info("checking client exists in clientOrganization");
 
         Optional<ClientOrganization> optionalClientOrganization = clientOrganizationRepository.findByClientId(clientId);
@@ -173,7 +200,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
                 .flatMap(aBoolean -> getAuth(authentication, clientId));//.block();
     }
 
-    private Mono<UsernamePasswordAuthenticationToken> getAuth(Authentication authentication, String clientId) {
+    private Mono<UsernamePasswordAuthenticationToken> getAuth(Authentication authentication, UUID clientId) {
         String password = authentication.getCredentials().toString();
 
         LOG.info("make authentication call out to endpoint: {}", authenticateEndpoint);
@@ -199,8 +226,14 @@ public class AuthenticationCallout implements AuthenticationProvider {
                String[] roles = roleList.split(",");
                for(String role: roles) {
                    LOG.info("add role: {}", role);
-                   grantedAuths.add(new SimpleGrantedAuthority(role));
+                   if (!role.trim().isEmpty()) {
+                       grantedAuths.add(new SimpleGrantedAuthority(role));
+                   }
                }
+            }
+           if(grantedAuths.isEmpty()) {
+                LOG.info("roles is empty, add a default one for now.");
+                grantedAuths.add(new SimpleGrantedAuthority("USER_ROLE"));
             }
             final UserDetails principal = new User(authentication.getName(), password, grantedAuths);
 
@@ -227,7 +260,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
      * @param authentication
      * @return
      */
-    public UsernamePasswordAuthenticationToken restAuth(Authentication authentication) {
+    public UsernamePasswordAuthenticationToken restAuth(Authentication authentication, String clientId) {
         String password = authentication.getCredentials().toString();
 
         LOG.info("make authentication call out to endpoint: {}", authenticateEndpoint);
@@ -235,7 +268,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(authenticateEndpoint).bodyValue(
                         Map.of("authenticationId", authentication.getPrincipal().toString(),
                                 "password", password,
-                "clientId", "-1"))
+                "clientId", clientId))
                 .retrieve();
 
         //throws exception on authentication not found return with 401 http status
@@ -263,7 +296,11 @@ public class AuthenticationCallout implements AuthenticationProvider {
                     }
                 }
             }
-            final UserDetails principal = new User(authentication.getName(), password, grantedAuths);
+            //final UserDetails principal = new User(authentication.getName(), password, grantedAuths);
+            UUID userId = UUID.fromString(map.get("userId").toString());
+            LOG.info("username: {}", authentication.getName());
+
+            final UserDetails principal = new UserId(userId, authentication.getPrincipal().toString(), password, grantedAuths);
 
             LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
 

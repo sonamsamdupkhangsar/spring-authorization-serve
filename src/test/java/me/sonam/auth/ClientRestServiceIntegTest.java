@@ -23,7 +23,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -62,10 +64,12 @@ public class ClientRestServiceIntegTest {
     private HClientUserRepository clientUserRepository;
 
     UUID clientId = UUID.randomUUID();
-    private String messageClient = "messaging-client";
+    UUID messageClient = UUID.randomUUID();
+    //String clientId = "test-private-client";
+    //private String messageClient = "messaging-client";
 
     private String clientSecret = "secret";
-    private String base64ClientSecret = Base64.getEncoder().encodeToString(new StringBuilder(messageClient)
+    private String base64ClientSecret = Base64.getEncoder().encodeToString(new StringBuilder(messageClient.toString())
             .append(":").append(clientSecret).toString().getBytes());
 
     private static MockWebServer mockWebServer;
@@ -96,7 +100,7 @@ public class ClientRestServiceIntegTest {
         LOG.info("create registration client");
 
         saveClient();
-        assertThat(clientUserRepository.existsByClientId(clientId.toString())).isTrue();
+        assertThat(clientUserRepository.existsByClientId(clientId)).isTrue();
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId.toString());
         assertThat(registeredClient.getClientSecret()).isEqualTo("{noop}secret");
@@ -159,17 +163,36 @@ public class ClientRestServiceIntegTest {
         LOG.info("access_token: {}", map.get("access_token"));
 
         LOG.info("now make a request to create a client");
-        var requestBody = Map.of("clientId", clientId, "clientSecret", "{noop}secret",
+        RegisteredClient registeredClient = RegisteredClient.withId(clientId.toString())
+                .clientId(clientId.toString())
+                .clientSecret("{noop}"+clientSecret)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
+                .redirectUri("http://127.0.0.1:8080/authorized")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .scope("message.read")
+                .scope("message.write")
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
+                .build();
+
+        Map<String, Object> regClientMap = jpaRegisteredClientRepository.getMapObject(registeredClient, false);
+      /*  var requestBody = Map.of("clientId", clientId, "clientSecret", "{noop}secret",
                 "clientName", "Blog Application",
                 "clientAuthenticationMethods", "client_secret_basic,client_secret_jwt",
                 "authorizationGrantTypes", "authorization_code,refresh_token,client_credentials",
                 "redirectUris", "http://127.0.0.1:8080/login/oauth2/code/my-client-oidc,http://127.0.0.1:8080/authorized",
                 "scopes", "openid,profile,message.read,message.write",
-                "clientSettings", Map.of("settings.client.require-proof-key", "false", "settings.client.require-authorization-consent", "true"),
-                "mediateToken", "true",
-        "userId", userId.toString());
+                "clientSettings", Map.of("settings.client.require-proof-key", false, "settings.client.require-authorization-consent", true,
+                "mediateToken", true),*/
 
-        LOG.info("requestBody: {}", requestBody);
+       // "userId", userId.toString());
+
+        LOG.info("requestBody: {}", regClientMap);
 
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody(refreshTokenResource.getContentAsString(StandardCharsets.UTF_8)));
@@ -178,7 +201,7 @@ public class ClientRestServiceIntegTest {
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"saved client, count of client by clientId: 1\"}"));
 
-        Mono<Map> mapMono = webTestClient.post().uri("/clients").bodyValue(requestBody)
+        Mono<Map> mapMono = webTestClient.post().uri("/clients").bodyValue(regClientMap)
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(map.get("access_token")))
                 .exchange().expectStatus().isCreated().returnResult(Map.class).getResponseBody().single();
 
@@ -271,5 +294,26 @@ public class ClientRestServiceIntegTest {
         } catch (JsonProcessingException e) {
             LOG.error("failed to parse map to json", e);
         }
+    }
+
+    @Test
+    public void saveAndGetRegisteredClient() {
+        var requestBody = Map.of("clientId", clientId, "clientSecret", "{noop}secret",
+                "clientName", "Blog Application",
+                "clientAuthenticationMethods", "client_secret_basic,client_secret_jwt",
+                "authorizationGrantTypes", "authorization_code,refresh_token,client_credentials",
+                "redirectUris", "http://127.0.0.1:8080/login/oauth2/code/my-client-oidc,http://127.0.0.1:8080/authorized",
+                "scopes", "openid,profile,message.read,message.write",
+                "clientSettings", Map.of("settings.client.require-proof-key", "false", "settings.client.require-authorization-consent", "true"),
+                "mediateToken", "true",
+                "userId", UUID.randomUUID().toString());
+
+        LOG.info("building a RegisteredClient with map: {}", requestBody);
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.build(requestBody);
+
+        LOG.info("registeredClient: {}", registeredClient);
+
+        LOG.info("registeredClient in Map: {}", jpaRegisteredClientRepository.getMap(registeredClient));
+
     }
 }
