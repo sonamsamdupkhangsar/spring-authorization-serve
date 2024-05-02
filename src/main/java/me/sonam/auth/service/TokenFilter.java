@@ -9,12 +9,17 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,8 +31,11 @@ import java.util.Map;
 public class TokenFilter {
     private static final Logger LOG = LoggerFactory.getLogger(TokenFilter.class);
 
-    @Value("${auth-server.root}${auth-server.oauth2token.path}${auth-server.oauth2token.params:}")
+    @Value("${auth-server.root}${auth-server.oauth2token.path}")
     private String oauth2TokenEndpoint;
+
+    @Value("${auth-server.oauth2token.grantType}")
+    private String grantType;
 
     @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
     private String userByAuthIdEp;
@@ -73,7 +81,7 @@ public class TokenFilter {
                             }
 
 
-                            return getAccessToken(oauthEndpointWithScope.toString(), jwt.getAccessToken().getBase64EncodedClientIdSecret())
+                            return getAccessToken(oauth2TokenEndpoint, grantType, jwt.getAccessToken().getScopes(), jwt.getAccessToken().getBase64EncodedClientIdSecret())
                                     .flatMap(accessToken -> {
 
                                         LOG.info("get accessToken: {}", accessToken);
@@ -97,9 +105,18 @@ public class TokenFilter {
         };
     }
 
-    private Mono<String> getAccessToken(final String oauthEndpoint, final String base64EncodeClientIdSecret) {
+    private Mono<String> getAccessToken(final String oauthEndpoint, String grantType, String scopes, final String base64EncodeClientIdSecret) {
         LOG.info("making a access-token request to endpoint: {}",oauthEndpoint);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", grantType);
+
+        List<String> scopeList = Arrays.stream(scopes.split(" ")).toList();
+        body.add("scopes", scopeList);
+
+        LOG.info("add body payload for grant type and scopes: {}", body);
+
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(oauthEndpoint)
+                .bodyValue(body)
                 .headers(httpHeaders -> httpHeaders.setBasicAuth(base64EncodeClientIdSecret))
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve();

@@ -97,7 +97,7 @@ auth-server:
   root: http://authorization-server/issuer
   oauth2token:
     path: /oauth2/token
-    params: ?grant_type=client_credentials
+    grantType: client_credentials
 
 client:
   url: ${client-app}

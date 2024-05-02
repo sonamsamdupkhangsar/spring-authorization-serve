@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import jakarta.annotation.Nullable;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.service.AuthenticationCallout;
@@ -29,13 +30,17 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationContext;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -67,6 +72,9 @@ public class JwtUserInfoMapperSecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(JwtUserInfoMapperSecurityConfig.class);
 
+    @Autowired
+    private OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer;
+
     @Value("${ISSUER_URI}")
     private String issuerUri;
 
@@ -96,6 +104,7 @@ public class JwtUserInfoMapperSecurityConfig {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
                 new OAuth2AuthorizationServerConfigurer();
         RequestMatcher endpointsMatcher = authorizationServerConfigurer
+              //  .tokenGenerator(tokenGenerator())
                 .getEndpointsMatcher();
 
         Function<OidcUserInfoAuthenticationContext, OidcUserInfo> userInfoMapper = (context) -> {
@@ -237,5 +246,30 @@ public class JwtUserInfoMapperSecurityConfig {
         return new HttpSessionEventPublisher();
     }
 
+    @Bean
+    OAuth2TokenGenerator<?> tokenGenerator() {
+        JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
+        LOG.info("tokenCustomizer: {}", tokenCustomizer);
+        jwtGenerator.setJwtCustomizer(tokenCustomizer);
+
+        OAuth2TokenGenerator<OAuth2RefreshToken> refreshTokenGenerator = new CustomRefreshTokenGenerator();
+        return new DelegatingOAuth2TokenGenerator(jwtGenerator, refreshTokenGenerator);
+    }
+
+    private static final class CustomRefreshTokenGenerator implements OAuth2TokenGenerator<OAuth2RefreshToken> {
+        private final OAuth2RefreshTokenGenerator delegate = new OAuth2RefreshTokenGenerator();
+
+        @Nullable
+        @Override
+        public OAuth2RefreshToken generate(OAuth2TokenContext context) {
+            if (context.getAuthorizedScopes().contains(OidcScopes.OPENID) &&
+                    !context.getAuthorizedScopes().contains("offline_access")) {
+                LOG.info("returning null for refresh token if not offline_access");
+                return null;
+            }
+            return this.delegate.generate(context);
+        }
+
+    }
 }
 
