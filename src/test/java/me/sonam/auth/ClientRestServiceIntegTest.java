@@ -227,7 +227,7 @@ public class ClientRestServiceIntegTest {
     public void getAllClientIdAssociatedWithUser() throws Exception {
         LOG.info("get all client ids by user-id");
         final String messageClientAccessToken = getOauth2Token(messageClient, clientSecret); //get token using messageClient first
-
+        LOG.info("messageClientAccessToken: {}", messageClientAccessToken);
         UUID userId = UUID.randomUUID();
 
         List<MyPair<String, String>> list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
@@ -282,6 +282,7 @@ public class ClientRestServiceIntegTest {
     }
 
     private String getOauth2Token(String clientId, String secret) {
+        LOG.info("clientId: {}, secret: {}", clientId, secret);
         final String encodedSecret  = Base64.getEncoder().encodeToString((clientId +":"+secret).getBytes());
 
         MultiValueMap<String, Object> mvm = new LinkedMultiValueMap<>();

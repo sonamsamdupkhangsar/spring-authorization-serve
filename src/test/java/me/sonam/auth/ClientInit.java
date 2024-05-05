@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.UUID;
 // initilization class for setting up a RegisteredClient used in test cases

@@ -1,11 +1,17 @@
 package me.sonam.auth.rest;
 
 import jakarta.transaction.Transactional;
+
+
+import jakarta.ws.rs.Produces;
 import me.sonam.auth.jpa.entity.ClientOrganization;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.rest.util.MyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -14,7 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/clientOrganizations")
+@RequestMapping("/clients")
 public class ClientOrganizationRestService {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOrganizationRestService.class);
 
@@ -25,9 +31,11 @@ public class ClientOrganizationRestService {
     }
 
     @Transactional
-    @PostMapping
+    @PostMapping("/organizations")
+    @ResponseStatus(HttpStatus.CREATED)
     public Mono<String> addClientToOrganization(@RequestBody ClientOrganization clientOrganization) {
         LOG.info("add client {} to organization: {}", clientOrganization.getClientId(), clientOrganization.getOrganizationId());
+        LOG.info("user is {}", SecurityContextHolder.getContext().getAuthentication().getName());
         String response;
 
         clientOrganizationRepository.deleteByClientId(clientOrganization.getClientId()).ifPresent(aLong -> {
@@ -57,19 +65,8 @@ public class ClientOrganizationRestService {
         }
     }
 
-    @Transactional
-    @DeleteMapping("/clientId/{clientId}/organizationId/{organizationId}")
-    public Mono<String> deleteClientOrganizationRow(@PathVariable("clientId")UUID clientId,
-                                                    @PathVariable("organizationId")UUID organizationId) {
-        LOG.info("delete clientId {} and organizationId {} row", clientId, organizationId);
-
-        clientOrganizationRepository.deleteByClientIdAndOrganizationId(
-                clientId, organizationId).ifPresent(aLong -> LOG.info("delete rows: {}", aLong));
-        return Mono.just("deleted clientId OrganizationId row");
-    }
-
-
-    @PutMapping("/findRow")
+    @PutMapping("/organizations")
+    @Produces(MediaType.APPLICATION_JSON_VALUE)
     public Mono<ClientOrganization> findRowWithClientIdAndOrganizationId(@RequestBody MyPair<UUID, List<UUID>> myPair) {
         LOG.info("find row with clientId and organizationId");
 
@@ -83,7 +80,22 @@ public class ClientOrganizationRestService {
         return clientOrganizationOptional.map(Mono::just).orElseGet(Mono::empty);
     }
 
-    @GetMapping("/clients/id/{id}/organizations/id")
+    @Transactional
+    @DeleteMapping("/{id}/organizations/{organizationId}")
+    public Mono<String> deleteClientOrganizationRow(@PathVariable("id")UUID clientId,
+                                                    @PathVariable("organizationId")UUID organizationId) {
+        LOG.info("delete clientId {} and organizationId {} row", clientId, organizationId);
+
+        clientOrganizationRepository.deleteByClientIdAndOrganizationId(
+                clientId, organizationId).ifPresent(aLong -> LOG.info("delete rows: {}", aLong));
+        return Mono.just("deleted clientId OrganizationId row");
+    }
+
+
+
+
+    @GetMapping("/{id}/organizations/id")
+    @ResponseStatus(HttpStatus.OK)
     public Mono<UUID> getOrganizationIdForClientId(@PathVariable("id")UUID id) {
         LOG.info("get organization id associated for this client.id: {}", id);
 
