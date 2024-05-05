@@ -246,7 +246,7 @@ public class JwtUserInfoMapperSecurityConfig {
         return new HttpSessionEventPublisher();
     }
 
-    @Bean
+   // @Bean
     OAuth2TokenGenerator<?> tokenGenerator() {
         JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
         LOG.info("tokenCustomizer: {}", tokenCustomizer);

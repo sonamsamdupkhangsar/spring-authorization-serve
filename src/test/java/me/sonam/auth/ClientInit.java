@@ -33,6 +33,9 @@ public class ClientInit {
 
     private String clientSecret = "secret";
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @PostConstruct
     public void saveInitialClient() {
         LOG.info("save messaging client for testing");
@@ -41,7 +44,7 @@ public class ClientInit {
 
             RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
-                    .clientSecret("{noop}"+clientSecret)
+                    .clientSecret(passwordEncoder.encode(clientSecret))
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)

@@ -64,6 +64,12 @@ jwtrequest:
       scopes: message.read
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
   - in: /*
+    out: /authentications/(.)*
+    accessToken:
+      option: request
+      scopes: message.read
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - in: /*
     out: /organizations/(.)*/users/(.)*
     accessToken:
       option: request
@@ -87,7 +93,7 @@ auth-server:
   root: http://localhost:{port}
   oauth2token:
     path: /oauth2/token
-    params: ?grant_type=client_credentials
+    grantType: client_credentials
 
 oauth2-token-mediator:
   root: http://localhost:8080
@@ -97,3 +103,4 @@ BASE64_CLIENT_ID_SECRET: dXNlcjpzZWNyZXQ=
 REQUEST_SCOPES: cmVhZCB3cml0ZQ==
 
 allowedOrigins: 10.0.0.28, localhost, 127.0.0.1
+authzmanager: http://localhost:9093

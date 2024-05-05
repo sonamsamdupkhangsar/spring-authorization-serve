@@ -3,9 +3,7 @@ package me.sonam.auth.rest;
 
 
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Path;
-import kotlin.collections.ArrayDeque;
-import me.sonam.auth.jpa.entity.ClientOrganization;
+
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.TokenMediate;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
@@ -15,27 +13,22 @@ import me.sonam.auth.jpa.repo.TokenMediateRepository;
 import me.sonam.auth.rest.util.MyPair;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import me.sonam.auth.util.JwtPath;
-import me.sonam.auth.util.UserId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static reactor.core.publisher.Mono.just;
 
@@ -135,7 +128,7 @@ public class ClientRestService {
         return mapToReturn;
     }
 
-    @GetMapping("clientId/{clientId}")
+    @RequestMapping(value = "/client-id/{clientId}",  method=RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public Map<String, Object> getByClientId(@PathVariable("clientId") String clientId) {
         LOG.info("get by clientId: {}", clientId);
@@ -145,7 +138,7 @@ public class ClientRestService {
         return jpaRegisteredClientRepository.getMapObject(registeredClient, exists);
     }
 
-    @GetMapping("id/{id}")
+    @GetMapping(value = "{id}")
     @ResponseStatus(HttpStatus.OK)
     public Map<String, Object> getClientById(@PathVariable("id") String id) {
         LOG.info("get client by id: {}", id);
@@ -160,9 +153,9 @@ public class ClientRestService {
     }
 
 
-    @GetMapping("/user/userId/{userId}")
+    @GetMapping("/users/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public List<MyPair<String, String>> getClientIdsByUser(@PathVariable("userId") UUID userId) {
+    public List<MyPair<String, String>> getClientIdsAssociatedWithUser(@PathVariable("id") UUID userId) {
         LOG.info("get clientIds for userId: {}", userId);
 
         List<MyPair<String, String>> list = new ArrayList<>();
@@ -237,12 +230,12 @@ public class ClientRestService {
             }
         }
         catch (Exception e) {
-            LOG.error("exception can occur if user does not fill right data {}", e.getMessage());
+            LOG.error("exception can occur if user does not fill right data {}", e.getMessage(), e);
             return Mono.error(new BadRequestException("update failed: "+ e.getMessage()));
         }
     }
 
-    @DeleteMapping("/id/{id}/ownerId/{ownerId}")
+    @DeleteMapping("{id}/ownerId/{ownerId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
     public Mono<Void> delete(@PathVariable("id") String id, @PathVariable("ownerId") UUID ownerId) {

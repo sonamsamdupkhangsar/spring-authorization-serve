@@ -90,6 +90,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         Map<String, Object> tokenSettingsMap = parseMap(client.getTokenSettings());
         builder.tokenSettings(TokenSettings.withSettings(tokenSettingsMap).build());
 
+        LOG.info("returning registeredClient");
         return builder.build();
     }
 

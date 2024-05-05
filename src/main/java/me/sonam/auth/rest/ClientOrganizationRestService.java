@@ -2,11 +2,10 @@ package me.sonam.auth.rest;
 
 import jakarta.transaction.Transactional;
 import me.sonam.auth.jpa.entity.ClientOrganization;
-import me.sonam.auth.jpa.entity.ClientOrganizationId;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.rest.util.MyPair;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -19,7 +18,7 @@ import java.util.UUID;
 public class ClientOrganizationRestService {
     private static final Logger LOG = LoggerFactory.getLogger(ClientOrganizationRestService.class);
 
-    private ClientOrganizationRepository clientOrganizationRepository;
+    private final ClientOrganizationRepository clientOrganizationRepository;
 
     public ClientOrganizationRestService(ClientOrganizationRepository clientOrganizationRepository) {
         this.clientOrganizationRepository = clientOrganizationRepository;

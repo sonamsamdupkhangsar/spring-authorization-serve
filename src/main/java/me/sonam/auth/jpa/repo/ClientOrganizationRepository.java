@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface ClientOrganizationRepository extends JpaRepository<ClientOrganization, ClientOrganizationId> {
     Optional<ClientOrganization> findByClientId(UUID clientId);//client.id field which is UUID type but stored as String
     Optional<Boolean> existsByClientId(UUID clientId);
+
     Optional<Long> deleteByClientId(UUID clientId);
     Optional<Boolean> existsByClientIdAndOrganizationId(UUID clientId, UUID organizationId);
     Optional<ClientOrganization> findByClientIdAndOrganizationIdIn(UUID clientId, List<UUID> organizationIds);

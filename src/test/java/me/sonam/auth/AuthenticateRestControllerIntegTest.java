@@ -17,6 +17,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,6 +28,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -83,13 +87,21 @@ public class AuthenticateRestControllerIntegTest {
     public void authenticate() throws Exception {
         LOG.info("call authenticate rest endpoint");
 
+        MultiValueMap<String, Object> mvm = new LinkedMultiValueMap<>();
+        mvm.add("grant_type", "client_credentials");
+        mvm.add("scopes", List.of("message.read", "message.write"));
+
         LOG.info("request oauth access token first");
-        EntityExchangeResult<Map> tokenEntityExchangeResult = webTestClient.post()
-                .uri("/oauth2/token?grant_type=client_credentials&scope=message.read message.write")
+        EntityExchangeResult<Map<String, String>> tokenEntityExchangeResult = webTestClient.post()
+                .uri("/oauth2/token")
+                .bodyValue(mvm)
+                //.headers(httpHeaders -> httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED))
                 .headers(httpHeaders -> httpHeaders.setBasicAuth(base64ClientSecret))
-                .exchange().expectStatus().isOk().expectBody(Map.class)
+                .exchange().expectStatus().isOk().expectBody(new ParameterizedTypeReference<Map<String, String>>() {
+                })
                 .returnResult();
 
+        LOG.info("tokenEntityExchangeResult: {}", tokenEntityExchangeResult.getResponseBody());
 
         final Map<String, String> map = tokenEntityExchangeResult.getResponseBody();
         assertThat(map.get("access_token")).isNotNull();
@@ -114,6 +126,12 @@ public class AuthenticateRestControllerIntegTest {
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new
                 UsernamePasswordAuthenticationToken("sonam", "password", grantedAuths);
 
+        final String jwtString = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzb25hbSIsImlzcyI6InNvbmFtLmNsb3VkIiwiYXVkIjoic29uYW0uY2xvdWQiLCJqdGkiOiJmMTY2NjM1OS05YTViLTQ3NzMtOWUyNy00OGU0OTFlNDYzNGIifQ.KGFBUjghvcmNGDH0eM17S9pWkoLwbvDaDBGAx2AyB41yZ_8-WewTriR08JdjLskw1dsRYpMh9idxQ4BS6xmOCQ";
+
+        final String jwtTokenMsg = " {\"access_token\":\"" + jwtString + "\"}";
+        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+                .setResponseCode(200).setBody(jwtTokenMsg));
+
         final String jsonResponse = "{\"userId\":\"1f442dab-96a3-459e-8605-7f5cd5f82e25\", " +
                 "\"roles\":\"[USER, CLIENT, ADMIN]\", \"message\":\"Authentication successful\"}";
 
@@ -124,13 +142,17 @@ public class AuthenticateRestControllerIntegTest {
         //Mockito.when(authenticationProvider.authenticate(any())).thenReturn(usernamePasswordAuthenticationToken);
         LOG.info("make the authenticate request");
         EntityExchangeResult<String> entityExchangeResult = webTestClient.put()
-                .uri("/myauthenticate")
-                .bodyValue(Map.of("username", "sonam", "password", "hello"))
+                .uri("/authenticate")
+                .bodyValue(Map.of("username", "sonam", "password", "hello", "clientId", messageClient))
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(map.get("access_token")))
                 .exchange().expectStatus().isOk().expectBody(String.class)
                 .returnResult();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+        assertThat(recordedRequest.getPath()).startsWith("/oauth2/token");
+
+        recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).startsWith("/authentications/authenticate");
 

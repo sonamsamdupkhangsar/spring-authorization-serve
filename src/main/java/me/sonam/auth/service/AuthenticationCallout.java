@@ -79,20 +79,6 @@ public class AuthenticationCallout implements AuthenticationProvider {
         this.requestCache = requestCache;
     }
 
-    private Authentication dummy(Authentication authentication) {
-        final List<GrantedAuthority> grantedAuths = new ArrayList<>();
-
-        if(grantedAuths.isEmpty()) {
-            LOG.info("roles is empty, add a default one for now.");
-            grantedAuths.add(new SimpleGrantedAuthority("USER_ROLE"));
-        }
-        LOG.info("return credentails as password: {}", authentication.getCredentials().toString());
-        final UserDetails principal = new User(authentication.getName(), authentication.getCredentials().toString(), grantedAuths);
-
-        LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
-        return new UsernamePasswordAuthenticationToken(principal, authentication.getCredentials(), grantedAuths);
-    }
-
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         LOG.info("authenticate with username and password");
@@ -128,8 +114,10 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         LOG.info("authorities: {}, details: {}, credentials: {}", authentication.getAuthorities(),
                 authentication.getDetails(), authentication.getCredentials());
+         LOG.info("get registeredClient from clientId: {}", clientId);
          RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
          UUID clientUuidId = UUID.fromString(registeredClient.getId());
+         LOG.info("got clientUuid: {}", clientUuidId);
         return checkUserAndClient(authentication, clientUuidId).block();
 
     }
@@ -145,7 +133,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
     private Mono<UsernamePasswordAuthenticationToken> checkUserAndClient(Authentication authentication, UUID clientId) {
         final String authenticationId = authentication.getName();
-        LOG.info("get usernameAndPasswordAuthentication token");
+        LOG.info("check user and client relationship");
 
         return getUserId(authenticationId).onErrorResume(throwable -> {
             LOG.error("failed to make get user by authId call: {}", throwable.getMessage());
@@ -264,6 +252,7 @@ public class AuthenticationCallout implements AuthenticationProvider {
         String password = authentication.getCredentials().toString();
 
         LOG.info("make authentication call out to endpoint: {}", authenticateEndpoint);
+        LOG.info("clientId: {}", clientId);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(authenticateEndpoint).bodyValue(
                         Map.of("authenticationId", authentication.getPrincipal().toString(),

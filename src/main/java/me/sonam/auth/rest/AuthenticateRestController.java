@@ -22,22 +22,20 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * this controller will use the AuthenticationCallout service to login a user.
+ * This should be replaced with pkce oauth client for authenitcation.
+ */
 @RestController
-@RequestMapping("/myauthenticate")
+@RequestMapping("/authenticate")
 public class AuthenticateRestController {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticateRestController.class);
 
     @Autowired
     private AuthenticationCallout authenticationCallout;
 
-    @GetMapping
-    public String hello() {
-        LOG.info("hello");
-        return "hello there";
-    }
-
     @PutMapping
-    public ResponseEntity<Map<String, String>> authenticate(@RequestBody Map<String, String> map) {
+    public ResponseEntity<Map<String, Object>> authenticate(@RequestBody Map<String, String> map) {
         LOG.info("authenticate using rest client: {}", map);
 
         try {
@@ -58,7 +56,7 @@ public class AuthenticateRestController {
                         "userId", userId.getUserId().toString()));
         }
         catch (Exception e) {
-            LOG.error("exception occured in authentication: {}", e.getMessage());
+            LOG.error("exception occured in authentication: {}", e.getMessage(), e);
             //return Map.of("error", "not authtenticated");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "authentication failed"));
