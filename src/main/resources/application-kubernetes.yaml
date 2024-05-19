@@ -11,4 +11,5 @@ eureka:
   client:
       enabled: false
 
-allowedOrigins: localhost
+allowedOrigins: ${ALLOWED_ORIGINS}  #localhost
+authzmanager: https://authzmanager.sonam.cloud

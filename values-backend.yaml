@@ -98,20 +98,24 @@ envs:
     value: 8080
   - name: TOKEN_MEDIATOR
     value: http://oauth2-token-mediator
-  - name: ISSUER_URL
+  - name: ISSUER_URI
     value: https://authorization.sonam.cloud/issuer
+  - name: ALLOWED_ORIGINS
+    value: https://api-gateway.sonam.cloud
+  - name: NEW_RELIC_ENABLED
+    value: false
 
 health:
   liveness:
     path: /issuer/api/health/liveness
     port: 8080
-    initialDelaySeconds: 5
+    initialDelaySeconds: 60
     periodSeconds: 5
     failureThreshold: 5
   readiness:
     path: /issuer/api/health/readiness
     port: 8080
-    initialDelaySeconds: 5
+    initialDelaySeconds: 60
     periodSeconds: 5
     failureThreshold: 5
 
@@ -122,3 +126,7 @@ secretFiles:
         name: BASE64_CLIENT_ID_SECRET
       - key: scopes
         name: REQUEST_SCOPES
+  - file: newrelic-secret
+    keys:
+      - key: newrelic.license_key
+        name: NEW_RELIC_LICENSE_KEY

@@ -1,18 +1,24 @@
 package me.sonam.auth.rest;
 
+import me.sonam.auth.AccountWebClient;
 import me.sonam.auth.service.exception.BadCredentialsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import javax.swing.*;
 import java.util.Map;
 
 /**
@@ -26,15 +32,60 @@ import java.util.Map;
 public class ForgotUsernameController {
     private static final Logger LOG = LoggerFactory.getLogger(ForgotUsernameController.class);
 
-    @Value("${account-rest-service.root}${account-rest-service.emailUsername}")
+    @Value("${account-rest-service.root}${account-rest-service.context}${account-rest-service.emailUsername}")
     private String emailUserName;
 
-    @Value("${account-rest-service.root}${account-rest-service.emailMySecret}")
+    @Value("${account-rest-service.root}${account-rest-service.context}${account-rest-service.emailMySecret}")
     private String emailMySecret;
 
-    private WebClient.Builder webClientBuilder;
-    public ForgotUsernameController(WebClient.Builder webClientBuilder) {
-        this.webClientBuilder = webClientBuilder;
+    private AccountWebClient accountWebClient;
+
+    public ForgotUsernameController(AccountWebClient accountWebClient) {
+        this.accountWebClient = accountWebClient;
+    }
+
+    @GetMapping("/loginHelp")
+    public String getLoginHelp() {
+        LOG.info("return login help page");
+        return "/loginHelp";
+    }
+
+
+    @GetMapping("/password/{email}/{secret}")
+    public Mono<String> passwordChange(@PathVariable("email") String email, @PathVariable("secret")String secret, Model model) {
+        LOG.info("validating email and secret");
+
+       return accountWebClient.validateEmailLoginSecret(email, secret)
+                .flatMap(stringStringMap -> {
+                    LOG.info("email and secret validated successfully");
+                    model.addAttribute("email", email);
+                    model.addAttribute("secret", secret);
+                    model.addAttribute("message", "email and secret validated successfully");
+
+                    return Mono.just("/passwordChange");
+                })
+                .onErrorResume(throwable -> {
+                    setErrorInModel(throwable, model, "failed to validate email login secret");
+                    return Mono.just("/passwordChange");
+                });
+
+    }
+
+    @PostMapping("/password/{email}/{secret}")
+    public Mono<String> passwordChange(@RequestBody String password ,  @PathVariable("email") String email, @PathVariable("secret") String secret, Model model) {
+        LOG.info("change password");
+
+        return accountWebClient.updateAuthenticationPassword(email, secret, password)
+                .flatMap(stringStringMap -> {
+                    LOG.info("password has been changed: {}", stringStringMap);
+                    model.addAttribute("message", "password has been updated successfully");
+                    return Mono.just("/passwordChange");
+                })
+                .onErrorResume(throwable -> {
+                    setErrorInModel(throwable, model, "failed to update password");
+                    return Mono.just("/passwordChange");
+                });
+
     }
 
     @GetMapping("/forgotUsername")
@@ -43,92 +94,88 @@ public class ForgotUsernameController {
         return "forgotUsername";
     }
 
+    @PostMapping("/forgotUsername")
+    public Mono<String> emailUsername(String emailAddress, Model model) {
+        LOG.info("email username for email: {}", emailAddress);
+
+      return  accountWebClient.emailUsername(emailAddress).flatMap(s -> {
+                LOG.info("add message attribute");
+                model.addAttribute("message", "Your username has been sent to your email address.");
+                return Mono.just("forgotUsername");
+            }).onErrorResume(throwable -> {
+                setErrorInModel(throwable,model, "failed to call email username account-rest-service: "+ throwable.getMessage());
+                return Mono.just("forgotUsername");
+        });
+    }
+
+
     @GetMapping("/forgotPassword")
     public String forgotPassword() {
         LOG.info("returning forgotPassword");
         return "forgotPassword";
     }
 
-    @PostMapping("/forgot/emailUsername")
-    public String emailUsername(String emailAddress, Model model) {
-        LOG.info("email username for email: {}", emailAddress);
-
-        StringBuilder emailUsernameEndpoint = new StringBuilder(emailUserName.replace("{email}",
-                emailAddress));
-      return  accountRestServiceCall(emailUsernameEndpoint.toString()).
-              flatMap(s -> {
-            LOG.info("add message attribute");
-            model.addAttribute("message", "Your username has been sent to your email address.");
-            return Mono.just("forgotUsername");
-        }).onErrorResume(throwable -> {
-            LOG.error("error on calling emailMyUsername endpoint '{}' with error: {}", emailUsernameEndpoint,
-                    throwable.getMessage());
-
-            if (throwable instanceof WebClientResponseException) {
-                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                Map<String, String> map = webClientResponseException.getResponseBodyAs(Map.class);
-                LOG.error("error: {}", map.get("error"));
-                //set model error attribute to present back to user
-                model.addAttribute("error", map.get("error"));
-            } else {
-                //set model error attribute to present back to user
-                model.addAttribute("error", "Failed calling account-rest-service for emailMySecret");
-            }
-            return Mono.just("forgotUsername");
-        }).block();
-    }
-
     /**
      * this is called to change password by user when they don't remember it anymore.
      * This will call account-rest-service method to start the process for password change.
-     * Account-rest-service will create a accesscode for password change process and send
+     * Account-rest-service will create accesscode for password change process and send
      * them a link with the code to click in the email.
-     * @param authenticationId
+     * @param email
      * @param model
      * @return
      */
-    @PostMapping("/forgot/changePassword")
-    public String passwordChange(String authenticationId, Model model) {
-        LOG.info("password change for email: {}", authenticationId);
+    @PostMapping("/forgotPassword")
+    public Mono<String> passwordChange(String email, Model model) {
+        LOG.info("password change for email: {}", email);
 
-        StringBuilder emailMySecretEndpoint = new StringBuilder(emailMySecret.replace("{authenticationId}",
-                authenticationId));
-
-        return accountRestServiceCall(emailMySecretEndpoint.toString())
-                .flatMap(s -> {
-            LOG.info("add message attribute");
+        return accountWebClient.emailMySecret(email).flatMap(s -> {
+            LOG.info("secret sent to email for password change");
             model.addAttribute("message", "Check your email for changing your password.");
             return Mono.just("forgotPassword");
         }).onErrorResume(throwable -> {
-            LOG.error("error on calling emailMySecret endpoint '{}' with error: {}", emailMySecretEndpoint,
-                    throwable.getMessage());
-
-            if (throwable instanceof WebClientResponseException) {
-                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                Map<String, String> map = webClientResponseException.getResponseBodyAs(Map.class);
-                LOG.error("error: {}", map.get("error"));
-
-                //set model error attribute to present back to user
-                model.addAttribute("error", map.get("error"));
-            } else {
-                //set model error attribute to present back to user
-                model.addAttribute("error", "Failed calling account-rest-service for emailMySecret");
-            }
-            LOG.info("return to the forgotPassword template page");
+            setErrorInModel(throwable, model, "error on calling emailMySecret endpoint  with error ");
             return Mono.just("forgotPassword");
-        }).block();
-    }
-
-    private Mono<String> accountRestServiceCall(String endpoint) {
-        LOG.info("make user call out to endpoint: {}", endpoint);
-
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(endpoint)
-                    .retrieve();
-
-        //throws exception on authentication not found return with 401 http status
-        return responseSpec.bodyToMono(Map.class).map(map -> {
-            LOG.info("account-rest-service response: {}", map);
-            return map.get("message").toString();
         });
     }
+
+    @GetMapping("/emailAccountActivateLink")
+    public String emailAccountActivateLink() {
+        return "emailAccountActivateLink";
+    }
+
+    @PostMapping("/emailAccountActivateLink")
+    public String handleEmailAccountActivateLink(String emailAddress, Model model) {
+        LOG.info("send email account activate link if inactive");
+
+        return accountWebClient.emailAccountActivationLink(emailAddress).doOnNext(s -> {
+            LOG.info("email sent");
+            model.addAttribute("message", "email sent successfully, check your email");
+        }).onErrorResume(throwable -> {
+            setErrorInModel(throwable, model, "Failed to send email ");
+            return Mono.just("/");
+        }).thenReturn("/emailAccountActivateLink").block();
+
+    }
+
+    private void setErrorInModel(Throwable throwable, Model model, String defaultErrMessage) {
+        if (throwable instanceof WebClientResponseException webClientResponseException) {
+            Map<String, String> map = webClientResponseException.getResponseBodyAs(
+                    new ParameterizedTypeReference<>() {});
+
+            if (map != null) {
+                LOG.error("{}: {}", defaultErrMessage, map.get("error"));
+
+                model.addAttribute("error", map.get("error"));
+            }
+            else {
+                LOG.error("map is null on response for throwable", throwable);
+                model.addAttribute("error", defaultErrMessage + throwable.getMessage());
+            }
+            LOG.error("{}: {}", defaultErrMessage, throwable.getMessage());
+        } else {
+            //set model error attribute to present back to user
+            model.addAttribute("error", defaultErrMessage  + throwable.getMessage());
+        }
+    }
+
 }

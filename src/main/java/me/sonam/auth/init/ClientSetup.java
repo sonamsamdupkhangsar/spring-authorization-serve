@@ -9,11 +9,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 
 import java.util.Arrays;
 import java.util.Base64;
@@ -33,6 +36,9 @@ public class ClientSetup {
     @Value("${BASE64_CLIENT_ID_SECRET}")
     private String base64ClientIdSecret;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @PostConstruct
     public void createServiceAccount() {
         String decodedString = new String(Base64.getDecoder().decode(base64ClientIdSecret));
@@ -48,11 +54,14 @@ public class ClientSetup {
 
         if (registeredClient != null) {
             LOG.info("registered client exists");
+            LOG.info("delete that client and create a new one");
+            clientRepository.deleteById(registeredClient.getId());
+            LOG.info("deleted client: {}", registeredClient.getClientId());
         }
-        else {
+       // else {
             registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
-                    .clientSecret("{noop}"+secret)
+                    .clientSecret(passwordEncoder.encode(secret))
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                     .scope(OidcScopes.OPENID)
@@ -64,7 +73,7 @@ public class ClientSetup {
 
             jpaRegisteredClientRepository.save(registeredClient);
             LOG.info("save a client-credential");
-        }
+      //  }
 /*
         final String nextJsClientId = "nextjs-client";
 

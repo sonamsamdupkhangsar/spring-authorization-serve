@@ -27,10 +27,16 @@ TOKEN_MEDIATOR: http://oauth2-token-mediator
 API_GATEWAY: http://api-gateway:8080
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation
-ISSUER_URL: http://api-gateway:9001/issuer
+ISSUER_ADDRESS: http://api-gateway:9001
+ISSUER_URI: ${ISSUER_ADDRESS}/issuer
+
+
 REQUEST_SCOPES: message.read message.write
 BASE64_CLIENT_ID_SECRET: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
 
 client-app: http://10.0.0.28:3000
 changePassword: /issuer/forgot/changePassword #@{/forgot/changePassword} use for local
-allowedOrigins: 10.0.0.28, localhost, 127.0.0.1
+allowedOrigins: http://api-gateway, 10.0.0.28, localhost, 127.0.0.1, api-gateway, 10.0.0.28:8080, 127.0.0.1
+
+NEW_RELIC_ENABLED: false
+authzmanager: http://localhost:9093

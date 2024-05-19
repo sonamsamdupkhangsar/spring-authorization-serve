@@ -18,23 +18,24 @@ package me.sonam.auth;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
-import com.gargoylesoftware.htmlunit.html.*;
-import jakarta.annotation.PostConstruct;
+import com.gargoylesoftware.htmlunit.html.HtmlButton;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import me.sonam.auth.jpa.entity.ClientOrganization;
 import me.sonam.auth.jpa.entity.ClientOrganizationId;
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.ClientUserId;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
-import me.sonam.auth.service.exception.AuthorizationException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,14 +45,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test cases in the original one does not apply for the use case I have in this implementation.
@@ -71,8 +70,8 @@ public class DefaultAuthorizationServerApplicationTests {
 
 	private static final String REDIRECT_URI = "http://127.0.0.1:{server.port}/login/oauth2/code/messaging-client-oidc";
 	//private static String REDIRECT_URI = "http://localhost:{server.port}/login";
-
-	static final String clientId = "messaging-client";
+	static final String clientsClientId = "messaging-client";
+	static final UUID clientId = UUID.randomUUID(); //"messaging-client";
 	private static UUID userId = UUID.randomUUID();
 	private static UUID organizationId = UUID.randomUUID();
 	private static String AUTHORIZATION_REQUEST = "";
@@ -86,14 +85,14 @@ public class DefaultAuthorizationServerApplicationTests {
 	private HClientUserRepository clientUserRepository;
 
 	//@BeforeEach
-	private void saveClientOrganization(final String clientId, UUID organizationId) {
+	private void saveClientOrganization(final UUID clientId, UUID organizationId) {
 		if (!clientOrganizationRepository.existsByClientId(clientId).get()) {
 			clientOrganizationRepository.save(new ClientOrganization(clientId, organizationId));
 			LOG.info("saved clientId {} with organizationId {}", clientId, organizationId);
 		}
 	}
 	//@BeforeEach
-	private void saveClientUser(final String clientId, UUID userId) {
+	private void saveClientUser(final UUID clientId, UUID userId) {
 		if (!clientUserRepository.existsById(new ClientUserId(clientId, userId))) {
 			clientUserRepository.save(new ClientUser(clientId, userId));
 			LOG.info("saved clientUser");
@@ -142,7 +141,7 @@ public class DefaultAuthorizationServerApplicationTests {
 		AUTHORIZATION_REQUEST = UriComponentsBuilder
 				.fromPath("/oauth2/authorize")
 				.queryParam("response_type", "code")
-				.queryParam("client_id", clientId)
+				.queryParam("client_id", clientsClientId)
 				.queryParam("scope", "openid")
 				.queryParam("state", "some-state")
 				.queryParam("redirect_uri", redirectUri)
@@ -294,7 +293,7 @@ public class DefaultAuthorizationServerApplicationTests {
 	}
 
 	private static void assertLoginPage(HtmlPage page) {
-		assertThat(page.getUrl().toString()).endsWith("/login");
+		assertThat(page.getUrl().toString()).endsWith("/");
 
 		HtmlInput usernameInput = page.querySelector("input[name=\"username\"]");
 		HtmlInput passwordInput = page.querySelector("input[name=\"password\"]");

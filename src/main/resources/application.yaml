@@ -5,15 +5,18 @@ server:
 
 logging:
   level:
-    root: error
+    root: warn
     me.sonam.auth: info
+    com.netflix: off
     me.sonam.auth.config: debug
-    org.springframework.web: info
-    org.springframework.security: info
-    org.springframework.security.oauth2: info
-    org.springframework.boot.autoconfigure: warn
+#    org.springframework.web: info
+#    org.springframework.security: info
+#    org.springframework.security.oauth2: info
+#    org.springframework.boot.autoconfigure: warn
 
 spring:
+  profiles:
+    active: local
   application:
     name: authorization-server
   datasource:
@@ -26,6 +29,15 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     generate-ddl: true
+  thymeleaf: # to enable hot reload of Thymeleaf templates
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+    prefix: file:src/main/resources/templates/
+  resources: # Static resources
+    static-locations: file:src/main/resources/static/
+    cache:
+      period: 0
 
 application-rest-service:
   root: ${APPLICATION_REST_SERVICE}
@@ -37,7 +49,8 @@ authentication-rest-service:
 
 user-rest-service:
   root: ${USER_REST_SERVICE}
-  userByAuthId: /users/{authenticationId}
+  context: /users
+  userByAuthId: ${user-rest-service.context}/{authenticationId}
 
 organization-rest-service:
   root: ${ORGANIZATION_REST_SERVICE}
@@ -45,16 +58,31 @@ organization-rest-service:
 
 account-rest-service:
   root: ${ACCOUNT_REST_SERVICE}
-  emailUsername: /accounts/email/authenticationId/{email}
-  emailMySecret: /accounts/emailmysecret/{authenticationId}
+  context: /accounts
+  emailUsername: /email/{email}/authentication-id
+  emailMySecret: /email/{email}/password-secret
+  emailActivateLink: /active/email/{email}/password-secret
+  validateEmailLoginSecret: /{email}/password-secret/{secret}
+  updatePassword: /password-secret
 
 oauth2-token-mediator:
   root: ${TOKEN_MEDIATOR}
   clients: /oauth2-token-mediator/clients
 
+# this is used for getting accesstoken by header filter
+auth-server:
+  root: http://authorization-server/issuer
+  oauth2token:
+    path: /oauth2/token
+    grantType: client_credentials
+
+client:
+  url: ${client-app}
+  forgot-username-password: /forgot
+
 jwtrequest:
   - in: /*
-    out: /users/(.)*
+    out: /users,/users/(.)*
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
@@ -77,14 +105,11 @@ jwtrequest:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-
-# this is used for getting accesstoken by header filter
-auth-server:
-  root: http://authorization-server/issuer
-  oauth2token:
-    path: /oauth2/token
-    params: ?grant_type=client_credentials
-
-client:
-  url: ${client-app}
-  forgot-username-password: /forgot
+  - in: /*
+    out: /accounts/active/email-link/(.)*, /accounts/email/(.)*, 
+          /accounts/email/(.)*/authenticationId, /accounts/active/email/(.)*/password-secret,
+          /accounts/(.)*/password-secret/(.)*, /accounts/password-secret
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}

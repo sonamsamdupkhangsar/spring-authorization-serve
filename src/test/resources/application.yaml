@@ -9,7 +9,7 @@ logging:
     org.springframework.web: INFO
     org.springframework.security: info
     org.springframework.security.oauth2: info
-    me.sonam: debug
+#    me.sonam.auth: debug
 #    org.springframework.boot.autoconfigure: DEBUG
 
 eureka:
@@ -50,15 +50,25 @@ organization-rest-service:
 
 account-rest-service:
   root:  http://localhost:8080
-  emailUsername: /accounts/email/authenticationId/{email}
-  emailMySecret: /accounts/emailmysecret/{authenticationId}
+  context: /accounts
+  emailUsername: /email/{email/authentication-id
+  emailMySecret: /email/{email}/password-secret
+  emailActivateLink: /active/email/{email}/password-secret
+  validateEmailLoginSecret: /{email}/password-secret/{secret}
+  updatePassword: /password-secret
 
-ISSUER_URL: http://my-server:9001
+ISSUER_URI: http://my-server:9001
 private-client-url: http://127.0.0.1:8090
 
 jwtrequest:
   - in: /*
     out: /users/(.)*
+    accessToken:
+      option: request
+      scopes: message.read
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - in: /*
+    out: /authentications/(.)*
     accessToken:
       option: request
       scopes: message.read
@@ -81,13 +91,21 @@ jwtrequest:
       option: request
       scopes: message.write
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - in: /*
+    out: /accounts/active/email-link/(.)*
+    accessToken:
+      option: request
+      scopes: message.write
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+
+
 
 # this is used for getting accesstoken by header filter
 auth-server:
   root: http://localhost:{port}
   oauth2token:
     path: /oauth2/token
-    params: ?grant_type=client_credentials
+    grantType: client_credentials
 
 oauth2-token-mediator:
   root: http://localhost:8080
@@ -97,3 +115,4 @@ BASE64_CLIENT_ID_SECRET: dXNlcjpzZWNyZXQ=
 REQUEST_SCOPES: cmVhZCB3cml0ZQ==
 
 allowedOrigins: 10.0.0.28, localhost, 127.0.0.1
+authzmanager: http://localhost:9093

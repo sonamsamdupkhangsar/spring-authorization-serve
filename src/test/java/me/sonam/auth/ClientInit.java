@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.UUID;
 // initilization class for setting up a RegisteredClient used in test cases
@@ -33,6 +34,9 @@ public class ClientInit {
 
     private String clientSecret = "secret";
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @PostConstruct
     public void saveInitialClient() {
         LOG.info("save messaging client for testing");
@@ -41,7 +45,7 @@ public class ClientInit {
 
             RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
-                    .clientSecret("{noop}"+clientSecret)
+                    .clientSecret(passwordEncoder.encode(clientSecret))
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_JWT)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
