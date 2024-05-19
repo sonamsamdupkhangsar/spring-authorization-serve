@@ -50,8 +50,12 @@ organization-rest-service:
 
 account-rest-service:
   root:  http://localhost:8080
-  emailUsername: /accounts/email/authenticationId/{email}
-  emailMySecret: /accounts/emailmysecret/{authenticationId}
+  context: /accounts
+  emailUsername: /email/{email/authentication-id
+  emailMySecret: /email/{email}/password-secret
+  emailActivateLink: /active/email/{email}/password-secret
+  validateEmailLoginSecret: /{email}/password-secret/{secret}
+  updatePassword: /password-secret
 
 ISSUER_URI: http://my-server:9001
 private-client-url: http://127.0.0.1:8090
@@ -87,6 +91,14 @@ jwtrequest:
       option: request
       scopes: message.write
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - in: /*
+    out: /accounts/active/email-link/(.)*
+    accessToken:
+      option: request
+      scopes: message.write
+      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+
+
 
 # this is used for getting accesstoken by header filter
 auth-server:

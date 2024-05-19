@@ -4,6 +4,7 @@ package me.sonam.auth.rest;
 
 import jakarta.ws.rs.BadRequestException;
 
+import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.TokenMediate;
 import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
@@ -160,10 +161,15 @@ public class ClientRestService {
 
         List<MyPair<String, String>> list = new ArrayList<>();
 
-        clientUserRepository.findByUserId(userId).forEach(clientUser ->
-                clientRepository.findById(clientUser.getClientId().toString())
-                        .ifPresent(client ->
-                            list.add(new MyPair<>(client.getId(), client.getClientId()))));
+        clientUserRepository.findByUserId(userId).forEach(clientUser -> {
+                    Optional<Client> optionalClient = clientRepository.findById(clientUser.getClientId().toString());
+                    if (optionalClient.isEmpty()) {
+                        LOG.error("client not found ClientRepository by clientId: '{}'", clientUser.getClientId());
+                    }
+                    optionalClient.ifPresent(client ->
+                            list.add(new MyPair<>(client.getId(), client.getClientId())));
+                }
+        );
         LOG.info("list of clientId pairs: {}", list);
         return list;
 /*
@@ -235,10 +241,10 @@ public class ClientRestService {
         }
     }
 
-    @DeleteMapping("{id}/ownerId/{ownerId}")
+    @DeleteMapping("{id}/user-id/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
-    public Mono<Void> delete(@PathVariable("id") String id, @PathVariable("ownerId") UUID ownerId) {
+    public Mono<Void> delete(@PathVariable("id") String id, @PathVariable("userId") UUID userId) {
         LOG.info("delete client with id: {}", id);
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findById(id);
@@ -249,7 +255,7 @@ public class ClientRestService {
         }
         else {
 
-            verifyUserOwnsClientId(UUID.fromString(id), ownerId);
+            verifyUserOwnsClientId(UUID.fromString(id), userId);
 
             LOG.info("deleting by id: {}", registeredClient.getId());
             clientRepository.deleteById(registeredClient.getId());

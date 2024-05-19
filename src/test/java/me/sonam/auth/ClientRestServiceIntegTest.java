@@ -106,6 +106,8 @@ public class ClientRestServiceIntegTest {
         LOG.info("create registration client");
         final String accessToken  = getOauth2Token(messageClient, "secret");
 
+        LOG.info("oauth2Token: {}", accessToken);
+
         UUID userId = UUID.randomUUID();
         saveClient(clientId.toString(),"{noop}"+clientSecret, userId, accessToken);
 
@@ -146,7 +148,7 @@ public class ClientRestServiceIntegTest {
                 .setResponseCode(200).setBody("{\"message\": \"deleted clientid in token-mediator: "+clientId+"\"}"));
 
         LOG.info("delete clientId");
-        webTestClient.delete().uri("/clients/"+clientId+"/ownerId/"+userId)
+        webTestClient.delete().uri("/clients/"+clientId+"/user-id/"+userId)
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isNoContent();
 

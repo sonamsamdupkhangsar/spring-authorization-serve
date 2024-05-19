@@ -58,13 +58,27 @@ organization-rest-service:
 
 account-rest-service:
   root: ${ACCOUNT_REST_SERVICE}
-  emailUsername: /accounts/email/authenticationId/{email}
-  emailMySecret: /accounts/emailmysecret/{authenticationId}
+  context: /accounts
+  emailUsername: /email/{email}/authentication-id
+  emailMySecret: /email/{email}/password-secret
+  emailActivateLink: /active/email/{email}/password-secret
+  validateEmailLoginSecret: /{email}/password-secret/{secret}
+  updatePassword: /password-secret
 
 oauth2-token-mediator:
   root: ${TOKEN_MEDIATOR}
   clients: /oauth2-token-mediator/clients
 
+# this is used for getting accesstoken by header filter
+auth-server:
+  root: http://authorization-server/issuer
+  oauth2token:
+    path: /oauth2/token
+    grantType: client_credentials
+
+client:
+  url: ${client-app}
+  forgot-username-password: /forgot
 
 jwtrequest:
   - in: /*
@@ -91,14 +105,11 @@ jwtrequest:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-
-# this is used for getting accesstoken by header filter
-auth-server:
-  root: http://authorization-server/issuer
-  oauth2token:
-    path: /oauth2/token
-    grantType: client_credentials
-
-client:
-  url: ${client-app}
-  forgot-username-password: /forgot
+  - in: /*
+    out: /accounts/active/email-link/(.)*, /accounts/email/(.)*, 
+          /accounts/email/(.)*/authenticationId, /accounts/active/email/(.)*/password-secret,
+          /accounts/(.)*/password-secret/(.)*, /accounts/password-secret
+    accessToken:
+      option: request
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}

@@ -107,11 +107,12 @@ public class TokenFilter {
 
     private Mono<String> getAccessToken(final String oauthEndpoint, String grantType, String scopes, final String base64EncodeClientIdSecret) {
         LOG.info("making a access-token request to endpoint: {}",oauthEndpoint);
+
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("grant_type", grantType);
 
-        List<String> scopeList = Arrays.stream(scopes.split(" ")).toList();
-        body.add("scopes", scopeList);
+        body.add("scope", scopes);
+        LOG.info("scope: {}", scopes);
 
         LOG.info("add body payload for grant type and scopes: {}", body);
 
