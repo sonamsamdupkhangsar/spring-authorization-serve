@@ -46,7 +46,7 @@ public class TokenFilter {
     private WebClient.Builder webClientBuilder;
 
     private RequestCache requestCache;
-    @Value("${auth-server.oauth2token.path:}")
+    @Value("${auth-server.oauth2token.issuerTokenPath:}")
     private String accessTokenPath;
 
     public TokenFilter(WebClient.Builder webClientBuilder, RequestCache requestCache) {
@@ -56,7 +56,7 @@ public class TokenFilter {
 
     public ExchangeFilterFunction renewTokenFilter() {
         return (request, next) -> {
-            LOG.debug("request.path: {}", request.url().getPath());
+            LOG.info("request.path: {}", request.url().getPath());
             if (request.url().getPath().equals(accessTokenPath)) {
                 LOG.debug("no need to request access token when going to that path: {}", request.url().getPath());
                 ClientRequest clientRequest = ClientRequest.from(request).build();

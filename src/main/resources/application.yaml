@@ -9,6 +9,7 @@ logging:
     me.sonam.auth: info
     com.netflix: off
     me.sonam.auth.config: debug
+    me.sonam.auth.service.TokenFilter: error
 #    org.springframework.web: info
 #    org.springframework.security: info
 #    org.springframework.security.oauth2: info
@@ -38,6 +39,8 @@ spring:
     static-locations: file:src/main/resources/static/
     cache:
       period: 0
+  authorization-server:
+    forward-cookies: false
 
 application-rest-service:
   root: ${APPLICATION_REST_SERVICE}
@@ -50,7 +53,7 @@ authentication-rest-service:
 user-rest-service:
   root: ${USER_REST_SERVICE}
   context: /users
-  userByAuthId: ${user-rest-service.context}/{authenticationId}
+  userByAuthId: ${user-rest-service.context}/authentication-id/{authenticationId}
 
 organization-rest-service:
   root: ${ORGANIZATION_REST_SERVICE}
@@ -75,6 +78,8 @@ auth-server:
   oauth2token:
     path: /oauth2/token
     grantType: client_credentials
+    issuerTokenPath: /issuer/oauth2/token
+
 
 client:
   url: ${client-app}
@@ -82,7 +87,7 @@ client:
 
 jwtrequest:
   - in: /*
-    out: /users,/users/(.)*
+    out: /users, /users/authentication-id/(.)*, /users/authentication-id/*
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}

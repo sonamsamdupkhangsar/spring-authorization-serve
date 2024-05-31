@@ -80,23 +80,7 @@ public class JwtUserInfoMapperSecurityConfig {
 
     @Value("${allowedOrigins}")
     private String allowedOrigins; //csv allow origins
-/*    @Value("${authentication-rest-service.root}${authentication-rest-service.authenticate}")
-    private String authenticateEndpoint;
 
-    @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
-    private String userEndpoint;
-
-    @Value("${organization-rest-service.root}${organization-rest-service.userExistsInOrganization}")
-    private String organizationEndpoint;
-
-    private RequestCache requestCache;
-    private WebClient.Builder webClientBuilder;
-
-    @Autowired
-    private ClientOrganizationRepository clientOrganizationRepository;
-
-    @Autowired
-    private HClientUserRepository clientUserRepository;*/
 
     @Bean
     @Order(1)
@@ -249,10 +233,11 @@ public class JwtUserInfoMapperSecurityConfig {
         return new HttpSessionEventPublisher();
     }
 
-   // @Bean
+   //@Bean
     OAuth2TokenGenerator<?> tokenGenerator() {
         JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
         LOG.info("tokenCustomizer: {}", tokenCustomizer);
+
         jwtGenerator.setJwtCustomizer(tokenCustomizer);
 
         OAuth2TokenGenerator<OAuth2RefreshToken> refreshTokenGenerator = new CustomRefreshTokenGenerator();
