@@ -34,7 +34,9 @@ spring:
     cache: false
     mode: HTML
     encoding: UTF-8
-    prefix: file:src/main/resources/templates/
+    #prefix: file:src/main/resources/templates/
+    classpath: /templates/
+    suffix: .html
   resources: # Static resources
     static-locations: file:src/main/resources/static/
     cache:
