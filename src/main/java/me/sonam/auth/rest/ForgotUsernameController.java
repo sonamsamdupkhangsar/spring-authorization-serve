@@ -133,6 +133,7 @@ public class ForgotUsernameController {
             model.addAttribute("message", "Check your email for changing your password.");
             return Mono.just("forgotPassword");
         }).onErrorResume(throwable -> {
+            LOG.error("error occurred in sending secret for password change", throwable);
             setErrorInModel(throwable, model, "error on calling emailMySecret endpoint  with error ");
             return Mono.just("forgotPassword");
         });

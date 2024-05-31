@@ -47,7 +47,10 @@ public class AccountWebClient {
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(emailMySecret)
                 .retrieve();
-        return responseSpec.bodyToMono(String.class);
+        return responseSpec.bodyToMono(String.class).onErrorResume(throwable -> {
+            LOG.error("failed to call email my secret endpoint", throwable);
+            return Mono.error(throwable);
+        });
     }
 
     public Mono<Map<String, String>> validateEmailLoginSecret(String email, String secret) {

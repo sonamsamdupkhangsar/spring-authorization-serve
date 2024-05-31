@@ -9,7 +9,7 @@ logging:
     org.springframework.web: INFO
     org.springframework.security: info
     org.springframework.security.oauth2: info
-#    me.sonam.auth: debug
+    me.sonam.auth: debug
 #    org.springframework.boot.autoconfigure: DEBUG
 
 eureka:
@@ -51,7 +51,7 @@ organization-rest-service:
 account-rest-service:
   root:  http://localhost:8080
   context: /accounts
-  emailUsername: /email/{email/authentication-id
+  emailUsername: /email/{email}/authentication-id
   emailMySecret: /email/{email}/password-secret
   emailActivateLink: /active/email/{email}/password-secret
   validateEmailLoginSecret: /{email}/password-secret/{secret}
