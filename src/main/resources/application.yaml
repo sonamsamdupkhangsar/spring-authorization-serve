@@ -16,8 +16,6 @@ logging:
 #    org.springframework.boot.autoconfigure: warn
 
 spring:
-  profiles:
-    active: local
   application:
     name: authorization-server
   datasource:
