@@ -232,55 +232,55 @@ public class ClientRestServiceIntegTest {
         LOG.info("messageClientAccessToken: {}", messageClientAccessToken);
         UUID userId = UUID.randomUUID();
 
-        List<MyPair<String, String>> list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list).isNotNull();
-        assertThat(list).isEmpty();
+        RestPage<MyPair<String, String>> page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page).isNotNull();
+        assertThat(page).isEmpty();
 
         UUID testClient1 = UUID.randomUUID();
         saveClient(testClient1.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(1);
-        assertThat(list.get(0).getKey()).isNotNull();
-        assertThat(list.get(0).getKey()).isEqualTo(testClient1.toString());
-        assertThat(list.get(0).getValue()).isEqualTo(testClient1.toString());
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        assertThat(page.getContent().get(0).getKey()).isNotNull();
+        assertThat(page.getContent().get(0).getKey()).isEqualTo(testClient1.toString());
+        assertThat(page.getContent().get(0).getValue()).isEqualTo(testClient1.toString());
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
 
         UUID testClient2= UUID.randomUUID();
         saveClient(testClient2.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(2);
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
 
         UUID testClient3 = UUID.randomUUID();
         saveClient(testClient3.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(3);
-        assertThat(list.get(2).getKey()).isNotNull();
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
-        assertThat(list).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent().get(2).getKey()).isNotNull();
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        assertThat(page).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
 
         UUID testClient4 = UUID.randomUUID();
         saveClient(testClient4.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(4);
-        assertThat(list.get(3).getKey()).isNotNull();
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
-        assertThat(list).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
-        assertThat(list).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(4);
+        assertThat(page.getContent().get(3).getKey()).isNotNull();
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        assertThat(page).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
+        assertThat(page).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
 
         UUID testClient5 = UUID.randomUUID();
         saveClient(testClient5.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(5);
-        assertThat(list.get(4).getKey()).isNotNull();
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
-        assertThat(list).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
-        assertThat(list).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
-        assertThat(list).contains(new MyPair<>(testClient5.toString(), testClient5.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getContent().get(4).getKey()).isNotNull();
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        assertThat(page).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
+        assertThat(page).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
+        assertThat(page).contains(new MyPair<>(testClient5.toString(), testClient5.toString()));
     }
 
     private String getOauth2Token(String clientId, String secret) {
@@ -404,12 +404,12 @@ public class ClientRestServiceIntegTest {
         return entityExchangeResult.getResponseBody();
     }
 
-    private List<MyPair<String, String>> getClientIdsAssociatedWithUser(UUID userId, String accessToken) {
-        EntityExchangeResult<List<MyPair<String, String>>> entityExchangeResult = webTestClient.get()
+    private RestPage<MyPair<String, String>> getClientIdsAssociatedWithUser(UUID userId, String accessToken) {
+        EntityExchangeResult<RestPage<MyPair<String, String>>> entityExchangeResult = webTestClient.get()
                 .uri("/clients/users/"+userId)
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isOk().expectBody(new ParameterizedTypeReference<
-                        List<MyPair<String, String>>>(){}).returnResult();
+                        RestPage<MyPair<String, String>>>(){}).returnResult();
 
         assertThat(entityExchangeResult).isNotNull();
         assertThat(entityExchangeResult.getResponseBody()).isNotNull();

@@ -18,6 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -157,12 +160,13 @@ public class ClientRestService {
 
     @GetMapping("/users/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public List<MyPair<String, String>> getClientIdsAssociatedWithUser(@PathVariable("id") UUID userId) {
+    public Page<MyPair<String, String>> getClientIdsAssociatedWithUser(@PathVariable("id") UUID userId, Pageable pageable) {
         LOG.info("get clientIds for userId: {}", userId);
 
         List<MyPair<String, String>> list = new ArrayList<>();
 
-        clientUserRepository.findByUserId(userId).forEach(clientUser -> {
+
+        clientUserRepository.findByUserId(userId, pageable).forEach(clientUser -> {
                     Optional<Client> optionalClient = clientRepository.findById(clientUser.getClientId().toString());
                     if (optionalClient.isEmpty()) {
                         LOG.error("client not found ClientRepository by clientId: '{}'", clientUser.getClientId());
@@ -171,8 +175,9 @@ public class ClientRestService {
                             list.add(new MyPair<>(client.getId(), client.getClientId())));
                 }
         );
+
         LOG.info("list of clientId pairs: {}", list);
-        return list;
+        return new PageImpl<>(list, pageable, clientUserRepository.countByUserId(userId));
 /*
         List<ClientUser> clientUserList =clientUserRepository.findByUserId(userId).stream()
                 .toList();

@@ -2,6 +2,7 @@ package me.sonam.auth.jpa.repo;
 
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.ClientUserId;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 
@@ -11,7 +12,8 @@ import java.util.UUID;
 
 public interface HClientUserRepository extends JpaRepository<ClientUser, ClientUserId> {
 
-    List<ClientUser> findByUserId(UUID userId);
+    long countByUserId(UUID userId);
+    List<ClientUser> findByUserId(UUID userId, Pageable pageable);
     List<ClientUser> findByClientId(UUID clientId);
     Optional<ClientUser> findByClientIdAndUserId(UUID clientId, UUID userId);
     Optional<Boolean> existsByClientIdAndUserId(UUID clientId, UUID userId);
