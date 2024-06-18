@@ -26,8 +26,10 @@ import java.util.stream.Collectors;
  * this controller will use the AuthenticationCallout service to login a user.
  * This should be replaced with pkce oauth client for authenitcation.
  */
+/*
 @RestController
 @RequestMapping("/authenticate")
+*/
 public class AuthenticateRestController {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticateRestController.class);
 

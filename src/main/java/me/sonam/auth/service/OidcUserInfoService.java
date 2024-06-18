@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This will perform a user info lookup by calling user-rest-service with authenticationId {@code id_token}.
@@ -19,6 +20,9 @@ public class OidcUserInfoService {
     private static final Logger LOG = LoggerFactory.getLogger(OidcUserInfoService.class);
     @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
     private String userByAuthIdEp;
+
+    @Value("${user-rest-service.root}${user-rest-service.userId}")
+    private String userIdEndpoint;
 
     private WebClient.Builder webClientBuilder;
 

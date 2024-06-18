@@ -146,12 +146,16 @@ public class AuthenticationCallout implements AuthenticationProvider {
             return Mono.error(new BadCredentialsException("user not found with authenticationId: "+ authenticationId));
         }
         ).flatMap(userId ->
-                    checkClientInOrganization(authentication, userId, clientId)
-                    .onErrorResume(throwable ->    {
-                        LOG.info("clientId is not associated to a organization-id, check if user owns the client-id");
+            checkClientInOrganization(authentication, userId, clientId)
+                    .switchIfEmpty(checkClientUserRelationship(userId, clientId, authentication))
 
-                        return checkClientUserRelationship(userId, clientId, authentication);
-                }));
+                    .onErrorResume(throwable -> {
+                        LOG.error("clientId is not associated to a organization-id, check if user owns the client-id");
+
+                        return Mono.error(throwable);
+                        //return checkClientUserRelationship(userId, clientId, authentication);
+                    })
+        );
     }
 
     private Mono<UsernamePasswordAuthenticationToken> checkClientUserRelationship(final UUID userId, final UUID clientId, final Authentication authentication) {
@@ -164,7 +168,9 @@ public class AuthenticationCallout implements AuthenticationProvider {
             return getAuth(authentication, clientId);
         }
         else {
-            LOG.info("client is not found in ClientUser");
+            LOG.info("client-id has no relationship with user-id, user is accessing the authzmanager app");
+            //return Mono.empty();
+            //return getAuth(authentication, clientId);
             return Mono.error(new BadCredentialsException("there is no client-id association with this user-id"));
         }
     }
@@ -177,12 +183,14 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         if (optionalClientOrganization.isEmpty()) {
             LOG.error("client-id {} not found in clientOrganization", clientId);
-           return Mono.error(new BadCredentialsException("no clientId " + clientId + " found in ClientOrganization"));
+            return Mono.empty(); // return empty if there is no client organization association for this client-id
+           //return Mono.error(new BadCredentialsException("no clientId " + clientId + " found in ClientOrganization"));
         }
 
         ClientOrganization clientOrganization = optionalClientOrganization.get();
-                return userExistInOrganization(userId, clientOrganization.getOrganizationId())
 
+        // client-id is associated to organization-id, check user-id is also in organization-id
+        return userExistInOrganization(userId, clientOrganization.getOrganizationId())
                 .filter(aBoolean -> aBoolean)
                 .switchIfEmpty(Mono.error(new BadCredentialsException("user does not exists in organization")))
                 .flatMap(aBoolean -> getAuth(authentication, clientId));//.block();
@@ -219,18 +227,26 @@ public class AuthenticationCallout implements AuthenticationProvider {
                    }
                }
             }
-           if(grantedAuths.isEmpty()) {
+
+            UUID userId = UUID.fromString(map.get("userId").toString());
+            //final UserDetails principal = new User(userId.toString(), password, grantedAuths);
+            final UserId principal = new UserId(userId.toString(), authentication.getPrincipal().toString(), password, grantedAuths);
+
+            //final UserDetails principal = new UserId(userId, authentication.getPrincipal().toString(), password, grantedAuths);
+
+            if(grantedAuths.isEmpty()) {
                 LOG.info("roles is empty, add a default one for now.");
                 grantedAuths.add(new SimpleGrantedAuthority("USER_ROLE"));
             }
-            final UserDetails principal = new User(authentication.getName(), password, grantedAuths);
 
+            LOG.info("storing userId as principal");
             LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
             return new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
 
         }).onErrorResume(throwable -> {
             LOG.error("error on authentication-rest-service to endpoint '{}' with error: {}", authenticateEndpoint,
                     throwable.getMessage());
+            LOG.debug("exception", throwable);
 
             if (throwable instanceof WebClientResponseException) {
                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
@@ -289,10 +305,11 @@ public class AuthenticationCallout implements AuthenticationProvider {
             UUID userId = UUID.fromString(map.get("userId").toString());
             LOG.info("username: {}", authentication.getName());
 
-            final UserDetails principal = new UserId(userId, authentication.getPrincipal().toString(), password, grantedAuths);
+            final UserId principal = new UserId(userId.toString(), authentication.getPrincipal().toString(), password, grantedAuths);
 
             LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
 
+            LOG.info("storing userId as principal in authToken");
             return new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
 
         }).onErrorResume(throwable -> {

@@ -4,14 +4,18 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.sonam.auth.config.BeanConfig;
 import me.sonam.auth.jpa.entity.Authorization;
 import me.sonam.auth.jpa.repo.AuthorizationRepository;
 
+import me.sonam.auth.util.UserId;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -45,10 +49,22 @@ public class JpaOAuth2AuthorizationService implements OAuth2AuthorizationService
 
         ClassLoader classLoader = JpaOAuth2AuthorizationService.class.getClassLoader();
         List<Module> securityModules = SecurityJackson2Modules.getModules(classLoader);
+
         this.objectMapper.registerModules(securityModules);
         this.objectMapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
+        objectMapper.addMixIn(UserId.class, MemberMixin.class);
     }
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE,
+            isGetterVisibility = JsonAutoDetect.Visibility.NONE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class MemberMixin {
 
+        @JsonCreator
+        public MemberMixin(@JsonProperty("userId") UUID userId, @JsonProperty("loginAccount") String userName, @JsonProperty("password") String password) {
+        }
+
+    }
     @Override
     public void save(OAuth2Authorization authorization) {
         Assert.notNull(authorization, "authorization cannot be null");

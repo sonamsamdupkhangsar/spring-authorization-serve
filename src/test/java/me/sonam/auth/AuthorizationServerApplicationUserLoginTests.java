@@ -267,7 +267,7 @@ public class AuthorizationServerApplicationUserLoginTests {
 		recordedRequest = mockWebServer.takeRequest();
 
 		assertThat(recordedRequest.getMethod()).isEqualTo("GET");
-		assertThat(recordedRequest.getPath()).startsWith("/users/");
+		assertThat(recordedRequest.getPath()).startsWith("/users/authentication-id/user1");
 	}
 
     /**
@@ -306,11 +306,12 @@ public class AuthorizationServerApplicationUserLoginTests {
 		// user will be found from clientUser relationship
 		//mock role names for authentication http callout
 		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
+				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"userId\": \""+ userId +"\", \"message\": \"Authentication successful\"}"));
+
 
 		//it seems like we need to mock one more response for the redirection to redirecUris: /login/oauth2/code/messaging-client-oidc?code=...
 		mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
+				.setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"userId\": \""+ userId +"\", \"message\": \"Authentication successful\"}"));
 
 
 		//WebResponse response = this.webClient.getPage(AUTHORIZATION_REQUEST).getWebResponse();

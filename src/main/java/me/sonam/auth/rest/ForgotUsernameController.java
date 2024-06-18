@@ -1,24 +1,19 @@
 package me.sonam.auth.rest;
 
-import me.sonam.auth.AccountWebClient;
-import me.sonam.auth.service.exception.BadCredentialsException;
+import me.sonam.auth.webclient.AccountWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
-import javax.swing.*;
 import java.util.Map;
 
 /**
@@ -38,7 +33,7 @@ public class ForgotUsernameController {
     @Value("${account-rest-service.root}${account-rest-service.context}${account-rest-service.emailMySecret}")
     private String emailMySecret;
 
-    private AccountWebClient accountWebClient;
+    private final AccountWebClient accountWebClient;
 
     public ForgotUsernameController(AccountWebClient accountWebClient) {
         this.accountWebClient = accountWebClient;
