@@ -59,6 +59,9 @@ public class AuthenticationCallout implements AuthenticationProvider {
     @Autowired
     private RegisteredClientRepository registeredClientRepository;
 
+    @Value("${authzmanager-id}")
+    private UUID authzManagerId;
+
     final String ROLES = "roles";
 
   /*  public AuthenticationCallout(String authenticateEndpoint, String userEndpoint, String organizationEndpoint,
@@ -168,10 +171,16 @@ public class AuthenticationCallout implements AuthenticationProvider {
             return getAuth(authentication, clientId);
         }
         else {
-            LOG.info("client-id has no relationship with user-id, user is accessing the authzmanager app");
-            //return Mono.empty();
-            //return getAuth(authentication, clientId);
-            return Mono.error(new BadCredentialsException("there is no client-id association with this user-id"));
+            if (authzManagerId.equals(clientId)) {
+                LOG.info("clientId is for authzmanager, create user-authzmanager client relationship");
+                clientUserRepository.save(new ClientUser(clientId, userId));
+
+                return getAuth(authentication, clientId);
+            }
+            else {
+                LOG.info("client-id has no relationship with user-id, user is accessing the authzmanager app");
+                return Mono.error(new BadCredentialsException("there is no client-id association with this user-id"));
+            }
         }
     }
 
