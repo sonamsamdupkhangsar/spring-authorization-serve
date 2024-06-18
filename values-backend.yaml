@@ -126,6 +126,8 @@ secretFiles:
         name: BASE64_CLIENT_ID_SECRET
       - key: scopes
         name: REQUEST_SCOPES
+      - key: authzmanagerInitialSecret
+        name: AUTHZMANAGER_INITIAL_SECRET
   - file: newrelic-secret
     keys:
       - key: newrelic.license_key
