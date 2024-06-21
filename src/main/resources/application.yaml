@@ -99,9 +99,8 @@ requestFilters:
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
 #  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
 #    accessToken:
-#      option: request
-#      scopes: ${REQUEST_SCOPES}
-#      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+#      option: forward
+
   - out: /accounts/active/email-link/(.)*, /accounts/email/(.)*, 
           /accounts/email/(.)*/authenticationId, /accounts/active/email/(.)*/password-secret,
           /accounts/(.)*/password-secret/(.)*, /accounts/password-secret

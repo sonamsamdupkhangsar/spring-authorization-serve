@@ -78,16 +78,9 @@ requestFilters:
       option: request
       scopes: message.read
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - out: /oauth2-token-mediator/clients
-    accessToken:
-      option: request
-      scopes: message.write
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - out: /oauth2-token-mediator/clients/(.)*
-    accessToken:
-      option: request
-      scopes: message.write
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+#  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
+#    accessToken:
+#      option: forward
   - out: /accounts/active/email-link/(.)*
     accessToken:
       option: request

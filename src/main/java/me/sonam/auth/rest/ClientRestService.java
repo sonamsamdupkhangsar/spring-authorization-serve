@@ -1,16 +1,12 @@
 package me.sonam.auth.rest;
 
 
-
 import jakarta.ws.rs.BadRequestException;
-
 import me.sonam.auth.jpa.entity.Client;
+import me.sonam.auth.jpa.entity.ClientOwner;
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.TokenMediate;
-import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
-import me.sonam.auth.jpa.repo.ClientRepository;
-import me.sonam.auth.jpa.repo.HClientUserRepository;
-import me.sonam.auth.jpa.repo.TokenMediateRepository;
+import me.sonam.auth.jpa.repo.*;
 import me.sonam.auth.rest.util.MyPair;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import me.sonam.auth.util.TokenRequestFilter;
@@ -21,12 +17,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -52,6 +48,9 @@ public class ClientRestService {
     private ClientOrganizationRepository clientOrganizationRepository;
 
     @Autowired
+    private ClientOwnerRepository clientOwnerRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -71,12 +70,15 @@ public class ClientRestService {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Map<String, Object> createNew(@RequestHeader(HttpHeaders.AUTHORIZATION)String accessToken, @RequestBody Map<String, Object> map) {
+    public Map<String, Object> createNew(@RequestBody Map<String, Object> map) {
         LOG.info("create new client with map: {}", map);
 
-        if (accessToken.contains("Bearer ")) {
-            accessToken = accessToken.replace("Bearer ", "");
-        }
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userIdString = jwt.getClaim("userId");
+
+        String accessToken = jwt.getTokenValue();
+
+        UUID userId = UUID.fromString(userIdString);
 
         if (jpaRegisteredClientRepository.findByClientId(map.get("clientId").toString()) != null) {
             LOG.error("clientId already exists, do an update");
@@ -130,7 +132,12 @@ public class ClientRestService {
                 UUID.fromString(map.get("userId").toString())));
 
         Map<String, Object> mapToReturn = jpaRegisteredClientRepository.getMapObject(registeredClient, false);
-        mapToReturn.put("mediateToken", Boolean.toString(mediateToken));
+        //mapToReturn.put("mediateToken", Boolean.toString(mediateToken));
+
+        LOG.info("clientId: {}", clientId);
+
+        clientOwnerRepository.save(new ClientOwner(clientId, userId));
+
         return mapToReturn;
     }
 
@@ -161,13 +168,29 @@ public class ClientRestService {
 
     @GetMapping("/users/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public Page<MyPair<String, String>> getClientIdsAssociatedWithUser(@PathVariable("id") UUID userId, Pageable pageable) {
+    public Page<MyPair<String, String>> getClientsOwnedByUserId(@PathVariable("id") UUID userId, Pageable pageable) {
         LOG.info("get clientIds for userId: {}", userId);
+
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userIdString = jwt.getClaim("userId");
+        UUID ownerId = UUID.fromString(userIdString);
+
+        LOG.info("userIdString: {}, and userId: {}",userIdString, userId);
+        LOG.info("jwt.getTokenValue: {}", jwt.getTokenValue());
 
         List<MyPair<String, String>> list = new ArrayList<>();
 
+        clientOwnerRepository.findByUserId(userId, pageable).forEach(clientOwner -> {
+                    Optional<Client> optionalClient = clientRepository.findById(clientOwner.getClientId().toString());
+                    if (optionalClient.isEmpty()) {
+                        LOG.error("client not found ClientRepository by clientId: '{}'", clientOwner.getClientId());
+                    }
+                    optionalClient.ifPresent(client ->
+                            list.add(new MyPair<>(client.getId(), client.getClientId())));
+                }
+        );
 
-        clientUserRepository.findByUserId(userId, pageable).forEach(clientUser -> {
+       /* clientUserRepository.findByUserId(userId, pageable).forEach(clientUser -> {
                     Optional<Client> optionalClient = clientRepository.findById(clientUser.getClientId().toString());
                     if (optionalClient.isEmpty()) {
                         LOG.error("client not found ClientRepository by clientId: '{}'", clientUser.getClientId());
@@ -175,10 +198,10 @@ public class ClientRestService {
                     optionalClient.ifPresent(client ->
                             list.add(new MyPair<>(client.getId(), client.getClientId())));
                 }
-        );
+        );*/
 
         LOG.info("list of clientId pairs: {}", list);
-        return new PageImpl<>(list, pageable, clientUserRepository.countByUserId(userId));
+        return new PageImpl<>(list, pageable, clientOwnerRepository.countByUserId(userId));
 /*
         List<ClientUser> clientUserList =clientUserRepository.findByUserId(userId).stream()
                 .toList();
@@ -188,13 +211,14 @@ public class ClientRestService {
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
-    public Mono<Map<String, Object>> update(@RequestHeader(HttpHeaders.AUTHORIZATION)String accessToken, @RequestBody Map<String, Object> map) {
+    public Mono<Map<String, Object>> update(@RequestBody Map<String, Object> map) {
         LOG.info("update client using map: {}", map);
         LOG.info("clientIdIssuedAt: {}", map.get("clientIdIssuedAt"));
 
-        if (accessToken.contains("Bearer ")) {
-            accessToken = accessToken.replace("Bearer ", "");
-        }
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String accessToken = jwt.getTokenValue();
+        LOG.info("accessToken: {}", accessToken);
 
         if (map.get("id") == null) {
             LOG.error("map does not contain client id");
@@ -270,8 +294,13 @@ public class ClientRestService {
     @DeleteMapping("{id}/user-id/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
-    public Mono<Void> delete(@RequestHeader(HttpHeaders.AUTHORIZATION)String accessToken, @PathVariable("id") String id, @PathVariable("userId") UUID userId) {
+    public Mono<Void> delete(@PathVariable("id") String id, @PathVariable("userId") UUID userId) {
         LOG.info("delete client with id: {}", id);
+
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String accessToken = jwt.getTokenValue();
+        LOG.info("accessToken: {}", accessToken);
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findById(id);
 

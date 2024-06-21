@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -83,7 +86,22 @@ public class TokenFilter {
     }
 
     private Mono<ClientResponse> getClientRequest(ClientRequest request, ExchangeFunction next, TokenRequestFilter.RequestFilter requestFilter, String outPath) {
-        if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.request)) {
+       /* if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.forward)) {
+            LOG.info("option is forward token");
+            return ReactiveSecurityContextHolder.getContext().
+                    map(securityContext -> securityContext.getAuthentication().getPrincipal())
+                    .cast(Jwt.class).flatMap(jwt -> {
+                        LOG.info("got accessToken inbound jwt.getTokenValue: {}, jwt: {}", jwt.getTokenValue(), jwt);
+                        ClientRequest clientRequest = ClientRequest.from(request)
+                                .headers(headers -> {
+                                    headers.set(HttpHeaders.ORIGIN, request.headers().getFirst(HttpHeaders.ORIGIN));
+                                    headers.setBearerAuth(jwt.getTokenValue());
+                                    LOG.info("added access-token to http header");
+                                }).build();
+                        return Mono.just(clientRequest);
+                    }).flatMap(next::exchange);
+        }
+        else */if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.request)) {
             return getAccessToken(oauth2TokenEndpoint.toString(), grantType, requestFilter.getAccessToken().getScopes(), requestFilter.getAccessToken().getBase64EncodedClientIdSecret())
                     .flatMap(accessToken -> {
                         LOG.info("got accessToken using client-credential: {}", accessToken);
@@ -94,7 +112,7 @@ public class TokenFilter {
                                     LOG.info("added access-token to http header");
                                 }).build();
                         return Mono.just(clientRequest);
-                    }).flatMap(clientRequest -> next.exchange(clientRequest));
+                    }).flatMap(next::exchange);
         }
         else {
             LOG.info("not going to request a token, forward the request with a Auth token");
