@@ -41,7 +41,7 @@ public class AccountWebClient {
 
     public Mono<String> emailMySecret(String email) {
         emailMySecret = emailMySecret.replace("{email}", email);
-        LOG.info("email using endpoint: {}", emailMySecret);
+        LOG.info("email '{}' using endpoint: {}", email, emailMySecret);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(emailMySecret)
                 .retrieve();
