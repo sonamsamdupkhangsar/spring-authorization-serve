@@ -19,6 +19,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 
 @Component
@@ -119,6 +123,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
 
         return entity;
     }
+    DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm");
 
     public RegisteredClient build(Map<String, Object> map) {
         String id;
@@ -140,7 +145,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         Set<String> clientScopes = StringUtils.commaDelimitedListToSet(
                 map.get("scopes").toString());
 
-        return RegisteredClient.withId(id)
+        RegisteredClient.Builder registeredClientBuilder = RegisteredClient.withId(id)
                 .clientId((String)map.get("clientId"))
                 .clientSecret((String)map.get("clientSecret"))
                 .clientName((String)map.get("clientName"))
@@ -170,7 +175,35 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
                 )
 
                 .clientSettings(ClientSettings.withSettings(parseMap(map.get("clientSettings").toString())).build())
-                .tokenSettings(TokenSettings.withSettings(parseMap(map.get("tokenSettings").toString())).build()).build();
+                .tokenSettings(TokenSettings.withSettings(parseMap(map.get("tokenSettings").toString())).build());
+
+
+        if (map.get("clientIdIssuedAt") != null) {
+            registeredClientBuilder.clientIdIssuedAt(getInstant(map.get("clientIdIssuedAt").toString()));
+            /*long secondsSinceEpoch = Double.valueOf(map.get("clientIdIssuedAt").toString()).longValue();
+            Instant instant = Instant.ofEpochSecond(secondsSinceEpoch);
+
+            registeredClientBuilder.clientIdIssuedAt(instant);
+            LOG.info("set clientIdIssuedAt to instant: {}", instant);*/
+        }
+        if (map.get("clientSecretExpiresAt") != null) {
+            registeredClientBuilder.clientSecretExpiresAt(getInstant(map.get("clientSecretExpiresAt").toString()));
+        }
+
+        return registeredClientBuilder.build();
+    }
+
+    private Instant getInstant(String secondsSinceEpochInExponential) {
+        if (secondsSinceEpochInExponential == null || secondsSinceEpochInExponential.isEmpty()) {
+            LOG.info("secondsSinceEpochInExponential is null/empty: {}", secondsSinceEpochInExponential);
+            return null;
+        }
+
+        long secondsSinceEpoch = Double.valueOf(secondsSinceEpochInExponential).longValue();
+        Instant instant = Instant.ofEpochSecond(secondsSinceEpoch);
+
+        LOG.info("secondsSinceEpoch {} to instant: {}", secondsSinceEpoch, instant);
+        return instant;
     }
 
     public Map<String, String> getMap(RegisteredClient registeredClient) {
@@ -211,6 +244,8 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         map.put("id", registeredClient.getId());
         map.put("clientId", registeredClient.getClientId());
         map.put("clientSecret", registeredClient.getClientSecret());
+        map.put("clientIdIssuedAt", registeredClient.getClientIdIssuedAt());
+        map.put("clientSecretExpiresAt", registeredClient.getClientSecretExpiresAt());
         map.put("clientName", registeredClient.getClientName());
         map.put("clientAuthenticationMethods", StringUtils.collectionToCommaDelimitedString(clientAuthenticationMethods));
         map.put("authorizationGrantTypes", StringUtils.collectionToCommaDelimitedString(authorizationGrantTypes));

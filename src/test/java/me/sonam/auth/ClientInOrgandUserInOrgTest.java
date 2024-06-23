@@ -193,12 +193,12 @@ public class ClientInOrgandUserInOrgTest {
 
         //then finally send the  mocked authentication response for callout
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-                .setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
+                .setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"userId\": \""+ userId +"\",\"message\": \"Authentication successful\"}"));
 
         // user will be found from clientUser relationship
         //mock role names for authentication http callout
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-                .setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\", \"message\": \"Authentication successful\"}"));
+                .setResponseCode(200).setBody("{\"roleNames\": \"[user, SuperAdmin]\",  \"userId\": \""+ userId +"\",\"message\": \"Authentication successful\"}"));
 
         LOG.info("sign-in to the location page");
         signIn(this.webClient.getPage(AUTHORIZATION_REQUEST), "user1", "password");

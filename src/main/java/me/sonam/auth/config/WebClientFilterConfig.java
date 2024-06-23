@@ -1,8 +1,9 @@
 package me.sonam.auth.config;
 
 import jakarta.annotation.PostConstruct;
-import me.sonam.auth.AccountWebClient;
-import me.sonam.auth.service.TokenFilter;
+import me.sonam.auth.webclient.AccountWebClient;
+import me.sonam.auth.util.TokenFilter;
+import me.sonam.auth.webclient.TokenMediatorWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +28,11 @@ public class WebClientFilterConfig {
     @Value("${account-rest-service.root}${account-rest-service.context}${account-rest-service.updatePassword}")
     private String updatePassword;
 
+    @Value("${oauth2-token-mediator.root}${oauth2-token-mediator.clients}")
+    private String tokenClientEndpoint;
+
     @Autowired
-    private WebClient.Builder webCliBuilder;
+    private WebClient.Builder webClientBuilder;
 
     @Autowired
     private TokenFilter tokenFilter;
@@ -36,12 +40,17 @@ public class WebClientFilterConfig {
     @PostConstruct
     public void addFilterToWebClient() {
         LOG.info("configure the renewTokenFilter only once in this config");
-        webCliBuilder.filter(tokenFilter.renewTokenFilter()).build();
+        webClientBuilder.filter(tokenFilter.renewTokenFilter()).build();
     }
 
     @Bean
     public AccountWebClient accountWebClient() {
-        return new AccountWebClient(webCliBuilder, emailUsername, emailMySecret, emailActiveLink, validateEmailLoginSecret, updatePassword);
+        return new AccountWebClient(webClientBuilder, emailUsername, emailMySecret, emailActiveLink, validateEmailLoginSecret, updatePassword);
+    }
+
+    @Bean
+    public TokenMediatorWebClient tokenMediatorWebClient() {
+        return new TokenMediatorWebClient(webClientBuilder, tokenClientEndpoint);
     }
 
 }

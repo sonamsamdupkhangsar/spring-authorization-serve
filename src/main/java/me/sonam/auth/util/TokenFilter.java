@@ -1,25 +1,21 @@
-package me.sonam.auth.service;
+package me.sonam.auth.util;
 
-import me.sonam.auth.util.JwtPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.client.ClientRequest;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.reactive.function.client.*;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,12 +37,12 @@ public class TokenFilter {
     private String userByAuthIdEp;
 
     @Autowired
-    private JwtPath jwtPath;
+    private TokenRequestFilter tokenRequestFilter;
 
     private WebClient.Builder webClientBuilder;
 
     private RequestCache requestCache;
-    @Value("${auth-server.oauth2token.path:}")
+    @Value("${auth-server.oauth2token.issuerTokenPath:}")
     private String accessTokenPath;
 
     public TokenFilter(WebClient.Builder webClientBuilder, RequestCache requestCache) {
@@ -56,7 +52,7 @@ public class TokenFilter {
 
     public ExchangeFilterFunction renewTokenFilter() {
         return (request, next) -> {
-            LOG.debug("request.path: {}", request.url().getPath());
+            LOG.info("request.path: {}", request.url().getPath());
             if (request.url().getPath().equals(accessTokenPath)) {
                 LOG.debug("no need to request access token when going to that path: {}", request.url().getPath());
                 ClientRequest clientRequest = ClientRequest.from(request).build();
@@ -64,9 +60,10 @@ public class TokenFilter {
             }
             else {
                 LOG.info("going thru jwt request ") ;
-                for (JwtPath.JwtRequest jwt : jwtPath.getJwtRequest()) {
-                    LOG.debug("jwt.out: {}", jwt.getOut());
-                    String[] outMatches = jwt.getOut().split(",");
+                for (TokenRequestFilter.RequestFilter requestFilter : tokenRequestFilter.getRequestFilters()) {
+                    LOG.debug("jwt.out: {}", requestFilter.getOut());
+                    String[] outMatches = requestFilter.getOut().split(",");
+
                     for (String outPath : outMatches) {
                         LOG.info("outPath: {}", outPath);
                         if (request.url().getPath().matches(outPath.trim())) {
@@ -74,35 +71,55 @@ public class TokenFilter {
                                     outPath, request.url().getPath());
                             LOG.info("make a token request");
 
-                            final StringBuilder oauthEndpointWithScope = new StringBuilder(oauth2TokenEndpoint);
-
-                            if (jwt.getAccessToken().getScopes() != null && !jwt.getAccessToken().getScopes().trim().isEmpty()) {
-                                oauthEndpointWithScope.append("&scope=").append(jwt.getAccessToken().getScopes());
-                            }
-
-
-                            return getAccessToken(oauth2TokenEndpoint, grantType, jwt.getAccessToken().getScopes(), jwt.getAccessToken().getBase64EncodedClientIdSecret())
-                                    .flatMap(accessToken -> {
-
-                                        LOG.info("get accessToken: {}", accessToken);
-                                        ClientRequest clientRequest = ClientRequest.from(request)
-                                                .headers(headers -> {
-                                                    headers.set(HttpHeaders.ORIGIN, request.headers().getFirst(HttpHeaders.ORIGIN));
-                                                    headers.setBearerAuth(accessToken);
-                                                    LOG.info("added access-token to http header");
-                                                }).build();
-                                        return Mono.just(clientRequest);
-                                    }).flatMap(clientRequest -> next.exchange(clientRequest));
+                            return getClientRequest(request, next, requestFilter, outPath);
                         }
                     }
                 }
 
                 LOG.info("no outbound path match found");
+                LOG.info("printing bearer header: {}", request.headers().get(HttpHeaders.AUTHORIZATION));
                 ClientRequest filtered = ClientRequest.from(request)
                         .build();
                 return next.exchange(filtered);
             }
         };
+    }
+
+    private Mono<ClientResponse> getClientRequest(ClientRequest request, ExchangeFunction next, TokenRequestFilter.RequestFilter requestFilter, String outPath) {
+       /* if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.forward)) {
+            LOG.info("option is forward token");
+            return ReactiveSecurityContextHolder.getContext().
+                    map(securityContext -> securityContext.getAuthentication().getPrincipal())
+                    .cast(Jwt.class).flatMap(jwt -> {
+                        LOG.info("got accessToken inbound jwt.getTokenValue: {}, jwt: {}", jwt.getTokenValue(), jwt);
+                        ClientRequest clientRequest = ClientRequest.from(request)
+                                .headers(headers -> {
+                                    headers.set(HttpHeaders.ORIGIN, request.headers().getFirst(HttpHeaders.ORIGIN));
+                                    headers.setBearerAuth(jwt.getTokenValue());
+                                    LOG.info("added access-token to http header");
+                                }).build();
+                        return Mono.just(clientRequest);
+                    }).flatMap(next::exchange);
+        }
+        else */if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.request)) {
+            return getAccessToken(oauth2TokenEndpoint.toString(), grantType, requestFilter.getAccessToken().getScopes(), requestFilter.getAccessToken().getBase64EncodedClientIdSecret())
+                    .flatMap(accessToken -> {
+                        LOG.info("got accessToken using client-credential: {}", accessToken);
+                        ClientRequest clientRequest = ClientRequest.from(request)
+                                .headers(headers -> {
+                                    headers.set(HttpHeaders.ORIGIN, request.headers().getFirst(HttpHeaders.ORIGIN));
+                                    headers.setBearerAuth(accessToken);
+                                    LOG.info("added access-token to http header");
+                                }).build();
+                        return Mono.just(clientRequest);
+                    }).flatMap(next::exchange);
+        }
+        else {
+            LOG.info("not going to request a token, forward the request with a Auth token");
+            ClientRequest filtered = ClientRequest.from(request)
+                    .build();
+            return next.exchange(filtered);
+        }
     }
 
     private Mono<String> getAccessToken(final String oauthEndpoint, String grantType, String scopes, final String base64EncodeClientIdSecret) {
@@ -111,8 +128,13 @@ public class TokenFilter {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("grant_type", grantType);
 
-        body.add("scope", scopes);
-        LOG.info("scope: {}", scopes);
+        if (scopes != null && !scopes.isEmpty()) {
+            body.add("scope", scopes);
+            LOG.info("added scope to body: {}", scopes);
+        }
+        else {
+            LOG.info("scope is null, not adding to body");
+        }
 
         LOG.info("add body payload for grant type and scopes: {}", body);
 

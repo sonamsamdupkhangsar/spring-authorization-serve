@@ -9,14 +9,13 @@ logging:
     me.sonam.auth: info
     com.netflix: off
     me.sonam.auth.config: debug
+    me.sonam.auth.service.TokenFilter: error
 #    org.springframework.web: info
 #    org.springframework.security: info
 #    org.springframework.security.oauth2: info
 #    org.springframework.boot.autoconfigure: warn
 
 spring:
-  profiles:
-    active: local
   application:
     name: authorization-server
   datasource:
@@ -33,11 +32,15 @@ spring:
     cache: false
     mode: HTML
     encoding: UTF-8
-    prefix: file:src/main/resources/templates/
+    #prefix: file:src/main/resources/templates/
+    classpath: /templates/
+    suffix: .html
   resources: # Static resources
     static-locations: file:src/main/resources/static/
     cache:
       period: 0
+  authorization-server:
+    forward-cookies: false
 
 application-rest-service:
   root: ${APPLICATION_REST_SERVICE}
@@ -50,7 +53,8 @@ authentication-rest-service:
 user-rest-service:
   root: ${USER_REST_SERVICE}
   context: /users
-  userByAuthId: ${user-rest-service.context}/{authenticationId}
+  userId: ${user-rest-service.context}/{id}
+  userByAuthId: ${user-rest-service.context}/authentication-id/{authenticationId}
 
 organization-rest-service:
   root: ${ORGANIZATION_REST_SERVICE}
@@ -75,41 +79,36 @@ auth-server:
   oauth2token:
     path: /oauth2/token
     grantType: client_credentials
+    issuerTokenPath: /issuer/oauth2/token
+
 
 client:
   url: ${client-app}
   forgot-username-password: /forgot
 
-jwtrequest:
-  - in: /*
-    out: /users,/users/(.)*
+requestFilters:
+  - out: /users, /users/authentication-id/(.)*, /users/authentication-id/*
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /*
-    out: /organizations/(.)*/users/(.)*
+  - out: /organizations/(.)*/users/(.)*
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /*
-    out: /oauth2-token-mediator/clients
-    accessToken:
-      option: request
-      scopes: ${REQUEST_SCOPES}
-      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /*
-    out: /oauth2-token-mediator/clients/(.)*
-    accessToken:
-      option: request
-      scopes: ${REQUEST_SCOPES}
-      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /*
-    out: /accounts/active/email-link/(.)*, /accounts/email/(.)*, 
+#  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
+#    accessToken:
+#      option: forward
+
+  - out: /accounts/active/email-link/(.)*, /accounts/email/(.)*, 
           /accounts/email/(.)*/authenticationId, /accounts/active/email/(.)*/password-secret,
           /accounts/(.)*/password-secret/(.)*, /accounts/password-secret
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+
+# this is for create authzmanager client if it is not present
+authzmanager-id: b4dfe3fb-1692-44b8-92ab-366ccc84b539
+authzmanager-client: b4dfe3fb-1692-44b8-92ab-366ccc84b539-authzmanager

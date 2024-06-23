@@ -1,13 +1,11 @@
-package me.sonam.auth;
+package me.sonam.auth.webclient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class AccountWebClient {
@@ -43,11 +41,14 @@ public class AccountWebClient {
 
     public Mono<String> emailMySecret(String email) {
         emailMySecret = emailMySecret.replace("{email}", email);
-        LOG.info("email using endpoint: {}", emailMySecret);
+        LOG.info("email '{}' using endpoint: {}", email, emailMySecret);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(emailMySecret)
                 .retrieve();
-        return responseSpec.bodyToMono(String.class);
+        return responseSpec.bodyToMono(String.class).onErrorResume(throwable -> {
+            LOG.error("failed to call email my secret endpoint", throwable);
+            return Mono.error(throwable);
+        });
     }
 
     public Mono<Map<String, String>> validateEmailLoginSecret(String email, String secret) {

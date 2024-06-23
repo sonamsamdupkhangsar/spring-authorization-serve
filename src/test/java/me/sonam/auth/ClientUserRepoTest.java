@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,7 +98,7 @@ public class ClientUserRepoTest {
 
 
         LOG.info("get clientUser list by userId: {}", userId);
-        List<ClientUser> list = clientUserRepository.findByUserId(userId);
+        List<ClientUser> list = clientUserRepository.findByUserId(userId, PageRequest.of(0, 100));
         LOG.info("found {} clientUsers for userId", list.size());
         assertThat(list.contains(new ClientUser(clientId1, userId))).isTrue();
         assertThat(list.contains(new ClientUser(clientId2, userId))).isTrue();
@@ -120,7 +121,7 @@ public class ClientUserRepoTest {
 
         LOG.info("get clientUser list by userId: {}", userId);
         LOG.info("should only have 1 entry when attempting to insert two");
-        List<ClientUser> list = clientUserRepository.findByUserId(userId);
+        List<ClientUser> list = clientUserRepository.findByUserId(userId, PageRequest.of(0, 100));
         assertThat(list.size()).isEqualTo(1);
         assertThat(list.contains(new ClientUser(clientId, userId))).isTrue();
 

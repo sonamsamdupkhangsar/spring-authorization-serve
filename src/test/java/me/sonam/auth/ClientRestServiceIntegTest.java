@@ -3,6 +3,7 @@ package me.sonam.auth;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
+import me.sonam.auth.mocks.WithMockCustomUser;
 import me.sonam.auth.rest.util.MyPair;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import okhttp3.mockwebserver.MockResponse;
@@ -70,6 +71,8 @@ public class ClientRestServiceIntegTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private final String tokenValue ="";
+
     UUID clientId = UUID.randomUUID();
     //UUID messageClient = UUID.randomUUID();
     //String clientId = "test-private-client";  //this is created in the test
@@ -101,10 +104,13 @@ public class ClientRestServiceIntegTest {
         r.add("oauth2-token-mediator.root", () -> "http://localhost:"+mockWebServer.getPort());
     }
 
+
+    @WithMockCustomUser(token = tokenValue, userId = "5d8de63a-0b45-4c33-b9eb-d7fb8d662107", username = "user@sonam.cloud", password = "password", role = "ROLE_USER")
     @Test
     public void create() throws Exception {
         LOG.info("create registration client");
         final String accessToken  = getOauth2Token(messageClient, "secret");
+        //final String accessToken = "eyJraWQiOiJiYThjMDY1Mi1mNDY1LTRjMjgtYTBhNC00ZjkwZjZiMDgwYWUiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJzb25hbSIsImF1ZCI6ImI0ZGZlM2ZiLTE2OTItNDRiOC05MmFiLTM2NmNjYzg0YjUzOS1hdXRoem1hbmFnZXIiLCJuYmYiOjE3MTg4MjMyOTgsInNjb3BlIjpbIm9wZW5pZCIsInByb2ZpbGUiXSwiaXNzIjoiaHR0cDovL2FwaS1nYXRld2F5OjkwMDEvaXNzdWVyIiwiZXhwIjoxNzE4ODIzNTk4LCJ1c2VyUm9sZSI6WyJVU0VSX1JPTEUiXSwiaWF0IjoxNzE4ODIzMjk4LCJ1c2VySWQiOiIxZjQ0MmRhYi05NmEzLTQ1OWUtODYwNS03ZjVjZDVmODJlMjUiLCJqdGkiOiJkOTA2MmE2MC01ODQ2LTRiM2YtYmYwOC03ZGZmNDY5ZmIxOTMifQ.fwKo-SWQnFRpyAVuLxTjjkAqMqNMXBy7NNr-SIbuaXYzOrpzdhY0PFKrG2sRbbvSWxoIIjPFaVeFskh-I_sON8uvTw3MPld5W3gf7RcT_ZG49UlGt4E1R_BzhxiYpkm2QCZqZl1CtgQ_lqgN0roTWuXGMCPFuwATIyIhfkAHnyvWBcUlGRavDfGEBx61MEWJZ3ZnK0Mr08_LH4dXqms2QoDEIQzDbpNLUFCpV99mTEKyOMfKh5wrSgex7fdwdDcdhq1wx98nlbrk9gmLRMruYaPx8Vun0xFjudZzIDwvqA9iQRPjQmJdO-8V9xFY5mvS04zrRbRCIDR_g09hwkkRTw";
 
         LOG.info("oauth2Token: {}", accessToken);
 
@@ -141,9 +147,9 @@ public class ClientRestServiceIntegTest {
 
         //secret is encoded but for base64 use {noop}secret
 
-        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+        /*mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"access_token\": \"eyJraWQiOiJlOGQ3MjIzMC1iMDgwLTRhZjEtODFkOC0zMzE3NmNhMTM5ODIiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI3NzI1ZjZmZC1kMzk2LTQwYWYtOTg4Ni1jYTg4YzZlOGZjZDgiLCJhdWQiOiI3NzI1ZjZmZC1kMzk2LTQwYWYtOTg4Ni1jYTg4YzZlOGZjZDgiLCJuYmYiOjE3MTQ3NTY2ODIsImlzcyI6Imh0dHA6Ly9teS1zZXJ2ZXI6OTAwMSIsImV4cCI6MTcxNDc1Njk4MiwiaWF0IjoxNzE0NzU2NjgyLCJqdGkiOiI0NDBlZDY0My00MzdkLTRjOTMtYTZkMi1jNzYxNjFlNDRlZjUifQ.fjqgoczZbbmcnvYpVN4yakpbplp7EkDyxslvar5nXBFa6mgIFcZa29fwIKfcie3oUMQ8MDWxayak5PZ_QIuHwTvKSWHs0WL91ljf-GT1sPi1b4gDKf0rJOwi0ClcoTCRIx9-WGR6t2BBR1Rk6RGF2MW7xKw8M-RMac2A2mPEPJqoh4Pky1KgxhZpEXixegpAdQIvBgc0KBZeQme-ZzTYugB8EPUmGpMlfd-zX_vcR1ijxi8e-LRRJMqmGkc9GXfrH7MOKNQ_nu6pc6Gish2v_iuUEcpPHXrfqzGb9IHCLvfuLSaTDcYKYjQaEUAp-1uDW8-5posjiUV2eBiU48ajYg\", \"token_type\":\"Bearer\", \"expires_in\":\"299\"}"));
-
+*/
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"deleted clientid in token-mediator: "+clientId+"\"}"));
 
@@ -152,10 +158,10 @@ public class ClientRestServiceIntegTest {
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isNoContent();
 
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        RecordedRequest recordedRequest = /*mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2/token");
-
+*/
         recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
@@ -164,7 +170,7 @@ public class ClientRestServiceIntegTest {
     }
 
 
-
+    @WithMockCustomUser(token = tokenValue, userId = "5d8de63a-0b45-4c33-b9eb-d7fb8d662107", username = "user@sonam.cloud", password = "password", role = "ROLE_USER")
     @Test
     public void update() throws Exception {
         LOG.info("update registration client by using access_token from this client itself for client credential flow");
@@ -175,11 +181,11 @@ public class ClientRestServiceIntegTest {
 
         final String clientIdAccessToken = getOauth2Token(clientId.toString(), "{noop}secret");
 
-        LOG.info("send a mock accesstoken for making a call to toke-mediator delete call");
+       /* LOG.info("send a mock accesstoken for making a call to toke-mediator delete call");
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody(refreshTokenResource.getContentAsString(StandardCharsets.UTF_8)));
 
-        LOG.info("mock the delete call from token-mediator call");
+       */ LOG.info("mock the delete call from token-mediator call");
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"deleted clientId: "+clientId+"\"}"));
 
@@ -196,12 +202,12 @@ public class ClientRestServiceIntegTest {
 
         // take request for mocked response of access token
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+      /*  assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2/token");
 
         LOG.info("take request for mocked response to token-mediator for client delete");
         recordedRequest = mockWebServer.takeRequest();
-        assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
+      */  assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
 
         assertThat(registeredClient1.getRedirectUris()).contains("http://www.sonam.cloud");
@@ -225,62 +231,63 @@ public class ClientRestServiceIntegTest {
      * this will test the "get all client association with user".
      * @throws Exception
      */
+    @WithMockCustomUser(token = tokenValue, userId = "e21457c5-1a89-45fe-9fbf-b49522077893", username = "user@sonam.cloud", password = "password", role = "ROLE_USER")
     @Test
     public void getAllClientIdAssociatedWithUser() throws Exception {
         LOG.info("get all client ids by user-id");
         final String messageClientAccessToken = getOauth2Token(messageClient, clientSecret); //get token using messageClient first
         LOG.info("messageClientAccessToken: {}", messageClientAccessToken);
-        UUID userId = UUID.randomUUID();
+        UUID userId = UUID.fromString("e21457c5-1a89-45fe-9fbf-b49522077893");
 
-        List<MyPair<String, String>> list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list).isNotNull();
-        assertThat(list).isEmpty();
+        RestPage<MyPair<String, String>> page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page).isNotNull();
+        assertThat(page).isEmpty();
 
         UUID testClient1 = UUID.randomUUID();
         saveClient(testClient1.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(1);
-        assertThat(list.get(0).getKey()).isNotNull();
-        assertThat(list.get(0).getKey()).isEqualTo(testClient1.toString());
-        assertThat(list.get(0).getValue()).isEqualTo(testClient1.toString());
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        assertThat(page.getContent().get(0).getKey()).isNotNull();
+        assertThat(page.getContent().get(0).getKey()).isEqualTo(testClient1.toString());
+        assertThat(page.getContent().get(0).getValue()).isEqualTo(testClient1.toString());
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
 
         UUID testClient2= UUID.randomUUID();
         saveClient(testClient2.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(2);
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
 
         UUID testClient3 = UUID.randomUUID();
         saveClient(testClient3.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(3);
-        assertThat(list.get(2).getKey()).isNotNull();
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
-        assertThat(list).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent().get(2).getKey()).isNotNull();
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        assertThat(page).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
 
         UUID testClient4 = UUID.randomUUID();
         saveClient(testClient4.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(4);
-        assertThat(list.get(3).getKey()).isNotNull();
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
-        assertThat(list).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
-        assertThat(list).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(4);
+        assertThat(page.getContent().get(3).getKey()).isNotNull();
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        assertThat(page).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
+        assertThat(page).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
 
         UUID testClient5 = UUID.randomUUID();
         saveClient(testClient5.toString(), "{noop}"+clientSecret, userId, messageClientAccessToken);
-        list = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
-        assertThat(list.size()).isEqualTo(5);
-        assertThat(list.get(4).getKey()).isNotNull();
-        assertThat(list).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
-        assertThat(list).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
-        assertThat(list).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
-        assertThat(list).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
-        assertThat(list).contains(new MyPair<>(testClient5.toString(), testClient5.toString()));
+        page = getClientIdsAssociatedWithUser(userId, messageClientAccessToken);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getContent().get(4).getKey()).isNotNull();
+        assertThat(page).contains(new MyPair<>(testClient1.toString(), testClient1.toString()));
+        assertThat(page).contains(new MyPair<>(testClient2.toString(), testClient2.toString()));
+        assertThat(page).contains(new MyPair<>(testClient3.toString(), testClient3.toString()));
+        assertThat(page).contains(new MyPair<>(testClient4.toString(), testClient4.toString()));
+        assertThat(page).contains(new MyPair<>(testClient5.toString(), testClient5.toString()));
     }
 
     private String getOauth2Token(String clientId, String secret) {
@@ -326,14 +333,14 @@ public class ClientRestServiceIntegTest {
         regClientMap.put("userId", userId);
         LOG.info("requestBody: {}", regClientMap);
 
-        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+       /* mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody(refreshTokenResource.getContentAsString(StandardCharsets.UTF_8)));
-
+*/
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"saved client, count of client by clientId: 1\"}"));
 
         Mono<Map> mapMono = webTestClient.post().uri("/clients").bodyValue(regClientMap)
-                .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
+              //  .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isCreated().returnResult(Map.class).getResponseBody().single();
 
         StepVerifier.create(mapMono).assertNext(map1 -> {
@@ -344,11 +351,11 @@ public class ClientRestServiceIntegTest {
 
         // take request for mocked response of access token
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+       /* assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2/token");
 
-        LOG.info("take request for mocked response to token-mediator for client when mediateToken field is not present");
-        recordedRequest = mockWebServer.takeRequest();
+        LOG.info("take request for mocked response to token-mediator for client when mediateToken field is not present");*/
+        //recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
     }
@@ -404,12 +411,12 @@ public class ClientRestServiceIntegTest {
         return entityExchangeResult.getResponseBody();
     }
 
-    private List<MyPair<String, String>> getClientIdsAssociatedWithUser(UUID userId, String accessToken) {
-        EntityExchangeResult<List<MyPair<String, String>>> entityExchangeResult = webTestClient.get()
+    private RestPage<MyPair<String, String>> getClientIdsAssociatedWithUser(UUID userId, String accessToken) {
+        EntityExchangeResult<RestPage<MyPair<String, String>>> entityExchangeResult = webTestClient.get()
                 .uri("/clients/users/"+userId)
-                .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
+               // .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isOk().expectBody(new ParameterizedTypeReference<
-                        List<MyPair<String, String>>>(){}).returnResult();
+                        RestPage<MyPair<String, String>>>(){}).returnResult();
 
         assertThat(entityExchangeResult).isNotNull();
         assertThat(entityExchangeResult.getResponseBody()).isNotNull();

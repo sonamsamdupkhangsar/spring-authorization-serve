@@ -9,7 +9,7 @@ logging:
     org.springframework.web: INFO
     org.springframework.security: info
     org.springframework.security.oauth2: info
-#    me.sonam.auth: debug
+    me.sonam.auth: debug
 #    org.springframework.boot.autoconfigure: DEBUG
 
 eureka:
@@ -42,7 +42,9 @@ authentication-rest-service:
 
 user-rest-service:
   root: http://localhost:8080
-  userByAuthId: /users/{authenticationId}
+  context: /users
+  userId: ${user-rest-service.context}/{id}
+  userByAuthId: ${user-rest-service.context}/authentication-id/{authenticationId}
 
 organization-rest-service:
   root: http://localhost:8080
@@ -51,7 +53,7 @@ organization-rest-service:
 account-rest-service:
   root:  http://localhost:8080
   context: /accounts
-  emailUsername: /email/{email/authentication-id
+  emailUsername: /email/{email}/authentication-id
   emailMySecret: /email/{email}/password-secret
   emailActivateLink: /active/email/{email}/password-secret
   validateEmailLoginSecret: /{email}/password-secret/{secret}
@@ -60,39 +62,26 @@ account-rest-service:
 ISSUER_URI: http://my-server:9001
 private-client-url: http://127.0.0.1:8090
 
-jwtrequest:
-  - in: /*
-    out: /users/(.)*
+requestFilters:
+  - out: /users, /users/authentication-id/(.)*
     accessToken:
       option: request
       scopes: message.read
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - in: /*
-    out: /authentications/(.)*
+  - out: /authentications/(.)*
     accessToken:
       option: request
       scopes: message.read
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - in: /*
-    out: /organizations/(.)*/users/(.)*
+  - out: /organizations/(.)*/users/(.)*
     accessToken:
       option: request
       scopes: message.read
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - in: /*
-    out: /oauth2-token-mediator/clients
-    accessToken:
-      option: request
-      scopes: message.write
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - in: /*
-    out: /oauth2-token-mediator/clients/(.)*
-    accessToken:
-      option: request
-      scopes: message.write
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - in: /*
-    out: /accounts/active/email-link/(.)*
+#  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
+#    accessToken:
+#      option: forward
+  - out: /accounts/active/email-link/(.)*
     accessToken:
       option: request
       scopes: message.write
@@ -115,4 +104,10 @@ BASE64_CLIENT_ID_SECRET: dXNlcjpzZWNyZXQ=
 REQUEST_SCOPES: cmVhZCB3cml0ZQ==
 
 allowedOrigins: 10.0.0.28, localhost, 127.0.0.1
+
 authzmanager: http://localhost:9093
+
+# this is for create authzmanager client if it is not present
+authzmanager-id: b4dfe3fb-1692-44b8-92ab-366ccc84b539
+authzmanager-client: b4dfe3fb-1692-44b8-92ab-366ccc84b539-authzmanager
+AUTHZMANAGER_INITIAL_SECRET: hello

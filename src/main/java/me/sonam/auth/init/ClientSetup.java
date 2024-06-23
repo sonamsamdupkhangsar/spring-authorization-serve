@@ -36,8 +36,50 @@ public class ClientSetup {
     @Value("${BASE64_CLIENT_ID_SECRET}")
     private String base64ClientIdSecret;
 
+    @Value("${authzmanager-id}")
+    private String authzManagerId;
+
+    @Value("${authzmanager-client}")
+    private String authzManagerClient;
+
+    @Value("${AUTHZMANAGER_INITIAL_SECRET}")
+    private String authzManagerInitialSecret;  //this secret can be changed by user in the authzmanager
+
+    @Value("${authzmanager}")
+    private String authzManagerUri;
+
+
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+
+    @PostConstruct
+    public void createAuthzManagerClient() {
+        LOG.info("create authzManager client if it is not created");
+
+        RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(authzManagerClient);
+
+        if (registeredClient == null) {
+            LOG.info("authzManager client: {}, secret: {}", authzManagerClient, authzManagerInitialSecret);
+
+            registeredClient = RegisteredClient.withId(authzManagerId)
+                    .clientId(authzManagerClient)
+                    .clientSecret(passwordEncoder.encode(authzManagerInitialSecret))
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .scope(OidcScopes.OPENID)
+                    .scope(OidcScopes.PROFILE)
+                    .redirectUri(authzManagerUri+"/login/oauth2/code/"+authzManagerClient)
+                    .build();
+
+            jpaRegisteredClientRepository.save(registeredClient);
+            LOG.info("saved authzmanager client");
+        }
+        else {
+            LOG.info("authzmanager exists");
+        }
+    }
 
     @PostConstruct
     public void createServiceAccount() {

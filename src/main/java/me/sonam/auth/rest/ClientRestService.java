@@ -1,45 +1,40 @@
 package me.sonam.auth.rest;
 
 
-
 import jakarta.ws.rs.BadRequestException;
-
 import me.sonam.auth.jpa.entity.Client;
+import me.sonam.auth.jpa.entity.ClientOwner;
 import me.sonam.auth.jpa.entity.ClientUser;
 import me.sonam.auth.jpa.entity.TokenMediate;
-import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
-import me.sonam.auth.jpa.repo.ClientRepository;
-import me.sonam.auth.jpa.repo.HClientUserRepository;
-import me.sonam.auth.jpa.repo.TokenMediateRepository;
+import me.sonam.auth.jpa.repo.*;
 import me.sonam.auth.rest.util.MyPair;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
-import me.sonam.auth.util.JwtPath;
+import me.sonam.auth.util.TokenRequestFilter;
+import me.sonam.auth.webclient.TokenMediatorWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-
-import static reactor.core.publisher.Mono.just;
 
 @RestController
 @RequestMapping("/clients")
 public class ClientRestService {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRestService.class);
 
-    @Value("${oauth2-token-mediator.root}${oauth2-token-mediator.clients}")
-    private String tokenMediatorEndpoint;
 
     private ClientRepository clientRepository;
     private final JpaRegisteredClientRepository jpaRegisteredClientRepository;
@@ -51,18 +46,22 @@ public class ClientRestService {
 
     @Autowired
     private ClientOrganizationRepository clientOrganizationRepository;
-    private WebClient.Builder webClientBuilder;
+
+    @Autowired
+    private ClientOwnerRepository clientOwnerRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private JwtPath jwtPath;
+    private TokenRequestFilter tokenRequestFilter;
 
-    public ClientRestService(WebClient.Builder webClientBuilder,
-                             JpaRegisteredClientRepository jpaRegisteredClientRepository,
-                             ClientRepository clientRepository, PasswordEncoder passwordEncoder) {
-        this.webClientBuilder = webClientBuilder;
+    private TokenMediatorWebClient tokenMediatorWebClient;
+
+    public ClientRestService(JpaRegisteredClientRepository jpaRegisteredClientRepository,
+                             ClientRepository clientRepository, PasswordEncoder passwordEncoder,
+                             TokenMediatorWebClient tokenMediatorWebClient) {
+        this.tokenMediatorWebClient = tokenMediatorWebClient;
         this.jpaRegisteredClientRepository = jpaRegisteredClientRepository;
         this.clientRepository = clientRepository;
         this.passwordEncoder = passwordEncoder;
@@ -71,8 +70,15 @@ public class ClientRestService {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Map<String, Object> createNew(@RequestBody Map<String, Object> map ) {
+    public Map<String, Object> createNew(@RequestBody Map<String, Object> map) {
         LOG.info("create new client with map: {}", map);
+
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userIdString = jwt.getClaim("userId");
+
+        String accessToken = jwt.getTokenValue();
+
+        UUID userId = UUID.fromString(userIdString);
 
         if (jpaRegisteredClientRepository.findByClientId(map.get("clientId").toString()) != null) {
             LOG.error("clientId already exists, do an update");
@@ -85,9 +91,10 @@ public class ClientRestService {
         }
 
         String encodedPassword = passwordEncoder.encode((String)map.get("clientSecret"));
-        LOG.info("encodedPassword: {}", encodedPassword);
+
+        LOG.info("saving bcrypt encodedPassword {} as the clientSecret", encodedPassword);
         map.put("clientSecret", encodedPassword);
-        LOG.info("encode password with bcrypt");
+
         RegisteredClient registeredClient = jpaRegisteredClientRepository.build(map);
 
         LOG.debug("built registeredClient from map: {}", registeredClient);
@@ -109,7 +116,7 @@ public class ClientRestService {
                 tokenMediateRepository.save(tokenMediate);
             }
             LOG.info("call tokenMediator");
-            saveClientInTokenMediator(map.get("clientId").toString(), map.get("clientSecret").toString())
+            tokenMediatorWebClient.saveClientInTokenMediator(accessToken, map.get("clientId").toString(), map.get("clientSecret").toString())
                     .block();
         }
         else {
@@ -117,7 +124,7 @@ public class ClientRestService {
                 LOG.info("delete existing tokenMediate record when not enabled.");
                 tokenMediateRepository.deleteById(clientId);
             }
-            deleteClientFromTokenMediator(map.get("clientId").toString()).block();
+            tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, map.get("clientId").toString()).block();
         }
 
         LOG.info("save clientUser relationship");
@@ -125,7 +132,12 @@ public class ClientRestService {
                 UUID.fromString(map.get("userId").toString())));
 
         Map<String, Object> mapToReturn = jpaRegisteredClientRepository.getMapObject(registeredClient, false);
-        mapToReturn.put("mediateToken", Boolean.toString(mediateToken));
+        //mapToReturn.put("mediateToken", Boolean.toString(mediateToken));
+
+        LOG.info("clientId: {}", clientId);
+
+        clientOwnerRepository.save(new ClientOwner(clientId, userId));
+
         return mapToReturn;
     }
 
@@ -156,12 +168,29 @@ public class ClientRestService {
 
     @GetMapping("/users/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public List<MyPair<String, String>> getClientIdsAssociatedWithUser(@PathVariable("id") UUID userId) {
+    public Page<MyPair<String, String>> getClientsOwnedByUserId(@PathVariable("id") UUID userId, Pageable pageable) {
         LOG.info("get clientIds for userId: {}", userId);
+
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userIdString = jwt.getClaim("userId");
+        UUID ownerId = UUID.fromString(userIdString);
+
+        LOG.info("userIdString: {}, and userId: {}",userIdString, userId);
+        LOG.info("jwt.getTokenValue: {}", jwt.getTokenValue());
 
         List<MyPair<String, String>> list = new ArrayList<>();
 
-        clientUserRepository.findByUserId(userId).forEach(clientUser -> {
+        clientOwnerRepository.findByUserId(userId, pageable).forEach(clientOwner -> {
+                    Optional<Client> optionalClient = clientRepository.findById(clientOwner.getClientId().toString());
+                    if (optionalClient.isEmpty()) {
+                        LOG.error("client not found ClientRepository by clientId: '{}'", clientOwner.getClientId());
+                    }
+                    optionalClient.ifPresent(client ->
+                            list.add(new MyPair<>(client.getId(), client.getClientId())));
+                }
+        );
+
+       /* clientUserRepository.findByUserId(userId, pageable).forEach(clientUser -> {
                     Optional<Client> optionalClient = clientRepository.findById(clientUser.getClientId().toString());
                     if (optionalClient.isEmpty()) {
                         LOG.error("client not found ClientRepository by clientId: '{}'", clientUser.getClientId());
@@ -169,9 +198,10 @@ public class ClientRestService {
                     optionalClient.ifPresent(client ->
                             list.add(new MyPair<>(client.getId(), client.getClientId())));
                 }
-        );
+        );*/
+
         LOG.info("list of clientId pairs: {}", list);
-        return list;
+        return new PageImpl<>(list, pageable, clientOwnerRepository.countByUserId(userId));
 /*
         List<ClientUser> clientUserList =clientUserRepository.findByUserId(userId).stream()
                 .toList();
@@ -183,6 +213,12 @@ public class ClientRestService {
     @ResponseStatus(HttpStatus.OK)
     public Mono<Map<String, Object>> update(@RequestBody Map<String, Object> map) {
         LOG.info("update client using map: {}", map);
+        LOG.info("clientIdIssuedAt: {}", map.get("clientIdIssuedAt"));
+
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String accessToken = jwt.getTokenValue();
+        LOG.info("accessToken: {}", accessToken);
 
         if (map.get("id") == null) {
             LOG.error("map does not contain client id");
@@ -198,15 +234,21 @@ public class ClientRestService {
 
         //RegisteredClient fromDb = jpaRegisteredClientRepository.findByClientId((String)map.get("clientId"));
         map.put("id", fromDb.getId());
+        final String newClientSecret = (String) map.get("newClientSecret");
+        LOG.info("using newClientSecret as clientSecret: {}", newClientSecret);
+
+        if (newClientSecret != null && !newClientSecret.isEmpty()) {
+
+            LOG.info("using new client secret to overwrite clientSecret: {}", map.get("newClientSecret"));
+            final String encodedPassword = passwordEncoder.encode(newClientSecret);
+            map.put("clientSecret", encodedPassword);
+            LOG.info("adding encodePassword as clientSecret: {}", encodedPassword);
+        }
 
         LOG.info("fromDb: {}, fromDb.ts.authCodeTimeToLive seconds: {}",
                 fromDb, fromDb.getTokenSettings().getAuthorizationCodeTimeToLive().getSeconds());
 
         try {
-           /* String encodedPassword = passwordEncoder.encode((String)map.get("clientSecret"));
-            LOG.info("encodedPassword: {}", encodedPassword);
-            map.put("clientSecret", encodedPassword);
-            LOG.info("encode password with bcrypt");*/
             RegisteredClient registeredClient = jpaRegisteredClientRepository.build(map);
 
             LOG.info("built registeredClient from map, authorizationCodeTimeToLive in seconds: {}, registeredClient",
@@ -222,17 +264,25 @@ public class ClientRestService {
                     TokenMediate tokenMediate = new TokenMediate(clientId);
                     tokenMediateRepository.save(tokenMediate);
                 }
-                return saveClientInTokenMediator(map.get("clientId").toString(), map.get("clientSecret").toString())
-                        .map(map1 -> jpaRegisteredClientRepository.findByClientId(registeredClient.getClientId()))
-                        .map(registeredClient1 -> jpaRegisteredClientRepository.getMapObject(registeredClient1, Boolean.parseBoolean(map.get("mediateToken").toString())));
+                if (newClientSecret != null && !newClientSecret.isEmpty()) {
+                    LOG.info("newClientSecret is set in plain text, so call token mediator");
+                    return tokenMediatorWebClient.saveClientInTokenMediator(accessToken, map.get("clientId").toString(), newClientSecret)
+                            .map(map1 -> jpaRegisteredClientRepository.findByClientId(registeredClient.getClientId()))
+                            .map(registeredClient1 -> jpaRegisteredClientRepository.getMapObject(registeredClient1, false));
+                }
+                else {
+                    RegisteredClient registeredClient1 = jpaRegisteredClientRepository.findByClientId(registeredClient.getClientId());
+                    return Mono.just(jpaRegisteredClientRepository.getMapObject(registeredClient1, false));
+                }
             }
             else {
                 if (tokenMediateRepository.existsById(clientId)) {
                     LOG.info("delete existing tokenMediate record when not enabled.");
                     tokenMediateRepository.deleteById(clientId);
                 }
-                return deleteClientFromTokenMediator(map.get("clientId").toString())
-                        .thenReturn(jpaRegisteredClientRepository.getMapObject(registeredClient, Boolean.parseBoolean(map.get("mediateToken").toString())));
+                LOG.debug("call to delete client from tokenMediator and return map object");
+                return tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, map.get("clientId").toString())
+                        .thenReturn(jpaRegisteredClientRepository.getMapObject(registeredClient, false));//Boolean.parseBoolean(map.get("mediateToken").toString())));
             }
         }
         catch (Exception e) {
@@ -246,6 +296,11 @@ public class ClientRestService {
     @Transactional
     public Mono<Void> delete(@PathVariable("id") String id, @PathVariable("userId") UUID userId) {
         LOG.info("delete client with id: {}", id);
+
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String accessToken = jwt.getTokenValue();
+        LOG.info("accessToken: {}", accessToken);
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findById(id);
 
@@ -270,36 +325,12 @@ public class ClientRestService {
                 LOG.info("delete tokenMediate for clientId");
                 tokenMediateRepository.deleteById(UUID.fromString(registeredClient.getId()));
             }
-            return deleteClientFromTokenMediator(registeredClient.getClientId())
+            return tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, registeredClient.getClientId())
                         .then();
         }
     }
 
-    private Mono<Map> saveClientInTokenMediator(String clientId, String password) {
-        LOG.info("save client in tokenMediator");
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(tokenMediatorEndpoint)
-                .bodyValue(Map.of("clientId", clientId, "clientSecret", password))
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve();
-        return responseSpec.bodyToMono(Map.class).
-                onErrorResume(throwable -> {LOG.error("failed to save clientId and clientSecret in token-mediator");
-                    return just(Map.of("error", "failed to save client in token-mediator"));
-                });
-    }
 
-    private Mono<Map> deleteClientFromTokenMediator(String clientId) {
-        LOG.info("delete client from tokenMediator");
-        String deleteTokenEndpoint = new StringBuilder(tokenMediatorEndpoint).append("/").append(clientId).toString();
-
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().delete().uri(deleteTokenEndpoint)
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve();
-        return responseSpec.bodyToMono(Map.class)
-                .onErrorResume(throwable -> {
-                    LOG.error("failed to delete clientId in token-mediator: {}", throwable.getMessage());
-                    return just(Map.of("error", "failed to delete client in token-mediator"));
-                });
-    }
 
     private void checkClientIdAndLoggedInUser(String clientId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
