@@ -13,7 +13,7 @@ This app will communicate with the following two external services:
 
 ## Run
 For running locally using local profile:
-`gradle bootRun --args="--spring.profiles.active=local"`
+`./gradlew bootRun --args="--spring.profiles.active=local"`
 
 In IntelliJ open Run and add environment variable :'`spring.profiles.active=local` 
 ## Build Docker image
