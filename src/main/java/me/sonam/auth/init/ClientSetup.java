@@ -15,10 +15,9 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 
-import java.util.Arrays;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,8 +58,16 @@ public class ClientSetup {
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(authzManagerClient);
 
+        if (registeredClient != null) {
+            clientRepository.deleteById(registeredClient.getId());
+            LOG.info("deleted client");
+        }
+        registeredClient = jpaRegisteredClientRepository.findByClientId(authzManagerClient);
+
         if (registeredClient == null) {
             LOG.info("authzManager client: {}, secret: {}", authzManagerClient, authzManagerInitialSecret);
+
+            TokenSettings tokenSettings = TokenSettings.builder().accessTokenTimeToLive(Duration.ofSeconds(1200)).build();
 
             registeredClient = RegisteredClient.withId(authzManagerId)
                     .clientId(authzManagerClient)
@@ -71,6 +78,7 @@ public class ClientSetup {
                     .scope(OidcScopes.OPENID)
                     .scope(OidcScopes.PROFILE)
                     .redirectUri(authzManagerUri+"/login/oauth2/code/"+authzManagerClient)
+                    .tokenSettings(tokenSettings)
                     .build();
 
             jpaRegisteredClientRepository.save(registeredClient);
