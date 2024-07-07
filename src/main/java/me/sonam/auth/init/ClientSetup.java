@@ -58,12 +58,6 @@ public class ClientSetup {
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(authzManagerClient);
 
-        if (registeredClient != null) {
-            clientRepository.deleteById(registeredClient.getId());
-            LOG.info("deleted client");
-        }
-        registeredClient = jpaRegisteredClientRepository.findByClientId(authzManagerClient);
-
         if (registeredClient == null) {
             LOG.info("authzManager client: {}, secret: {}", authzManagerClient, authzManagerInitialSecret);
 
