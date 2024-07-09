@@ -43,9 +43,15 @@ public class ForgotUsernameController {
     }
 
 
+    /**
+     * @param email
+     * @param secret
+     * @param model
+     * @return
+     */
     @GetMapping("/password/{email}/{secret}")
     public Mono<String> passwordChange(@PathVariable("email") String email, @PathVariable("secret")String secret, Model model) {
-        LOG.info("validating email and secret");
+        LOG.info("validating email '{}' and secret", email);
 
        return accountWebClient.validateEmailLoginSecret(email, secret)
                 .flatMap(stringStringMap -> {
