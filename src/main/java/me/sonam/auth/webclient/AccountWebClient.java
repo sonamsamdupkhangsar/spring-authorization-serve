@@ -45,7 +45,7 @@ public class AccountWebClient {
 
     public Mono<String> emailMySecret(String email) {
         String urlEncodedEmail = URLEncoder.encode(email, Charset.defaultCharset());
-        LOG.info("urlENcodedEmail: {}, and raw email: {}", urlEncodedEmail, email);
+        LOG.info("urlEncodedEmail: {}, and raw email: {}", urlEncodedEmail, email);
 
         emailMySecret = emailMySecret.replace("{email}", urlEncodedEmail);
         LOG.info("email '{}' using endpoint: {}", email, emailMySecret);
@@ -60,9 +60,9 @@ public class AccountWebClient {
 
     public Mono<Map<String, String>> validateEmailLoginSecret(String email, String secret) {
         LOG.info("call validate email login secret using account-rest-service");
-        String urlDecodedEmail = URLDecoder.decode(email, Charset.defaultCharset());
 
-        String endpoint = validateEmailLoginSecret.replace("{email}", urlDecodedEmail).replace("{secret}", secret);
+
+        String endpoint = validateEmailLoginSecret.replace("{email}", URLEncoder.encode(email, Charset.defaultCharset())).replace("{secret}", secret);
         LOG.info("validate secret using endpoint: {}", endpoint);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(endpoint)
