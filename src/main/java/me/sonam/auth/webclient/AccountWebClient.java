@@ -6,6 +6,9 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 public class AccountWebClient {
@@ -31,7 +34,8 @@ public class AccountWebClient {
     }
 
     public Mono<String> emailAccountActivationLink(String email) {
-        emailActiveLink = emailActiveLink.replace("{email}", email);
+        String urlEncodedEmail = URLEncoder.encode(email, Charset.defaultCharset());
+        emailActiveLink = emailActiveLink.replace("{email}", urlEncodedEmail);
         LOG.info("email using endpoint: {}", emailActiveLink);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(emailActiveLink)
@@ -40,7 +44,10 @@ public class AccountWebClient {
     }
 
     public Mono<String> emailMySecret(String email) {
-        emailMySecret = emailMySecret.replace("{email}", email);
+        String urlEncodedEmail = URLEncoder.encode(email, Charset.defaultCharset());
+        LOG.info("urlENcodedEmail: {}, and raw email: {}", urlEncodedEmail, email);
+
+        emailMySecret = emailMySecret.replace("{email}", urlEncodedEmail);
         LOG.info("email '{}' using endpoint: {}", email, emailMySecret);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(emailMySecret)
@@ -53,8 +60,9 @@ public class AccountWebClient {
 
     public Mono<Map<String, String>> validateEmailLoginSecret(String email, String secret) {
         LOG.info("call validate email login secret using account-rest-service");
+        String urlDecodedEmail = URLDecoder.decode(email, Charset.defaultCharset());
 
-        String endpoint = validateEmailLoginSecret.replace("{email}", email).replace("{secret}", secret);
+        String endpoint = validateEmailLoginSecret.replace("{email}", urlDecodedEmail).replace("{secret}", secret);
         LOG.info("validate secret using endpoint: {}", endpoint);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(endpoint)
@@ -65,8 +73,6 @@ public class AccountWebClient {
     public Mono<Map<String, String>> updateAuthenticationPassword(String email, String secret, String password) {
         LOG.info("update password using account-rest-service {}", updatePassword);
 
-
-
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(updatePassword)
                 .bodyValue(Map.of("email", email, "secret", secret, "password", password))
                 .retrieve();
@@ -74,10 +80,10 @@ public class AccountWebClient {
     }
 
     public Mono<Map<String, String>> emailUsername(String email) {
-        LOG.info("email username using account-rest-service");
+        String urlEncodedEmail = URLEncoder.encode(email, Charset.defaultCharset());
 
-        String endpoint = emailUserName.replace("{email}", email);
-        LOG.info("email username endpoint: {}", endpoint);
+        String endpoint = emailUserName.replace("{email}", urlEncodedEmail);
+        LOG.info("username endpoint: {}", endpoint);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(endpoint)
                 .retrieve();
