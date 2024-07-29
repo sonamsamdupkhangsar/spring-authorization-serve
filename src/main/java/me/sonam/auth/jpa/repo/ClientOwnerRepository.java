@@ -10,5 +10,7 @@ import java.util.UUID;
 
 public interface ClientOwnerRepository extends JpaRepository<ClientOwner, UUID> {
     List<ClientOwner> findByUserId(UUID userId, Pageable pageable);
+    List<ClientOwner> findByUserId(UUID userId);
     long countByUserId(UUID userId);
+    long deleteByUserId(UUID userId);
 }

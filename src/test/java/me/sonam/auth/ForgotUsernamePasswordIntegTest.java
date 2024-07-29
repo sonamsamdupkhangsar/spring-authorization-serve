@@ -104,7 +104,8 @@ public class ForgotUsernamePasswordIntegTest {
         LOG.info("serve the queued mock response for email username http callout");
         RecordedRequest request = mockWebServer.takeRequest();
         assertThat(request.getMethod()).isEqualTo("PUT");
-        //assertThat(request.getPath()).startsWith("/accounts/email/"+email+"/authentication-id");
+        //looks like the urlEncoded is getting urlEncoded again in the account put call so double it
+        assertThat(request.getPath()).startsWith("/accounts/email/"+URLEncoder.encode(urlEncodedEmail, Charset.defaultCharset())+"/authentication-id");
     }
 
     @Test

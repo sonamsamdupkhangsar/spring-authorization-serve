@@ -2,6 +2,9 @@ package me.sonam.auth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.sonam.auth.jpa.repo.ClientOrganizationRepository;
+import me.sonam.auth.jpa.repo.ClientOwnerRepository;
+import me.sonam.auth.jpa.repo.ClientRepository;
 import me.sonam.auth.jpa.repo.HClientUserRepository;
 import me.sonam.auth.mocks.WithMockCustomUser;
 import me.sonam.auth.rest.util.MyPair;
@@ -151,7 +154,7 @@ public class ClientRestServiceIntegTest {
                 .setResponseCode(200).setBody("{\"access_token\": \"eyJraWQiOiJlOGQ3MjIzMC1iMDgwLTRhZjEtODFkOC0zMzE3NmNhMTM5ODIiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI3NzI1ZjZmZC1kMzk2LTQwYWYtOTg4Ni1jYTg4YzZlOGZjZDgiLCJhdWQiOiI3NzI1ZjZmZC1kMzk2LTQwYWYtOTg4Ni1jYTg4YzZlOGZjZDgiLCJuYmYiOjE3MTQ3NTY2ODIsImlzcyI6Imh0dHA6Ly9teS1zZXJ2ZXI6OTAwMSIsImV4cCI6MTcxNDc1Njk4MiwiaWF0IjoxNzE0NzU2NjgyLCJqdGkiOiI0NDBlZDY0My00MzdkLTRjOTMtYTZkMi1jNzYxNjFlNDRlZjUifQ.fjqgoczZbbmcnvYpVN4yakpbplp7EkDyxslvar5nXBFa6mgIFcZa29fwIKfcie3oUMQ8MDWxayak5PZ_QIuHwTvKSWHs0WL91ljf-GT1sPi1b4gDKf0rJOwi0ClcoTCRIx9-WGR6t2BBR1Rk6RGF2MW7xKw8M-RMac2A2mPEPJqoh4Pky1KgxhZpEXixegpAdQIvBgc0KBZeQme-ZzTYugB8EPUmGpMlfd-zX_vcR1ijxi8e-LRRJMqmGkc9GXfrH7MOKNQ_nu6pc6Gish2v_iuUEcpPHXrfqzGb9IHCLvfuLSaTDcYKYjQaEUAp-1uDW8-5posjiUV2eBiU48ajYg\", \"token_type\":\"Bearer\", \"expires_in\":\"299\"}"));
 */
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
-                .setResponseCode(200).setBody("{\"message\": \"deleted clientid in token-mediator: "+clientId+"\"}"));
+                .setResponseCode(200).setBody("{\"message\": \"deleted clientId in token-mediator: "+clientId+"\"}"));
 
         LOG.info("delete clientId");
         webTestClient.delete().uri("/clients/"+clientId+"/user-id/"+userId)
@@ -361,6 +364,54 @@ public class ClientRestServiceIntegTest {
     }
 
 
+    @Autowired
+    private ClientOwnerRepository clientOwnerRepository;
+    @Autowired
+    private ClientRepository clientRepository;
+    @Autowired
+    private ClientOrganizationRepository clientOrganizationRepository;
+
+    /**
+     * this test is for testing client delete, part of delete my info
+     * @throws Exception
+     */
+    //WithMockCustomUser annotation will pass a token to the security.  No need to add to the http header as bearer authorization
+    @WithMockCustomUser(token = tokenValue, userId = "e21457c5-1a89-45fe-9fbf-b49522077893", username = "user@sonam.cloud", password = "password", role = "ROLE_USER")
+    @Test
+    public void deleteClient() throws Exception {
+        LOG.info("create registration client");
+        //final String accessToken  = getOauth2Token(messageClient, "secret");
+        final String accessToken = "eyJraWQiOiJiYThjMDY1Mi1mNDY1LTRjMjgtYTBhNC00ZjkwZjZiMDgwYWUiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJzb25hbSIsImF1ZCI6ImI0ZGZlM2ZiLTE2OTItNDRiOC05MmFiLTM2NmNjYzg0YjUzOS1hdXRoem1hbmFnZXIiLCJuYmYiOjE3MTg4MjMyOTgsInNjb3BlIjpbIm9wZW5pZCIsInByb2ZpbGUiXSwiaXNzIjoiaHR0cDovL2FwaS1nYXRld2F5OjkwMDEvaXNzdWVyIiwiZXhwIjoxNzE4ODIzNTk4LCJ1c2VyUm9sZSI6WyJVU0VSX1JPTEUiXSwiaWF0IjoxNzE4ODIzMjk4LCJ1c2VySWQiOiIxZjQ0MmRhYi05NmEzLTQ1OWUtODYwNS03ZjVjZDVmODJlMjUiLCJqdGkiOiJkOTA2MmE2MC01ODQ2LTRiM2YtYmYwOC03ZGZmNDY5ZmIxOTMifQ.fwKo-SWQnFRpyAVuLxTjjkAqMqNMXBy7NNr-SIbuaXYzOrpzdhY0PFKrG2sRbbvSWxoIIjPFaVeFskh-I_sON8uvTw3MPld5W3gf7RcT_ZG49UlGt4E1R_BzhxiYpkm2QCZqZl1CtgQ_lqgN0roTWuXGMCPFuwATIyIhfkAHnyvWBcUlGRavDfGEBx61MEWJZ3ZnK0Mr08_LH4dXqms2QoDEIQzDbpNLUFCpV99mTEKyOMfKh5wrSgex7fdwdDcdhq1wx98nlbrk9gmLRMruYaPx8Vun0xFjudZzIDwvqA9iQRPjQmJdO-8V9xFY5mvS04zrRbRCIDR_g09hwkkRTw";
+
+        LOG.info("oauth2Token: {}", accessToken);
+
+        UUID userId = UUID.fromString("e21457c5-1a89-45fe-9fbf-b49522077893"); //this should match the value from WithMockCustomerUser.userId value
+        saveClient(clientId.toString(),"{noop}"+clientSecret, userId, accessToken);
+
+        assertThat(clientOwnerRepository.findByUserId(userId).size()).isEqualTo(1);
+        assertThat(clientUserRepository.countByUserId(userId)).isEqualTo(1);
+        assertThat(clientRepository.findByClientId(clientId.toString()).get()).isNotNull();
+        assertThat(clientOrganizationRepository.findByClientId(clientId)).isEmpty();
+
+        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+                .setResponseCode(200).setBody("{\"message\": \"deleted clientId in token-mediator: "+clientId+"\"}"));
+
+        LOG.info("call client delete");
+        EntityExchangeResult<Map<String, Object>> entityExchangeResult = webTestClient.delete()
+                .uri("/clients")
+                .accept(MediaType.APPLICATION_JSON).exchange().expectBody(new ParameterizedTypeReference<Map<String, Object>>() {}).returnResult();
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
+        assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients/"+clientId);
+
+
+        assertThat(clientOwnerRepository.findByUserId(userId).size()).isEqualTo(0);
+        assertThat(clientUserRepository.countByUserId(userId)).isEqualTo(0);
+        assertThat(clientRepository.findByClientId(clientId.toString())).isEmpty();
+        assertThat(clientOrganizationRepository.findByClientId(clientId)).isEmpty();
+
+    }
     private RegisteredClient getRegisteredClientFromRestService(String clientId, String token) {
 
         EntityExchangeResult<Map<String, Object>> entityExchangeResult = webTestClient.get()

@@ -64,16 +64,19 @@ private-client-url: http://127.0.0.1:8090
 
 requestFilters:
   - out: /users, /users/authentication-id/(.)*
+    httpMethods: get
     accessToken:
       option: request
       scopes: message.read
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - out: /authentications/(.)*
+  - out: /authentications/authenticate
+    httpMethods: post
     accessToken:
       option: request
       scopes: message.read
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
   - out: /organizations/(.)*/users/(.)*
+    httpMethods: get
     accessToken:
       option: request
       scopes: message.read
@@ -86,6 +89,9 @@ requestFilters:
       option: request
       scopes: message.write
       base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
+  - out: /oauth2-token-mediator/clients/.*
+    accessToken:
+      option: forward
 
 
 

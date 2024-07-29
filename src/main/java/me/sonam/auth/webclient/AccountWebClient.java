@@ -71,7 +71,7 @@ public class AccountWebClient {
     }
 
     public Mono<Map<String, String>> updateAuthenticationPassword(String email, String secret, String password) {
-        LOG.info("update password using account-rest-service {}", updatePassword);
+        LOG.info("update password using email {} and endpoint account-rest-service {}", email, updatePassword);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(updatePassword)
                 .bodyValue(Map.of("email", email, "secret", secret, "password", password))
@@ -83,7 +83,7 @@ public class AccountWebClient {
         String urlEncodedEmail = URLEncoder.encode(email, Charset.defaultCharset());
 
         String endpoint = emailUserName.replace("{email}", urlEncodedEmail);
-        LOG.info("username endpoint: {}", endpoint);
+        LOG.info("email {}, username endpoint: {}", email, endpoint);
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(endpoint)
                 .retrieve();
