@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import me.sonam.auth.webclient.AccountWebClient;
 import me.sonam.auth.util.TokenFilter;
 import me.sonam.auth.webclient.TokenMediatorWebClient;
+import me.sonam.auth.webclient.UserWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,5 +53,6 @@ public class WebClientFilterConfig {
     public TokenMediatorWebClient tokenMediatorWebClient() {
         return new TokenMediatorWebClient(webClientBuilder, tokenClientEndpoint);
     }
+
 
 }

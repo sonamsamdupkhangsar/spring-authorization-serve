@@ -44,6 +44,13 @@ public class ForgotUsernamePasswordIntegTest {
     private MockMvc mockMvc;
     private static MockWebServer mockWebServer;
 
+    final String clientCredentialResponse = "{" +
+            "    \"access_token\": \"eyJraWQiOiJhNzZhN2I0My00YTAzLTQ2MzAtYjVlMi0wMTUzMGRlYzk0MGUiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJwcml2YXRlLWNsaWVudCIsImF1ZCI6InByaXZhdGUtY2xpZW50IiwibmJmIjoxNjg3MTA0NjY1LCJzY29wZSI6WyJtZXNzYWdlLnJlYWQiLCJtZXNzYWdlLndyaXRlIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMSIsImV4cCI6MTY4NzEwNDk2NSwiaWF0IjoxNjg3MTA0NjY1LCJhdXRob3JpdGllcyI6WyJtZXNzYWdlLnJlYWQiLCJtZXNzYWdlLndyaXRlIl19.Wx03Q96TR17gL-BCsG6jPxpdt3P-UkcFAuE6pYmZLl5o9v1ag9XR7MX71pfJcIhjmoog8DUTJXrq-ZB-IxIbMhIGmIHIw57FfnbBzbA8mjyBYQOLFOh9imLygtO4r9uip3UR0Ut_YfKMMi-vPfeKzVDgvaj6N08YNp3HNoAnRYrEJLZLPp1CUQSqIHEsGXn2Sny6fYOmR3aX-LcSz9MQuyDDr5AQcC0fbcpJva6aSPvlvliYABxfldDfpnC-i90F6azoxJn7pu3wTC7sjtvS0mt0fQ2NTDYXFTtHm4Bsn5MjZbOruih39XNsLUnp4EHpAh6Bb9OKk3LSBE6ZLXaaqQ\"," +
+            "    \"scope\": \"message.read message.write\"," +
+            "    \"token_type\": \"Bearer\"," +
+            "    \"expires_in\": 299" +
+            "}";
+
     @BeforeAll
     static void setupMockWebServer() throws IOException {
         LOG.info("starting mock web server");
@@ -64,6 +71,7 @@ public class ForgotUsernamePasswordIntegTest {
     static void properties(DynamicPropertyRegistry r) throws IOException {
         LOG.info("mock the port for account-rest-service");
         r.add("account-rest-service.root", () -> "http://localhost:"+mockWebServer.getPort());
+        r.add("auth-server.root", () -> "http://localhost:"+ mockWebServer.getPort());
     }
 
     @Test
@@ -87,6 +95,8 @@ public class ForgotUsernamePasswordIntegTest {
     public void emailUsername() throws Exception {
         LOG.info("email username");
 
+        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200).setBody(clientCredentialResponse));
+
         LOG.info("add mock response for email username call into queue");
         final String emailMsg = " {\"message\":\"email successfully sent\"}";
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
@@ -103,6 +113,10 @@ public class ForgotUsernamePasswordIntegTest {
 
         LOG.info("serve the queued mock response for email username http callout");
         RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getMethod()).isEqualTo("POST");
+        assertThat(request.getPath()).startsWith("/oauth2/token");
+
+        request = mockWebServer.takeRequest();
         assertThat(request.getMethod()).isEqualTo("PUT");
         //looks like the urlEncoded is getting urlEncoded again in the account put call so double it
         assertThat(request.getPath()).startsWith("/accounts/email/"+URLEncoder.encode(urlEncodedEmail, Charset.defaultCharset())+"/authentication-id");

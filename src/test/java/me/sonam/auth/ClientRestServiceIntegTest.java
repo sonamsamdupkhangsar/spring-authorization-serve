@@ -74,7 +74,7 @@ public class ClientRestServiceIntegTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private final String tokenValue ="";
+    private final String tokenValue ="my-dummy-token";
 
     UUID clientId = UUID.randomUUID();
     //UUID messageClient = UUID.randomUUID();

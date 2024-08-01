@@ -1,6 +1,7 @@
 package me.sonam.auth.service;
 
 
+import me.sonam.auth.webclient.UserWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,16 +19,10 @@ import java.util.UUID;
 @Service
 public class OidcUserInfoService {
     private static final Logger LOG = LoggerFactory.getLogger(OidcUserInfoService.class);
-    @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
-    private String userByAuthIdEp;
+    private UserWebClient userWebClient;
 
-    @Value("${user-rest-service.root}${user-rest-service.userId}")
-    private String userIdEndpoint;
-
-    private WebClient.Builder webClientBuilder;
-
-    public OidcUserInfoService(WebClient.Builder webClientBuilder) {
-        this.webClientBuilder = webClientBuilder;
+    public OidcUserInfoService(UserWebClient userWebClient) {
+        this.userWebClient = userWebClient;
     }
 
     public OidcUserInfo loadUser(String username) {
@@ -41,21 +36,13 @@ public class OidcUserInfoService {
     }
 
     private Mono<Map<String, Object>> getOidcUserInfoMap(String authenticationId) {
-        final String userInfoEndpoint = userByAuthIdEp.replace("{authenticationId}", authenticationId);
-        LOG.info("making a call to user endpoint: {}", userInfoEndpoint);
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(userInfoEndpoint)
-                        .retrieve();
-
-        return responseSpec.bodyToMono(Map.class).flatMap(map -> {
-            LOG.info("got userInfo from user-rest-service: {}", map);
-            Map<String, Object> oidcUserInfoMap = buildOidcUserInfo(authenticationId, map);
+        return userWebClient.getUserByAuthenticationId(authenticationId).flatMap(stringStringMap -> {
+            LOG.info("got userInfo from user-rest-service: {}", stringStringMap);
+            Map<String, Object> oidcUserInfoMap = buildOidcUserInfo(authenticationId, stringStringMap);
             return Mono.just(oidcUserInfoMap);
-        }).onErrorResume(throwable -> {
-            LOG.error("error on getting user info from user-rest-service endpoint '{}' with error: {}",
-                    userInfoEndpoint, throwable.getMessage());
-            return Mono.error(new RuntimeException("user info call failed, error: " + throwable.getMessage()));
         });
+
     }
 
     private static Map<String, Object> buildOidcUserInfo(String authenticationId, Map<String, String> map) {

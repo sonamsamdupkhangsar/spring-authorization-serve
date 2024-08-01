@@ -1,5 +1,6 @@
 package me.sonam.auth.util;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,12 +8,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.*;
 import reactor.core.publisher.Mono;
 
@@ -39,7 +42,7 @@ public class TokenFilter {
     @Autowired
     private TokenRequestFilter tokenRequestFilter;
 
-    private WebClient.Builder webClientBuilder;
+    private final WebClient.Builder webClientBuilder;
 
     private RequestCache requestCache;
     @Value("${auth-server.oauth2token.issuerTokenPath:}")
@@ -52,46 +55,77 @@ public class TokenFilter {
 
     public ExchangeFilterFunction renewTokenFilter() {
         return (request, next) -> {
-            LOG.info("request.path: {}", request.url().getPath());
+
+            RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+            String path;
+
+            if (requestAttributes instanceof ServletRequestAttributes) {
+                HttpServletRequest servletRequest = ((ServletRequestAttributes)requestAttributes).getRequest();
+                LOG.debug("is a server request:  {}, contextPath: {}", servletRequest.getPathInfo(), servletRequest.getContextPath());
+                if (servletRequest.getPathInfo() != null) {
+                    path = servletRequest.getPathInfo();
+                    LOG.info("inPath: {}", path);
+                }
+                else {
+                    LOG.info("serverRequest.pathInfo is null");
+                    path = "";
+                }
+            }
+            else {
+                path = "";
+            }
+
+            LOG.info("inbound path: {}, outbound request path: {}", path, request.url().getPath());
             if (request.url().getPath().equals(accessTokenPath)) {
                 LOG.debug("no need to request access token when going to that path: {}", request.url().getPath());
                 ClientRequest clientRequest = ClientRequest.from(request).build();
                 return next.exchange(clientRequest);
             }
             else {
-                LOG.info("going thru jwt request ") ;
+                LOG.debug("going thru request filters") ;
+                int index = 0;
                 for (TokenRequestFilter.RequestFilter requestFilter : tokenRequestFilter.getRequestFilters()) {
-                    LOG.debug("jwt.out: {}", requestFilter.getOut());
+                    LOG.info("checking requestFilter[{}]  {}", index++, requestFilter);
 
-                    if (!requestFilter.getHttpMethodSet().isEmpty()) {
+                    if (!requestFilter.getInHttpMethodSet().isEmpty()) {
 
-                        LOG.debug("httpMethods: {} provided, inbound httpMethod: {}", requestFilter.getHttpMethodSet(),
-                                request.method());
+                        LOG.debug("httpMethods: {} provided, actual inbound httpMethod: {}", requestFilter.getInHttpMethodSet(),
+                                request.method().name());
 
-                        if (requestFilter.getHttpMethodSet().contains(request.method().name().toLowerCase())) {
-                            LOG.info("request.method {} matched with provided httpMethod", request.method().name());
+                        if (requestFilter.getInHttpMethodSet().contains(request.method().name().toLowerCase())) {
+                            LOG.info("outbound request method {} matched with provided httpMethod", request.method().name());
 
-                            //boolean matchInPath = requestFilter.getInSet().stream().anyMatch(w -> r.getPath().pathWithinApplication().value().matches(w));
-
-                            boolean matchOutPath = requestFilter.getOutSet().stream().anyMatch(w -> {
-                                boolean value = request.url().getPath().matches(w);
-                                LOG.debug("w '{}' matches request.url.path '{}', result: {}", w, request.url().getPath(), value);
-                                return value;
+                            boolean matchInPath = requestFilter.getInSet().stream().anyMatch(w -> {
+                               boolean matched = path.matches(w);
+                                if (LOG.isDebugEnabled() && matched) {
+                                    LOG.debug("inPath {} matched with regEx {}", path, w);
+                                }
+                                return matched;
                             });
-                            if (matchOutPath) {
-                                LOG.info("inbound and outbound path matched");
-                                return getClientRequest(request, next, requestFilter);
+
+                            if (matchInPath) {
+                                LOG.info("inPath {} match found, check outPath next", path);
+                                boolean matchOutPath = requestFilter.getOutSet().stream().anyMatch(w -> {
+                                    boolean value = request.url().getPath().matches(w);
+                                    LOG.debug("request path {}, regex expression '{}' matches? : {}", request.url().getPath(), w, value);
+                                    return value;
+                                });
+                                if (matchOutPath) {
+                                    LOG.info("inbound and outbound path matched");
+                                    return getClientRequest(request, next, requestFilter);
+                                } else {
+                                    LOG.info("no match found for outbound path {} ",
+                                            request.url().getPath());
+                                }
                             }
                             else {
-                                LOG.info("no match found for outbound path {} ",
-                                        request.url().getPath());
+                                LOG.info("no match found for inbound path {}", path);
                             }
                         }
                     }
                 }
 
                 LOG.info("no outbound path match found");
-                LOG.info("printing bearer header: {}", request.headers().get(HttpHeaders.AUTHORIZATION));
                 ClientRequest filtered = ClientRequest.from(request)
                         .build();
                 return next.exchange(filtered);
