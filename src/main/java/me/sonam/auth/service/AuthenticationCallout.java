@@ -279,7 +279,13 @@ public class AuthenticationCallout implements AuthenticationProvider {
             if (throwable instanceof WebClientResponseException) {
                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                 LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-                return Mono.error(new BadCredentialsException("Bad credentials"));
+                if (webClientResponseException.getResponseBodyAsString().contains("\"error\":")) {
+                    String error = webClientResponseException.getResponseBodyAs(Map.class).get("error").toString();
+                    return Mono.error(new BadCredentialsException("message: " +error));
+                }
+                else {
+                    return Mono.error(new BadCredentialsException("message: " +webClientResponseException.getResponseBodyAsString()));
+                }
             }
             else {
                 return Mono.error(new BadCredentialsException("Bad credentials"));

@@ -125,7 +125,7 @@ public class TokenFilter {
                     }
                 }
 
-                LOG.info("no outbound path match found");
+                LOG.info("no match found");
                 ClientRequest filtered = ClientRequest.from(request)
                         .build();
                 return next.exchange(filtered);

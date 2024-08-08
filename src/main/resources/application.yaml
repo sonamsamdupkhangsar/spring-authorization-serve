@@ -139,7 +139,7 @@ requestFilters:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /emailAccountActivateLink
+  - in:
     out: /accounts/active/email/(.)*/password-secret
     inHttpMethods: put
     accessToken:
