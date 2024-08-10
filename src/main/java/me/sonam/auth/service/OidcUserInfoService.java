@@ -1,6 +1,7 @@
 package me.sonam.auth.service;
 
 
+import me.sonam.auth.service.exception.BadCredentialsException;
 import me.sonam.auth.webclient.UserWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +29,17 @@ public class OidcUserInfoService {
     public OidcUserInfo loadUser(String username) {
         LOG.info("loadUser by username: {}", username);
 
-        OidcUserInfo oidcUserInfo = getOidcUserInfoMap(username).flatMap(map ->
-                Mono.just(new OidcUserInfo(map))).block();
+        try {
+            OidcUserInfo oidcUserInfo = getOidcUserInfoMap(username).flatMap(map ->
+                    Mono.just(new OidcUserInfo(map))).block();
 
-        LOG.info("oidcUserInfo.claims: {}, oidcUserInfo: {}", oidcUserInfo.getClaims(), oidcUserInfo);
-        return oidcUserInfo;
+            LOG.info("oidcUserInfo.claims: {}, oidcUserInfo: {}", oidcUserInfo.getClaims(), oidcUserInfo);
+            return oidcUserInfo;
+        }
+        catch (Exception e) {
+            LOG.error("failed to build oidcUserInfo");
+            throw new BadCredentialsException("failed to get oidcUserInfo, maybe the user does not exist with authenticationId: "+ username);
+        }
     }
 
     private Mono<Map<String, Object>> getOidcUserInfoMap(String authenticationId) {
@@ -41,8 +48,12 @@ public class OidcUserInfoService {
             LOG.info("got userInfo from user-rest-service: {}", stringStringMap);
             Map<String, Object> oidcUserInfoMap = buildOidcUserInfo(authenticationId, stringStringMap);
             return Mono.just(oidcUserInfoMap);
-        });
+        }).onErrorResume(throwable -> {
+            LOG.error("failed to get user by authenticationid '{}'", authenticationId);
+            LOG.debug("exception occurred in get user by authenticationId", throwable);
 
+            return Mono.error(throwable);
+        });
     }
 
     private static Map<String, Object> buildOidcUserInfo(String authenticationId, Map<String, String> map) {

@@ -22,4 +22,14 @@ public class RegExpTest {
         assertThat(matchOutPath).isTrue();
     }
 
+    @Test
+    public void httpAddressStringMatch() {
+        final String path = "http://localhost:9001/issuer/forgotPassword";
+        final String exp = ".*/forgotPassword";
+        boolean matchOutPath = path.matches(exp);
+
+        LOG.info("forgotPassword matches with full httpAddress? is {}, path {}, exp {}", matchOutPath, path, exp);
+        assertThat(matchOutPath).isTrue();
+    }
+
 }

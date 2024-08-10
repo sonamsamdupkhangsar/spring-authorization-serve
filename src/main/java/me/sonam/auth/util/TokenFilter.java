@@ -45,7 +45,7 @@ public class TokenFilter {
     private final WebClient.Builder webClientBuilder;
 
     private RequestCache requestCache;
-    @Value("${auth-server.oauth2token.issuerTokenPath:}")
+    @Value("${auth-server.oauth2token.path:}")
     private String accessTokenPath;
 
     public TokenFilter(WebClient.Builder webClientBuilder, RequestCache requestCache) {
@@ -58,21 +58,25 @@ public class TokenFilter {
 
             RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
             String path;
+            String inHttpMethod;
 
             if (requestAttributes instanceof ServletRequestAttributes) {
                 HttpServletRequest servletRequest = ((ServletRequestAttributes)requestAttributes).getRequest();
-                LOG.debug("is a server request:  {}, contextPath: {}", servletRequest.getPathInfo(), servletRequest.getContextPath());
-                if (servletRequest.getPathInfo() != null) {
-                    path = servletRequest.getPathInfo();
+
+                if (servletRequest.getRequestURI() != null) {
+                    path = servletRequest.getRequestURI();
+                    inHttpMethod = servletRequest.getMethod();
                     LOG.info("inPath: {}", path);
                 }
                 else {
                     LOG.info("serverRequest.pathInfo is null");
                     path = "";
+                    inHttpMethod = "";
                 }
             }
             else {
                 path = "";
+                inHttpMethod = "";
             }
 
             LOG.info("inbound path: {}, outbound request path: {}", path, request.url().getPath());
@@ -90,10 +94,10 @@ public class TokenFilter {
                     if (!requestFilter.getInHttpMethodSet().isEmpty()) {
 
                         LOG.debug("httpMethods: {} provided, actual inbound httpMethod: {}", requestFilter.getInHttpMethodSet(),
-                                request.method().name());
+                                inHttpMethod);
 
-                        if (requestFilter.getInHttpMethodSet().contains(request.method().name().toLowerCase())) {
-                            LOG.info("outbound request method {} matched with provided httpMethod", request.method().name());
+                        if (requestFilter.getInHttpMethodSet().contains(inHttpMethod.toLowerCase())) {//request.method().name().toLowerCase())) {
+                            LOG.info("inbound request method {} matched with provided httpMethod", request.method().name());
 
                             boolean matchInPath = requestFilter.getInSet().stream().anyMatch(w -> {
                                boolean matched = path.matches(w);

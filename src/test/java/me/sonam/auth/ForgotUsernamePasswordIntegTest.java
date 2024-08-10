@@ -127,6 +127,9 @@ public class ForgotUsernamePasswordIntegTest {
         LOG.info("email username");
 
         LOG.info("add mock response for email username call into queue");
+
+        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200).setBody(clientCredentialResponse));
+
         final String emailMsg = " {\"message\":\"email successfully sent\"}";
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(201).setBody(emailMsg));//"Account created successfully.  Check email for activating account"));
@@ -139,6 +142,10 @@ public class ForgotUsernamePasswordIntegTest {
 
         LOG.info("serve the queued mock response for email username http callout");
         RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getMethod()).isEqualTo("POST");
+        assertThat(request.getPath()).startsWith("/oauth2/token");
+
+        request = mockWebServer.takeRequest();
         assertThat(request.getMethod()).isEqualTo("PUT");
         assertThat(request.getPath()).startsWith("/accounts/email/");
     }
@@ -148,6 +155,8 @@ public class ForgotUsernamePasswordIntegTest {
         LOG.info("email username");
 
         LOG.info("add mock response for email username call into queue");
+        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200).setBody(clientCredentialResponse));
+
         final String emailMsg = " {\"error\":\"Account is not active or does not exist\"}";
         mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json").setResponseCode(400).setBody(emailMsg));//"Account created successfully.  Check email for activating account"));
 
@@ -158,6 +167,10 @@ public class ForgotUsernamePasswordIntegTest {
 
         LOG.info("serve the queued mock response for email username http callout");
         RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getMethod()).isEqualTo("POST");
+        assertThat(request.getPath()).startsWith("/oauth2/token");
+
+        request = mockWebServer.takeRequest();
         assertThat(request.getMethod()).isEqualTo("PUT");
         assertThat(request.getPath()).startsWith("/accounts/email/");
     }

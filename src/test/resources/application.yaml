@@ -63,16 +63,16 @@ private-client-url: http://127.0.0.1:8090
 
 
 requestFilters:
-  - in:
+  - in: /
     out: /users, /users/authentication-id/(.)*, /users/authentication-id/*
-    inHttpMethods: get
+    inHttpMethods: post
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
   - in:
     out: /organizations/(.)*/users/(.)*
-    inHttpMethods: get
+    inHttpMethods:
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
@@ -103,7 +103,7 @@ requestFilters:
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
   - in: /forgotUsername
     out: /accounts/email/(.)*/authentication-id
-    inHttpMethods: put
+    inHttpMethods: post
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
@@ -124,7 +124,7 @@ requestFilters:
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
   - in:
     out: /authentications/authenticate
-    inHttpMethods: post
+    inHttpMethods:
     accessToken:
       option: request
       scopes: message.read

@@ -87,16 +87,16 @@ client:
   forgot-username-password: /forgot
 
 requestFilters:
-  - in:
+  - in: /
     out: /users, /users/authentication-id/(.)*, /users/authentication-id/*
-    inHttpMethods: get
+    inHttpMethods: post
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
   - in:
     out: /organizations/(.)*/users/(.)*
-    inHttpMethods: get
+    inHttpMethods:
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
@@ -120,14 +120,14 @@ requestFilters:
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
   - in: /password/(.)*/(.)*
     out: /accounts/password-secret
-    inHttpMethods: post
+    inHttpMethods: get
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
   - in: /forgotUsername
     out: /accounts/email/(.)*/authentication-id
-    inHttpMethods: put
+    inHttpMethods: post
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
@@ -139,7 +139,7 @@ requestFilters:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in:
+  - in: /emailAccountActivateLink
     out: /accounts/active/email/(.)*/password-secret
     inHttpMethods: put
     accessToken:
@@ -148,7 +148,7 @@ requestFilters:
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
   - in:
     out: /authentications/authenticate
-    inHttpMethods: post
+    inHttpMethods:
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
