@@ -6,7 +6,7 @@ server:
 logging:
   level:
     root: warn
-    me.sonam.auth: info
+    me.sonam: info
     com.netflix: off
     me.sonam.auth.config: debug
     me.sonam.auth.service.TokenFilter: error
@@ -87,68 +87,31 @@ client:
   forgot-username-password: /forgot
 
 requestFilters:
-  - in: /
-    out: /users, /users/authentication-id/(.)*, /users/authentication-id/*
-    inHttpMethods: post
+  # get user info during authentication, user exists in organization during authentication,
+  #  validate emailLoginSecret during password change
+  - out: /users/authentication-id/(.)*,
+      /organizations/(.)*/users/(.)*, /accounts/(.)*/password-secret/(.)*
+    outHttpMethods: get
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in:
-    out: /organizations/(.)*/users/(.)*
-    inHttpMethods:
-    accessToken:
-      option: request
-      scopes: ${REQUEST_SCOPES}
-      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /clients
-    out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
-    inHttpMethods: post, put
+  # these endpoints are called from authzmanager with acessToken present
+  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
+    outHttpMethods: put, delete
     accessToken:
       option: forward
-  - in: /clients/(.)*/user-id/(.)*, /clients
-    out: /oauth2-token-mediator/clients/(.)*
-    inHttpMethods: delete
-    accessToken:
-      option: forward
-  - in: /password/(.)*/(.)*
-    out: /accounts/(.)*/password-secret/(.)*
-    inHttpMethods: get
+    # update password, authenticate
+  - out: /authentications/authenticate
+    outHttpMethods: post
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /password/(.)*/(.)*
-    out: /accounts/password-secret
-    inHttpMethods: get
-    accessToken:
-      option: request
-      scopes: ${REQUEST_SCOPES}
-      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /forgotUsername
-    out: /accounts/email/(.)*/authentication-id
-    inHttpMethods: post
-    accessToken:
-      option: request
-      scopes: ${REQUEST_SCOPES}
-      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /forgotPassword
-    out: /accounts/email/(.)*/password-secret
-    inHttpMethods: post
-    accessToken:
-      option: request
-      scopes: ${REQUEST_SCOPES}
-      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in: /emailAccountActivateLink
-    out: /accounts/active/email/(.)*/password-secret
-    inHttpMethods: put
-    accessToken:
-      option: request
-      scopes: ${REQUEST_SCOPES}
-      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  - in:
-    out: /authentications/authenticate
-    inHttpMethods:
+  # email my username, emailActivationLink, email my secret for password reset, password reset
+  - out: /accounts/email/(.)*/authentication-id, /accounts/active/email/(.)*/password-secret,
+      /accounts/email/(.)*/password-secret, /accounts/password-secret
+    outHttpMethods: put
     accessToken:
       option: request
       scopes: ${REQUEST_SCOPES}

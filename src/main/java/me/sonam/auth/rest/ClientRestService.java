@@ -36,7 +36,7 @@ public class ClientRestService {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRestService.class);
 
 
-    private ClientRepository clientRepository;
+    private final ClientRepository clientRepository;
     private final JpaRegisteredClientRepository jpaRegisteredClientRepository;
     @Autowired
     private TokenMediateRepository tokenMediateRepository;
@@ -56,7 +56,7 @@ public class ClientRestService {
     @Autowired
     private TokenRequestFilter tokenRequestFilter;
 
-    private TokenMediatorWebClient tokenMediatorWebClient;
+    private final TokenMediatorWebClient tokenMediatorWebClient;
 
     public ClientRestService(JpaRegisteredClientRepository jpaRegisteredClientRepository,
                              ClientRepository clientRepository, PasswordEncoder passwordEncoder,

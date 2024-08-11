@@ -19,12 +19,11 @@ public class TokenRequestFilter {
     }
 
     public static class RequestFilter {
-        private String in;
         private String out;
-        private String inHttpMethods;
-        private Set<String> inHttpMethodSet = new HashSet<>();
-        private Set<String> inSet = new HashSet<>();
         private Set<String> outSet = new HashSet<>();
+        private String outHttpMethods;
+        private Set<String> outHttpMethodSet = new HashSet<>();
+
         private AccessToken accessToken;
 
         public RequestFilter() {
@@ -33,18 +32,7 @@ public class TokenRequestFilter {
         public String getOut() {
             return out;
         }
-        public String getIn() {
-            return in;
-        }
 
-        public void setIn(String in) {
-            this.in = in;
-            String[] inArray = in.split(",");
-            inSet = Arrays.stream(inArray).map(String::trim).collect(Collectors.toSet());
-        }
-        public Set<String> getInSet() {
-            return this.inSet;
-        }
         public void setOut(String out) {
             this.out = out;
             String[] outArray = out.split(",");
@@ -53,14 +41,14 @@ public class TokenRequestFilter {
         public Set<String> getOutSet() {
             return this.outSet;
         }
-        public Set<String> getInHttpMethodSet() {
-            return this.inHttpMethodSet;
+        public Set<String> getOutHttpMethodSet() {
+            return this.outHttpMethodSet;
         }
 
-        public void setInHttpMethods(String inHttpMethods) {
-            this.inHttpMethods = inHttpMethods;
-            String[] httpMethodArray = inHttpMethods.split(",");
-            inHttpMethodSet = Arrays.stream(httpMethodArray).map(String::trim).map(String::toLowerCase).collect(Collectors.toSet());
+        public void setOutHttpMethods(String outHttpMethods) {
+            this.outHttpMethods = outHttpMethods;
+            String[] httpMethodArray = outHttpMethods.split(",");
+            outHttpMethodSet = Arrays.stream(httpMethodArray).map(String::trim).map(String::toLowerCase).collect(Collectors.toSet());
         }
         public AccessToken getAccessToken() {
             return accessToken;
@@ -73,12 +61,10 @@ public class TokenRequestFilter {
         @Override
         public String toString() {
             return "RequestFilter{" +
-                    "in='" + in + '\'' +
-                    ", inSet='" + inSet + '\'' +
-                    ", out='" + out + '\'' +
+                    " out='" + out + '\'' +
                     ", outSet='" + outSet +'\'' +
-                    ", inHttpMethods='" + inHttpMethods + '\'' +
-                    ", inHttpMethodSet='" + inHttpMethodSet + '\'' +
+                    ", outHttpMethods='" + outHttpMethods + '\'' +
+                    ", outHttpMethodSet='" + outHttpMethodSet + '\'' +
                     ", accessToken='" + accessToken + '\'' +
                     '}';
         }
