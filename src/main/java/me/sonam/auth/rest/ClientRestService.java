@@ -36,7 +36,7 @@ public class ClientRestService {
     private static final Logger LOG = LoggerFactory.getLogger(ClientRestService.class);
 
 
-    private ClientRepository clientRepository;
+    private final ClientRepository clientRepository;
     private final JpaRegisteredClientRepository jpaRegisteredClientRepository;
     @Autowired
     private TokenMediateRepository tokenMediateRepository;
@@ -56,7 +56,7 @@ public class ClientRestService {
     @Autowired
     private TokenRequestFilter tokenRequestFilter;
 
-    private TokenMediatorWebClient tokenMediatorWebClient;
+    private final TokenMediatorWebClient tokenMediatorWebClient;
 
     public ClientRestService(JpaRegisteredClientRepository jpaRegisteredClientRepository,
                              ClientRepository clientRepository, PasswordEncoder passwordEncoder,
@@ -79,6 +79,8 @@ public class ClientRestService {
         String accessToken = jwt.getTokenValue();
 
         UUID userId = UUID.fromString(userIdString);
+
+        LOG.info("userId {}, accessToken: {}", userId, accessToken);
 
         if (jpaRegisteredClientRepository.findByClientId(map.get("clientId").toString()) != null) {
             LOG.error("clientId already exists, do an update");
@@ -127,7 +129,7 @@ public class ClientRestService {
             tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, map.get("clientId").toString()).block();
         }
 
-        LOG.info("save clientUser relationship");
+        LOG.info("save clientUser relationship, userId: {}", map.get("userId"));
         clientUserRepository.save(new ClientUser(UUID.fromString(registeredClient.getId()),
                 UUID.fromString(map.get("userId").toString())));
 
@@ -300,7 +302,7 @@ public class ClientRestService {
         Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         String accessToken = jwt.getTokenValue();
-        LOG.info("accessToken: {}", accessToken);
+        LOG.info("userId: {}, accessToken: {}", jwt.getClaim("userId"), accessToken);
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findById(id);
 
@@ -328,6 +330,38 @@ public class ClientRestService {
             return tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, registeredClient.getClientId())
                         .then();
         }
+    }
+
+
+    /**
+     * delete clients, clientorganization, clientowner, clientuser part of delete my info
+     * @return
+     */
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public Mono<Map<String, String>> delete() {
+        LOG.info("delete my clients");
+
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String userIdString = jwt.getClaim("userId");
+        LOG.info("delete user data for userId: {}", userIdString);
+
+        UUID userId = UUID.fromString(userIdString);
+
+        String accessToken = jwt.getTokenValue();
+        LOG.info("userId: {}, accessToken: {}", jwt.getClaim("userId"), accessToken);
+
+        clientOwnerRepository.findByUserId(userId).forEach(clientOwner -> {
+            clientUserRepository.deleteByClientId(clientOwner.getClientId());
+            clientRepository.deleteById(clientOwner.getClientId().toString());
+            clientOrganizationRepository.deleteByClientId(clientOwner.getClientId());
+            tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, clientOwner.getClientId().toString())
+                    .then().block();
+        });
+        clientOwnerRepository.deleteByUserId(userId);
+        return Mono.just(Map.of("message", "deleted user client data"));
     }
 
 

@@ -31,7 +31,7 @@ public class WithMockCustomUserSecurityContextFactory implements WithSecurityCon
                 Instant.now().plusSeconds(60), Map.of("role", "USER_ROLE", "sub", "sonam", "userId", customUser.userId()));
         //DefaultOidcUser principal = new DefaultOidcUser(grantedAuths, idToken);
 
-        Jwt principal = Jwt.withTokenValue("token")
+        Jwt principal = Jwt.withTokenValue(customUser.token())
                 .header("alg", "none")
                 .claim("sub", "user")
                 .claim("scope", "read")

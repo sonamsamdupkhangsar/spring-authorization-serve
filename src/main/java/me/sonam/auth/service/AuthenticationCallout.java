@@ -47,8 +47,8 @@ public class AuthenticationCallout implements AuthenticationProvider {
     @Value("${organization-rest-service.root}${organization-rest-service.userExistsInOrganization}")
     private String organizationEndpoint;
 
-    private RequestCache requestCache;
-    private WebClient.Builder webClientBuilder;
+    private final RequestCache requestCache;
+    private final WebClient.Builder webClientBuilder;
 
     @Autowired
     private ClientOrganizationRepository clientOrganizationRepository;
@@ -63,19 +63,6 @@ public class AuthenticationCallout implements AuthenticationProvider {
     private UUID authzManagerId;
 
     final String ROLES = "roles";
-
-  /*  public AuthenticationCallout(String authenticateEndpoint, String userEndpoint, String organizationEndpoint,
-                                 RequestCache requestCache, WebClient.Builder webClientBuilder,
-                                 ClientOrganizationRepository clientOrganizationRepository,
-                                 HClientUserRepository clientUserRepository) {
-        this.authenticateEndpoint = authenticateEndpoint;
-        this.userEndpoint = userEndpoint;
-        this.organizationEndpoint = organizationEndpoint;
-        this.requestCache = requestCache;
-        this.webClientBuilder = webClientBuilder;
-        this.clientOrganizationRepository = clientOrganizationRepository;
-        this.clientUserRepository = clientUserRepository;
-    }*/
 
     public AuthenticationCallout(WebClient.Builder webClientBuilder, RequestCache requestCache) {
         this.webClientBuilder = webClientBuilder;
@@ -224,16 +211,8 @@ public class AuthenticationCallout implements AuthenticationProvider {
 
         LOG.info("make authentication call out to endpoint: {}", authenticateEndpoint);
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(authenticateEndpoint).bodyValue(
-                mapBody
-/*
-                        Map.of("authenticationId", authentication.getPrincipal().toString(),
-                                "password", password,
-                                "clientId", clientId,
-                                    "organizationId", organizationId)
-*/
-                )
-                .retrieve();
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(authenticateEndpoint)
+                .bodyValue(mapBody).retrieve();
 
         //throws exception on authentication not found return with 401 http status
         return responseSpec.bodyToMono(Map.class).map(map -> {
@@ -279,82 +258,19 @@ public class AuthenticationCallout implements AuthenticationProvider {
             if (throwable instanceof WebClientResponseException) {
                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                 LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-                return Mono.error(new BadCredentialsException("Bad credentials"));
+                if (webClientResponseException.getResponseBodyAsString().contains("\"error\":")) {
+                    String error = webClientResponseException.getResponseBodyAs(Map.class).get("error").toString();
+                    return Mono.error(new BadCredentialsException("message: " +error));
+                }
+                else {
+                    return Mono.error(new BadCredentialsException("message: " +webClientResponseException.getResponseBodyAsString()));
+                }
             }
             else {
                 return Mono.error(new BadCredentialsException("Bad credentials"));
             }
         });
     }
-
-    /**
-     * this is used by the {#AuthenticateRestController}
-     * @param authentication
-     * @return
-     */
-    public UsernamePasswordAuthenticationToken restAuth(Authentication authentication, String clientId) {
-        String password = authentication.getCredentials().toString();
-
-        LOG.info("make authentication call out to endpoint: {}", authenticateEndpoint);
-        LOG.info("clientId: {}", clientId);
-
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post().uri(authenticateEndpoint).bodyValue(
-                        Map.of("authenticationId", authentication.getPrincipal().toString(),
-                                "password", password,
-                "clientId", clientId))
-                .retrieve();
-
-        //throws exception on authentication not found return with 401 http status
-        return responseSpec.bodyToMono(Map.class).map(map -> {
-            LOG.info("authentication response contains: {}", map);
-
-            final List<GrantedAuthority> grantedAuths = new ArrayList<>();
-
-            LOG.info("map.get('roles'): {}", map.get(ROLES));
-
-            if (map.get(ROLES) != null) {
-                String roleList = map.get(ROLES).toString();
-                roleList = roleList.replace("[", "");
-                roleList = roleList.replace("]", "");
-
-                LOG.info("go thru each ROLES from list and add to grantedAuths: {}", roleList);
-                String[] roles = roleList.split(",");
-                for(String role: roles) {
-                    LOG.info("add role: {}", role);
-                    if (!role.trim().isEmpty()) {
-                        grantedAuths.add(new SimpleGrantedAuthority(role));
-                    }
-                    else {
-                        LOG.info("role string is empty: '{}'", role);
-                    }
-                }
-            }
-            //final UserDetails principal = new User(authentication.getName(), password, grantedAuths);
-            UUID userId = UUID.fromString(map.get("userId").toString());
-            LOG.info("username: {}", authentication.getName());
-
-            final UserId principal = new UserId(userId.toString(), authentication.getPrincipal().toString(), password, grantedAuths);
-
-            LOG.info("returning using custom authenticator with grantedAuths added: {}", grantedAuths);
-
-            LOG.info("storing userId as principal in authToken");
-            return new UsernamePasswordAuthenticationToken(principal, password, grantedAuths);
-
-        }).onErrorResume(throwable -> {
-            LOG.error("error on authentication-rest-service to endpoint '{}' with error: {}", authenticateEndpoint,
-                    throwable.getMessage());
-
-            if (throwable instanceof WebClientResponseException) {
-                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                LOG.error("error body contains: {}", webClientResponseException.getResponseBodyAsString());
-                return Mono.error(new BadCredentialsException("Bad credentials"));
-            }
-            else {
-                return Mono.error(new BadCredentialsException("Bad credentials"));
-            }
-        }).block();
-    }
-
 
     private Mono<UUID> getUserId(String authenticationId) {
         StringBuilder userByAuthId = new StringBuilder(userEndpoint.replace("{authenticationId}",

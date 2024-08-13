@@ -1,6 +1,9 @@
 #server:
 #  port: 9000
 AUTH_SERVER_PORT: 9000
+server:
+  servlet:
+    context-path: /issuer
 
 
 logging:
@@ -43,7 +46,6 @@ authentication-rest-service:
 user-rest-service:
   root: http://localhost:8080
   context: /users
-  userId: ${user-rest-service.context}/{id}
   userByAuthId: ${user-rest-service.context}/authentication-id/{authenticationId}
 
 organization-rest-service:
@@ -62,32 +64,37 @@ account-rest-service:
 ISSUER_URI: http://my-server:9001
 private-client-url: http://127.0.0.1:8090
 
+
 requestFilters:
-  - out: /users, /users/authentication-id/(.)*
+  # get user info during authentication, user exists in organization during authentication,
+  #  validate emailLoginSecret during password change
+  - out: /users/authentication-id/(.)*,
+      /organizations/(.)*/users/(.)*, /accounts/(.)*/password-secret/(.)*
+    outHttpMethods: get
     accessToken:
       option: request
-      scopes: message.read
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - out: /authentications/(.)*
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  # these endpoints are called from authzmanager with acessToken present
+  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
+    outHttpMethods: put, delete
+    accessToken:
+      option: forward
+    # update password, authenticate
+  - out: /authentications/authenticate
+    outHttpMethods: post
     accessToken:
       option: request
-      scopes: message.read
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-  - out: /organizations/(.)*/users/(.)*
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
+  # email my username, emailActivationLink, email my secret for password reset
+  - out: /accounts/email/(.)*/authentication-id, /accounts/active/email/(.)*/password-secret,
+      /accounts/email/(.)*/password-secret, /accounts/password-secret
+    outHttpMethods: put
     accessToken:
       option: request
-      scopes: message.read
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-#  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
-#    accessToken:
-#      option: forward
-  - out: /accounts/active/email-link/(.)*
-    accessToken:
-      option: request
-      scopes: message.write
-      base64EncodedClientIdSecret: b2F1dGgtY2xpZW50Om9hdXRoLXNlY3JldA==
-
-
+      scopes: ${REQUEST_SCOPES}
+      base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
 
 # this is used for getting accesstoken by header filter
 auth-server:

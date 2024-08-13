@@ -3,7 +3,6 @@ package me.sonam.auth.rest;
 import me.sonam.auth.webclient.AccountWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,12 +22,6 @@ import java.util.Map;
 @Controller
 public class ForgotUsernameController {
     private static final Logger LOG = LoggerFactory.getLogger(ForgotUsernameController.class);
-
-    @Value("${account-rest-service.root}${account-rest-service.context}${account-rest-service.emailUsername}")
-    private String emailUserName;
-
-    @Value("${account-rest-service.root}${account-rest-service.context}${account-rest-service.emailMySecret}")
-    private String emailMySecret;
 
     private final AccountWebClient accountWebClient;
 

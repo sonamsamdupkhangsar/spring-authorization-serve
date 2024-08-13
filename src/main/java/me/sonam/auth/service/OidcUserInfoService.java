@@ -1,6 +1,8 @@
 package me.sonam.auth.service;
 
 
+import me.sonam.auth.service.exception.BadCredentialsException;
+import me.sonam.auth.webclient.UserWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,43 +20,39 @@ import java.util.UUID;
 @Service
 public class OidcUserInfoService {
     private static final Logger LOG = LoggerFactory.getLogger(OidcUserInfoService.class);
-    @Value("${user-rest-service.root}${user-rest-service.userByAuthId}")
-    private String userByAuthIdEp;
+    private UserWebClient userWebClient;
 
-    @Value("${user-rest-service.root}${user-rest-service.userId}")
-    private String userIdEndpoint;
-
-    private WebClient.Builder webClientBuilder;
-
-    public OidcUserInfoService(WebClient.Builder webClientBuilder) {
-        this.webClientBuilder = webClientBuilder;
+    public OidcUserInfoService(UserWebClient userWebClient) {
+        this.userWebClient = userWebClient;
     }
 
     public OidcUserInfo loadUser(String username) {
         LOG.info("loadUser by username: {}", username);
 
-        OidcUserInfo oidcUserInfo = getOidcUserInfoMap(username).flatMap(map ->
-                Mono.just(new OidcUserInfo(map))).block();
+        try {
+            OidcUserInfo oidcUserInfo = getOidcUserInfoMap(username).flatMap(map ->
+                    Mono.just(new OidcUserInfo(map))).block();
 
-        LOG.info("oidcUserInfo.claims: {}, oidcUserInfo: {}", oidcUserInfo.getClaims(), oidcUserInfo);
-        return oidcUserInfo;
+            LOG.info("oidcUserInfo.claims: {}, oidcUserInfo: {}", oidcUserInfo.getClaims(), oidcUserInfo);
+            return oidcUserInfo;
+        }
+        catch (Exception e) {
+            LOG.error("failed to build oidcUserInfo");
+            throw new BadCredentialsException("failed to get oidcUserInfo, maybe the user does not exist with authenticationId: "+ username);
+        }
     }
 
     private Mono<Map<String, Object>> getOidcUserInfoMap(String authenticationId) {
-        final String userInfoEndpoint = userByAuthIdEp.replace("{authenticationId}", authenticationId);
-        LOG.info("making a call to user endpoint: {}", userInfoEndpoint);
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(userInfoEndpoint)
-                        .retrieve();
-
-        return responseSpec.bodyToMono(Map.class).flatMap(map -> {
-            LOG.info("got userInfo from user-rest-service: {}", map);
-            Map<String, Object> oidcUserInfoMap = buildOidcUserInfo(authenticationId, map);
+        return userWebClient.getUserByAuthenticationId(authenticationId).flatMap(stringStringMap -> {
+            LOG.info("got userInfo from user-rest-service: {}", stringStringMap);
+            Map<String, Object> oidcUserInfoMap = buildOidcUserInfo(authenticationId, stringStringMap);
             return Mono.just(oidcUserInfoMap);
         }).onErrorResume(throwable -> {
-            LOG.error("error on getting user info from user-rest-service endpoint '{}' with error: {}",
-                    userInfoEndpoint, throwable.getMessage());
-            return Mono.error(new RuntimeException("user info call failed, error: " + throwable.getMessage()));
+            LOG.error("failed to get user by authenticationid '{}'", authenticationId);
+            LOG.debug("exception occurred in get user by authenticationId", throwable);
+
+            return Mono.error(throwable);
         });
     }
 

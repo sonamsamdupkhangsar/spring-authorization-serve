@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Service;
@@ -39,10 +38,10 @@ public class TokenFilter {
     @Autowired
     private TokenRequestFilter tokenRequestFilter;
 
-    private WebClient.Builder webClientBuilder;
+    private final WebClient.Builder webClientBuilder;
 
     private RequestCache requestCache;
-    @Value("${auth-server.oauth2token.issuerTokenPath:}")
+    @Value("${server.servlet.context-path}${auth-server.oauth2token.path:}")
     private String accessTokenPath;
 
     public TokenFilter(WebClient.Builder webClientBuilder, RequestCache requestCache) {
@@ -52,32 +51,47 @@ public class TokenFilter {
 
     public ExchangeFilterFunction renewTokenFilter() {
         return (request, next) -> {
-            LOG.info("request.path: {}", request.url().getPath());
+
+            LOG.info("outbound request path: {}", request.url().getPath());
             if (request.url().getPath().equals(accessTokenPath)) {
                 LOG.debug("no need to request access token when going to that path: {}", request.url().getPath());
                 ClientRequest clientRequest = ClientRequest.from(request).build();
                 return next.exchange(clientRequest);
             }
             else {
-                LOG.info("going thru jwt request ") ;
+                LOG.debug("going thru request filters") ;
+                int index = 0;
                 for (TokenRequestFilter.RequestFilter requestFilter : tokenRequestFilter.getRequestFilters()) {
-                    LOG.debug("jwt.out: {}", requestFilter.getOut());
-                    String[] outMatches = requestFilter.getOut().split(",");
+                    LOG.info("checking requestFilter[{}]  {}", index++, requestFilter);
 
-                    for (String outPath : outMatches) {
-                        LOG.info("outPath: {}", outPath);
-                        if (request.url().getPath().matches(outPath.trim())) {
-                            LOG.info("path {} matches with outbound request matches: {}",
-                                    outPath, request.url().getPath());
-                            LOG.info("make a token request");
+                    if (!requestFilter.getOutHttpMethodSet().isEmpty()) {
 
-                            return getClientRequest(request, next, requestFilter, outPath);
+                        LOG.info("outHttpMethods: {} provided, actual outbound httpMethod: {}", requestFilter.getOutHttpMethodSet(),
+                                request.method().name());
+
+                        if (requestFilter.getOutHttpMethodSet().contains(request.method().name().toLowerCase())) {
+
+                            boolean matchOutPath = requestFilter.getOutSet().stream().anyMatch(w -> {
+                                boolean value = request.url().getPath().trim().matches(w);
+                                LOG.debug("request path {}, regex expression '{}' matches? : {}", request.url().getPath().trim(), w, value);
+                                return value;
+                            });
+                            if (matchOutPath) {
+                                LOG.info("outbound path matched");
+                                return getClientRequest(request, next, requestFilter);
+                            }
+                            else {
+                                LOG.info("no match found for outbound path {} ",
+                                        request.url().getPath());
+                            }
                         }
+                    }
+                    else {
+                        LOG.info("requestFilter outHttpMethodSet is empty");
                     }
                 }
 
-                LOG.info("no outbound path match found");
-                LOG.info("printing bearer header: {}", request.headers().get(HttpHeaders.AUTHORIZATION));
+                LOG.info("no out match found");
                 ClientRequest filtered = ClientRequest.from(request)
                         .build();
                 return next.exchange(filtered);
@@ -85,8 +99,8 @@ public class TokenFilter {
         };
     }
 
-    private Mono<ClientResponse> getClientRequest(ClientRequest request, ExchangeFunction next, TokenRequestFilter.RequestFilter requestFilter, String outPath) {
-       /* if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.forward)) {
+    private Mono<ClientResponse> getClientRequest(ClientRequest request, ExchangeFunction next, TokenRequestFilter.RequestFilter requestFilter) {
+        if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.forward)) {
             LOG.info("option is forward token");
             return ReactiveSecurityContextHolder.getContext().
                     map(securityContext -> securityContext.getAuthentication().getPrincipal())
@@ -101,7 +115,7 @@ public class TokenFilter {
                         return Mono.just(clientRequest);
                     }).flatMap(next::exchange);
         }
-        else */if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.request)) {
+        else if (requestFilter.getAccessToken().getOption().equals(TokenRequestFilter.RequestFilter.AccessToken.JwtOption.request)) {
             return getAccessToken(oauth2TokenEndpoint.toString(), grantType, requestFilter.getAccessToken().getScopes(), requestFilter.getAccessToken().getBase64EncodedClientIdSecret())
                     .flatMap(accessToken -> {
                         LOG.info("got accessToken using client-credential: {}", accessToken);
@@ -115,7 +129,7 @@ public class TokenFilter {
                     }).flatMap(next::exchange);
         }
         else {
-            LOG.info("not going to request a token, forward the request with a Auth token");
+            LOG.info("forward the request as is");
             ClientRequest filtered = ClientRequest.from(request)
                     .build();
             return next.exchange(filtered);

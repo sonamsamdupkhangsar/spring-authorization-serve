@@ -3,13 +3,13 @@ package me.sonam.auth.util;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @ConfigurationProperties
 public class TokenRequestFilter {
-    private List<RequestFilter> requestFilters = new ArrayList();
+    private final List<RequestFilter> requestFilters = new ArrayList<>();
 
     public List<RequestFilter> getRequestFilters() {
         return requestFilters;
@@ -20,6 +20,10 @@ public class TokenRequestFilter {
 
     public static class RequestFilter {
         private String out;
+        private Set<String> outSet = new HashSet<>();
+        private String outHttpMethods;
+        private Set<String> outHttpMethodSet = new HashSet<>();
+
         private AccessToken accessToken;
 
         public RequestFilter() {
@@ -31,8 +35,21 @@ public class TokenRequestFilter {
 
         public void setOut(String out) {
             this.out = out;
+            String[] outArray = out.split(",");
+            outSet = Arrays.stream(outArray).map(String::trim).collect(Collectors.toSet());
+        }
+        public Set<String> getOutSet() {
+            return this.outSet;
+        }
+        public Set<String> getOutHttpMethodSet() {
+            return this.outHttpMethodSet;
         }
 
+        public void setOutHttpMethods(String outHttpMethods) {
+            this.outHttpMethods = outHttpMethods;
+            String[] httpMethodArray = outHttpMethods.split(",");
+            outHttpMethodSet = Arrays.stream(httpMethodArray).map(String::trim).map(String::toLowerCase).collect(Collectors.toSet());
+        }
         public AccessToken getAccessToken() {
             return accessToken;
         }
@@ -43,8 +60,11 @@ public class TokenRequestFilter {
 
         @Override
         public String toString() {
-            return "JwtRequest{" +
-                    ", out='" + out + '\'' +
+            return "RequestFilter{" +
+                    " out='" + out + '\'' +
+                    ", outSet='" + outSet +'\'' +
+                    ", outHttpMethods='" + outHttpMethods + '\'' +
+                    ", outHttpMethodSet='" + outHttpMethodSet + '\'' +
                     ", accessToken='" + accessToken + '\'' +
                     '}';
         }

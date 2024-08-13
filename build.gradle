@@ -13,7 +13,7 @@ plugins {
 group = 'me.sonam'
 version = '1.0'
 description = 'authorization'
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 repositories {
     mavenCentral()
@@ -54,7 +54,11 @@ dependencies {
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.0.1'
     testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.0.0'
 }
-
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
