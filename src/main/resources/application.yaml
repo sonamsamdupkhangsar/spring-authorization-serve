@@ -69,10 +69,6 @@ account-rest-service:
   validateEmailLoginSecret: /{email}/password-secret/{secret}
   updatePassword: /password-secret
 
-oauth2-token-mediator:
-  root: ${TOKEN_MEDIATOR}
-  clients: /oauth2-token-mediator/clients
-
 # this is used for getting accesstoken by header filter
 auth-server:
   root: http://authorization-server/issuer
@@ -96,11 +92,6 @@ requestFilters:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  # these endpoints are called from authzmanager with acessToken present
-  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
-    outHttpMethods: put, delete
-    accessToken:
-      option: forward
     # update password, authenticate
   - out: /authentications/authenticate
     outHttpMethods: post
