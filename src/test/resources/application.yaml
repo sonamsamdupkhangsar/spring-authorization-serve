@@ -75,11 +75,6 @@ requestFilters:
       option: request
       scopes: ${REQUEST_SCOPES}
       base64EncodedClientIdSecret: ${BASE64_CLIENT_ID_SECRET}
-  # these endpoints are called from authzmanager with acessToken present
-  - out: /oauth2-token-mediator/clients, /oauth2-token-mediator/clients/(.)*
-    outHttpMethods: put, delete
-    accessToken:
-      option: forward
     # update password, authenticate
   - out: /authentications/authenticate
     outHttpMethods: post
@@ -103,9 +98,6 @@ auth-server:
     path: /oauth2/token
     grantType: client_credentials
 
-oauth2-token-mediator:
-  root: http://localhost:8080
-  clients: /oauth2-token-mediator/clients
 
 BASE64_CLIENT_ID_SECRET: dXNlcjpzZWNyZXQ=
 REQUEST_SCOPES: cmVhZCB3cml0ZQ==

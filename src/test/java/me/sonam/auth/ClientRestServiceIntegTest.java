@@ -153,22 +153,21 @@ public class ClientRestServiceIntegTest {
         /*mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"access_token\": \"eyJraWQiOiJlOGQ3MjIzMC1iMDgwLTRhZjEtODFkOC0zMzE3NmNhMTM5ODIiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI3NzI1ZjZmZC1kMzk2LTQwYWYtOTg4Ni1jYTg4YzZlOGZjZDgiLCJhdWQiOiI3NzI1ZjZmZC1kMzk2LTQwYWYtOTg4Ni1jYTg4YzZlOGZjZDgiLCJuYmYiOjE3MTQ3NTY2ODIsImlzcyI6Imh0dHA6Ly9teS1zZXJ2ZXI6OTAwMSIsImV4cCI6MTcxNDc1Njk4MiwiaWF0IjoxNzE0NzU2NjgyLCJqdGkiOiI0NDBlZDY0My00MzdkLTRjOTMtYTZkMi1jNzYxNjFlNDRlZjUifQ.fjqgoczZbbmcnvYpVN4yakpbplp7EkDyxslvar5nXBFa6mgIFcZa29fwIKfcie3oUMQ8MDWxayak5PZ_QIuHwTvKSWHs0WL91ljf-GT1sPi1b4gDKf0rJOwi0ClcoTCRIx9-WGR6t2BBR1Rk6RGF2MW7xKw8M-RMac2A2mPEPJqoh4Pky1KgxhZpEXixegpAdQIvBgc0KBZeQme-ZzTYugB8EPUmGpMlfd-zX_vcR1ijxi8e-LRRJMqmGkc9GXfrH7MOKNQ_nu6pc6Gish2v_iuUEcpPHXrfqzGb9IHCLvfuLSaTDcYKYjQaEUAp-1uDW8-5posjiUV2eBiU48ajYg\", \"token_type\":\"Bearer\", \"expires_in\":\"299\"}"));
 */
-        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+     /*   mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"deleted clientId in token-mediator: "+clientId+"\"}"));
-
+*/
         LOG.info("delete clientId");
         webTestClient.delete().uri("/clients/"+clientId+"/user-id/"+userId)
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isNoContent();
 
-        RecordedRequest recordedRequest = /*mockWebServer.takeRequest();
+        /*RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2/token");
-*/
         recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
-
+*/
         assertThat(clientUserRepository.existsByClientId(UUID.fromString(registeredClient.getId()))).isFalse();
     }
 
@@ -189,9 +188,9 @@ public class ClientRestServiceIntegTest {
                 .setResponseCode(200).setBody(refreshTokenResource.getContentAsString(StandardCharsets.UTF_8)));
 
        */ LOG.info("mock the delete call from token-mediator call");
-        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+     /*   mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"deleted clientId: "+clientId+"\"}"));
-
+*/
         RegisteredClient registeredClient = getRegisteredClientFromRestService(clientId.toString(), clientIdAccessToken);
         Map<String, String> rcMap = jpaRegisteredClientRepository.getMap(registeredClient);
         rcMap.put("redirectUris", "http://www.sonam.cloud");
@@ -204,15 +203,16 @@ public class ClientRestServiceIntegTest {
         RegisteredClient registeredClient1 = jpaRegisteredClientRepository.build(registeredClientMap);
 
         // take request for mocked response of access token
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+     //   RecordedRequest recordedRequest = mockWebServer.takeRequest();
       /*  assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2/token");
 
         LOG.info("take request for mocked response to token-mediator for client delete");
         recordedRequest = mockWebServer.takeRequest();
-      */  assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
+      */
+        /*assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
-
+*/
         assertThat(registeredClient1.getRedirectUris()).contains("http://www.sonam.cloud");
 
 
@@ -332,35 +332,37 @@ public class ClientRestServiceIntegTest {
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).requireProofKey(false).build())
                 .build();
 
-        Map<String, Object> regClientMap = jpaRegisteredClientRepository.getMapObject(registeredClient, false);
+        Map<String, Object> regClientMap = jpaRegisteredClientRepository.getMapObject(registeredClient);
         regClientMap.put("userId", userId);
         LOG.info("requestBody: {}", regClientMap);
 
        /* mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody(refreshTokenResource.getContentAsString(StandardCharsets.UTF_8)));
 */
-        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+       /* mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"saved client, count of client by clientId: 1\"}"));
-
+*/
         Mono<Map> mapMono = webTestClient.post().uri("/clients").bodyValue(regClientMap)
               //  .headers(httpHeaders -> httpHeaders.setBearerAuth(accessToken))
                 .exchange().expectStatus().isCreated().returnResult(Map.class).getResponseBody().single();
 
+        LOG.info("saved client");
         StepVerifier.create(mapMono).assertNext(map1 -> {
             LOG.info("map: {}", map1);
             assertThat(map1.get("id")).isNotNull();
             LOG.info("map1.id: {}", map1.get("id"));
         }).verifyComplete();
 
+        LOG.info("test verified complete");
         // take request for mocked response of access token
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+      //  RecordedRequest recordedRequest = mockWebServer.takeRequest();
        /* assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2/token");
 
         LOG.info("take request for mocked response to token-mediator for client when mediateToken field is not present");*/
         //recordedRequest = mockWebServer.takeRequest();
-        assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
-        assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
+       // assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
+      //  assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients");
     }
 
 
@@ -393,18 +395,18 @@ public class ClientRestServiceIntegTest {
         assertThat(clientRepository.findByClientId(clientId.toString()).get()).isNotNull();
         assertThat(clientOrganizationRepository.findByClientId(clientId)).isEmpty();
 
-        mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
+       /* mockWebServer.enqueue(new MockResponse().setHeader("Content-Type", "application/json")
                 .setResponseCode(200).setBody("{\"message\": \"deleted clientId in token-mediator: "+clientId+"\"}"));
-
+*/
         LOG.info("call client delete");
         EntityExchangeResult<Map<String, Object>> entityExchangeResult = webTestClient.delete()
                 .uri("/clients")
                 .accept(MediaType.APPLICATION_JSON).exchange().expectBody(new ParameterizedTypeReference<Map<String, Object>>() {}).returnResult();
 
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+       /* RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertThat(recordedRequest.getMethod()).isEqualTo("DELETE");
         assertThat(recordedRequest.getPath()).startsWith("/oauth2-token-mediator/clients/"+clientId);
-
+*/
 
         assertThat(clientOwnerRepository.findByUserId(userId).size()).isEqualTo(0);
         assertThat(clientUserRepository.countByUserId(userId)).isEqualTo(0);

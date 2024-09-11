@@ -23,7 +23,6 @@ AUTHENTICATION_REST_SERVICE: http://authentication-rest-service
 USER_REST_SERVICE: http://user-rest-service
 ORGANIZATION_REST_SERVICE: http://organization-rest-service
 ACCOUNT_REST_SERVICE: http://account-rest-service
-TOKEN_MEDIATOR: http://oauth2-token-mediator
 API_GATEWAY: http://api-gateway:8080
 
 # ISSUER_URL here is used for pulling the public certs from authorization-server for token validation

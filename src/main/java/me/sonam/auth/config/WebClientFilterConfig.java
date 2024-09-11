@@ -3,8 +3,6 @@ package me.sonam.auth.config;
 import jakarta.annotation.PostConstruct;
 import me.sonam.auth.webclient.AccountWebClient;
 import me.sonam.auth.util.TokenFilter;
-import me.sonam.auth.webclient.TokenMediatorWebClient;
-import me.sonam.auth.webclient.UserWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +27,6 @@ public class WebClientFilterConfig {
     @Value("${account-rest-service.root}${account-rest-service.context}${account-rest-service.updatePassword}")
     private String updatePassword;
 
-    @Value("${oauth2-token-mediator.root}${oauth2-token-mediator.clients}")
-    private String tokenClientEndpoint;
-
     @Autowired
     private WebClient.Builder webClientBuilder;
 
@@ -48,11 +43,5 @@ public class WebClientFilterConfig {
     public AccountWebClient accountWebClient() {
         return new AccountWebClient(webClientBuilder, emailUsername, emailMySecret, emailActiveLink, validateEmailLoginSecret, updatePassword);
     }
-
-    @Bean
-    public TokenMediatorWebClient tokenMediatorWebClient() {
-        return new TokenMediatorWebClient(webClientBuilder, tokenClientEndpoint);
-    }
-
 
 }

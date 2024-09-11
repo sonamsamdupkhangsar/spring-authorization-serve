@@ -5,12 +5,10 @@ import jakarta.ws.rs.BadRequestException;
 import me.sonam.auth.jpa.entity.Client;
 import me.sonam.auth.jpa.entity.ClientOwner;
 import me.sonam.auth.jpa.entity.ClientUser;
-import me.sonam.auth.jpa.entity.TokenMediate;
 import me.sonam.auth.jpa.repo.*;
 import me.sonam.auth.rest.util.MyPair;
 import me.sonam.auth.service.JpaRegisteredClientRepository;
 import me.sonam.auth.util.TokenRequestFilter;
-import me.sonam.auth.webclient.TokenMediatorWebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,8 +36,6 @@ public class ClientRestService {
 
     private final ClientRepository clientRepository;
     private final JpaRegisteredClientRepository jpaRegisteredClientRepository;
-    @Autowired
-    private TokenMediateRepository tokenMediateRepository;
 
     @Autowired
     private HClientUserRepository clientUserRepository;
@@ -56,12 +52,8 @@ public class ClientRestService {
     @Autowired
     private TokenRequestFilter tokenRequestFilter;
 
-    private final TokenMediatorWebClient tokenMediatorWebClient;
-
     public ClientRestService(JpaRegisteredClientRepository jpaRegisteredClientRepository,
-                             ClientRepository clientRepository, PasswordEncoder passwordEncoder,
-                             TokenMediatorWebClient tokenMediatorWebClient) {
-        this.tokenMediatorWebClient = tokenMediatorWebClient;
+                             ClientRepository clientRepository, PasswordEncoder passwordEncoder) {
         this.jpaRegisteredClientRepository = jpaRegisteredClientRepository;
         this.clientRepository = clientRepository;
         this.passwordEncoder = passwordEncoder;
@@ -84,10 +76,9 @@ public class ClientRestService {
 
         if (jpaRegisteredClientRepository.findByClientId(map.get("clientId").toString()) != null) {
             LOG.error("clientId already exists, do an update");
-            //throw new BadRequestException("clientId already exists");
             RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(map.get("clientId").toString());
             if (registeredClient != null) {
-                return jpaRegisteredClientRepository.getMapObject(registeredClient, false);
+                return jpaRegisteredClientRepository.getMapObject(registeredClient);
             }
             throw new BadRequestException("clientId already exists but not able to pull from repository");
         }
@@ -107,34 +98,12 @@ public class ClientRestService {
 
         LOG.info("saved registeredClient.id: {}", registeredClient.getId());
         UUID clientId = UUID.fromString(registeredClient.getId());
-        boolean mediateToken = false;
-        if (map.get("mediateToken") != null) {
-            mediateToken = Boolean.parseBoolean(map.get("mediateToken").toString());
-        }
-
-        if (mediateToken) {
-            if (!tokenMediateRepository.existsById(clientId)) {
-                TokenMediate tokenMediate = new TokenMediate(UUID.fromString(registeredClient.getId()));
-                tokenMediateRepository.save(tokenMediate);
-            }
-            LOG.info("call tokenMediator");
-            tokenMediatorWebClient.saveClientInTokenMediator(accessToken, map.get("clientId").toString(), map.get("clientSecret").toString())
-                    .block();
-        }
-        else {
-            if (tokenMediateRepository.existsById(clientId)) {
-                LOG.info("delete existing tokenMediate record when not enabled.");
-                tokenMediateRepository.deleteById(clientId);
-            }
-            tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, map.get("clientId").toString()).block();
-        }
 
         LOG.info("save clientUser relationship, userId: {}", map.get("userId"));
         clientUserRepository.save(new ClientUser(UUID.fromString(registeredClient.getId()),
                 UUID.fromString(map.get("userId").toString())));
 
-        Map<String, Object> mapToReturn = jpaRegisteredClientRepository.getMapObject(registeredClient, false);
-        //mapToReturn.put("mediateToken", Boolean.toString(mediateToken));
+        Map<String, Object> mapToReturn = jpaRegisteredClientRepository.getMapObject(registeredClient);
 
         LOG.info("clientId: {}", clientId);
 
@@ -149,8 +118,7 @@ public class ClientRestService {
         LOG.info("get by clientId: {}", clientId);
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findByClientId(clientId);
-        boolean exists = tokenMediateRepository.existsById(UUID.fromString(registeredClient.getId()));
-        return jpaRegisteredClientRepository.getMapObject(registeredClient, exists);
+        return jpaRegisteredClientRepository.getMapObject(registeredClient);
     }
 
     @GetMapping(value = "{id}")
@@ -159,10 +127,8 @@ public class ClientRestService {
         LOG.info("get client by id: {}", id);
 
         RegisteredClient registeredClient = jpaRegisteredClientRepository.findById(id);
-        boolean exists = false;
         if (registeredClient != null) {
-            exists = tokenMediateRepository.existsById(UUID.fromString(registeredClient.getId()));
-            return jpaRegisteredClientRepository.getMapObject(registeredClient, exists);
+            return jpaRegisteredClientRepository.getMapObject(registeredClient);
         }
         return Map.of("error", "registeredClient not found with id:"+ id);
     }
@@ -192,23 +158,8 @@ public class ClientRestService {
                 }
         );
 
-       /* clientUserRepository.findByUserId(userId, pageable).forEach(clientUser -> {
-                    Optional<Client> optionalClient = clientRepository.findById(clientUser.getClientId().toString());
-                    if (optionalClient.isEmpty()) {
-                        LOG.error("client not found ClientRepository by clientId: '{}'", clientUser.getClientId());
-                    }
-                    optionalClient.ifPresent(client ->
-                            list.add(new MyPair<>(client.getId(), client.getClientId())));
-                }
-        );*/
-
         LOG.info("list of clientId pairs: {}", list);
         return new PageImpl<>(list, pageable, clientOwnerRepository.countByUserId(userId));
-/*
-        List<ClientUser> clientUserList =clientUserRepository.findByUserId(userId).stream()
-                .toList();
-        return clientUserList.stream().map(ClientUser::getClientId).toList();
-*/
     }
 
     @PutMapping
@@ -234,7 +185,6 @@ public class ClientRestService {
 
         verifyUserOwnsClientId(UUID.fromString(fromDb.getId()), UUID.fromString(map.get("userId").toString()));
 
-        //RegisteredClient fromDb = jpaRegisteredClientRepository.findByClientId((String)map.get("clientId"));
         map.put("id", fromDb.getId());
         final String newClientSecret = (String) map.get("newClientSecret");
         LOG.info("using newClientSecret as clientSecret: {}", newClientSecret);
@@ -253,39 +203,15 @@ public class ClientRestService {
         try {
             RegisteredClient registeredClient = jpaRegisteredClientRepository.build(map);
 
-            LOG.info("built registeredClient from map, authorizationCodeTimeToLive in seconds: {}, registeredClient",
+            LOG.info("built registeredClient from map, authorizationCodeTimeToLive in seconds: {}, registeredClient {}",
                     registeredClient.getTokenSettings().getAuthorizationCodeTimeToLive().getSeconds(), registeredClient);
 
             jpaRegisteredClientRepository.save(registeredClient);
 
             LOG.info("saved registeredClient entity");
             UUID clientId = UUID.fromString(registeredClient.getId());
-
-            if (map.get("mediateToken") != null && Boolean.parseBoolean(map.get("mediateToken").toString()) == true) {
-                if (!tokenMediateRepository.existsById(clientId)) {
-                    TokenMediate tokenMediate = new TokenMediate(clientId);
-                    tokenMediateRepository.save(tokenMediate);
-                }
-                if (newClientSecret != null && !newClientSecret.isEmpty()) {
-                    LOG.info("newClientSecret is set in plain text, so call token mediator");
-                    return tokenMediatorWebClient.saveClientInTokenMediator(accessToken, map.get("clientId").toString(), newClientSecret)
-                            .map(map1 -> jpaRegisteredClientRepository.findByClientId(registeredClient.getClientId()))
-                            .map(registeredClient1 -> jpaRegisteredClientRepository.getMapObject(registeredClient1, false));
-                }
-                else {
-                    RegisteredClient registeredClient1 = jpaRegisteredClientRepository.findByClientId(registeredClient.getClientId());
-                    return Mono.just(jpaRegisteredClientRepository.getMapObject(registeredClient1, false));
-                }
-            }
-            else {
-                if (tokenMediateRepository.existsById(clientId)) {
-                    LOG.info("delete existing tokenMediate record when not enabled.");
-                    tokenMediateRepository.deleteById(clientId);
-                }
-                LOG.debug("call to delete client from tokenMediator and return map object");
-                return tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, map.get("clientId").toString())
-                        .thenReturn(jpaRegisteredClientRepository.getMapObject(registeredClient, false));//Boolean.parseBoolean(map.get("mediateToken").toString())));
-            }
+            RegisteredClient registeredClient1 = jpaRegisteredClientRepository.findByClientId(registeredClient.getClientId());
+            return Mono.just(jpaRegisteredClientRepository.getMapObject(registeredClient1));
         }
         catch (Exception e) {
             LOG.error("exception can occur if user does not fill right data {}", e.getMessage(), e);
@@ -311,7 +237,6 @@ public class ClientRestService {
             return Mono.empty();
         }
         else {
-
             verifyUserOwnsClientId(UUID.fromString(id), userId);
 
             LOG.info("deleting by id: {}", registeredClient.getId());
@@ -322,14 +247,8 @@ public class ClientRestService {
             clientOrganizationRepository.deleteByClientId(UUID.fromString(registeredClient.getId()));
 
             clientUserRepository.deleteByClientId(UUID.fromString(registeredClient.getId()));
-
-            if (tokenMediateRepository.existsById(UUID.fromString(registeredClient.getId()))) {
-                LOG.info("delete tokenMediate for clientId");
-                tokenMediateRepository.deleteById(UUID.fromString(registeredClient.getId()));
-            }
-            return tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, registeredClient.getClientId())
-                        .then();
         }
+        return Mono.empty();
     }
 
 
@@ -357,8 +276,6 @@ public class ClientRestService {
             clientUserRepository.deleteByClientId(clientOwner.getClientId());
             clientRepository.deleteById(clientOwner.getClientId().toString());
             clientOrganizationRepository.deleteByClientId(clientOwner.getClientId());
-            tokenMediatorWebClient.deleteClientFromTokenMediator(accessToken, clientOwner.getClientId().toString())
-                    .then().block();
         });
         clientOwnerRepository.deleteByUserId(userId);
         return Mono.just(Map.of("message", "deleted user client data"));
