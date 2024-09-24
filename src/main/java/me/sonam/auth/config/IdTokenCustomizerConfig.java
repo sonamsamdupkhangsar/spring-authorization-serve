@@ -39,7 +39,6 @@ public class IdTokenCustomizerConfig {
                 context.getClaims().claims(claims -> {
                     LOG.info("add all claims");
                     claims.putAll(userInfo.getClaims());
-                    claims.put("myrole", "superduper");
                 });
             }
             else  if (context.getTokenType() == OAuth2TokenType.ACCESS_TOKEN) {
