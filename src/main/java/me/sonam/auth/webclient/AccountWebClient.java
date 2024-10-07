@@ -16,11 +16,11 @@ public class AccountWebClient {
 
     private final WebClient.Builder webClientBuilder;
 
-    private String emailUserName;
-    private String emailMySecret;
-    private String emailActiveLink;
-    private String validateEmailLoginSecret;
-    private String updatePassword;
+    private final String emailUserName;
+    private final String emailMySecret;
+    private final String emailActiveLink;
+    private final String validateEmailLoginSecret;
+    private final String updatePassword;
 
     public AccountWebClient(WebClient.Builder webClientBuilder,
                             String emailUserName, String emailMySecret, String emailActiveLink,
@@ -35,10 +35,10 @@ public class AccountWebClient {
 
     public Mono<String> emailAccountActivationLink(String email) {
         String urlEncodedEmail = URLEncoder.encode(email, Charset.defaultCharset());
-        emailActiveLink = emailActiveLink.replace("{email}", urlEncodedEmail);
-        LOG.info("email using endpoint: {}", emailActiveLink);
+        final String endpoint = emailActiveLink.replace("{email}", urlEncodedEmail);
+        LOG.info("email using endpoint: {}", endpoint);
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(emailActiveLink)
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(endpoint)
                 .retrieve();
         return responseSpec.bodyToMono(String.class);
     }
@@ -48,10 +48,10 @@ public class AccountWebClient {
         LOG.info("urlEncodedEmail: {}, and raw email: {}", urlEncodedEmail, email);
         LOG.info("emailMySecret endpoint: {}", emailMySecret);
 
-        emailMySecret = emailMySecret.replace("{email}", urlEncodedEmail);
-        LOG.info("email '{}' using endpoint: {}", email, emailMySecret);
+        String endpoint = emailMySecret.replace("{email}", urlEncodedEmail);
+        LOG.info("email '{}' using endpoint: {}", email, endpoint);
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(emailMySecret)
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().put().uri(endpoint)
                 .retrieve();
         return responseSpec.bodyToMono(String.class).onErrorResume(throwable -> {
             LOG.error("failed to call email my secret endpoint", throwable);
@@ -68,7 +68,7 @@ public class AccountWebClient {
 
         WebClient.ResponseSpec responseSpec = webClientBuilder.build().get().uri(endpoint)
                 .retrieve();
-        return responseSpec.bodyToMono(new ParameterizedTypeReference<Map<String, String>>() {});
+        return responseSpec.bodyToMono(new ParameterizedTypeReference<>() {});
     }
 
     public Mono<Map<String, String>> updateAuthenticationPassword(String email, String secret, String password) {
