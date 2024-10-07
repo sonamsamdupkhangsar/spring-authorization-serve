@@ -46,6 +46,7 @@ public class AccountWebClient {
     public Mono<String> emailMySecret(String email) {
         String urlEncodedEmail = URLEncoder.encode(email, Charset.defaultCharset());
         LOG.info("urlEncodedEmail: {}, and raw email: {}", urlEncodedEmail, email);
+        LOG.info("emailMySecret endpoint: {}", emailMySecret);
 
         emailMySecret = emailMySecret.replace("{email}", urlEncodedEmail);
         LOG.info("email '{}' using endpoint: {}", email, emailMySecret);

@@ -37,8 +37,10 @@ public class IdTokenCustomizerConfig {
                 LOG.info("userInfo: {}, principal.name: {}", userInfo, context.getPrincipal().getName());
 
                 context.getClaims().claims(claims -> {
-                    LOG.info("add all claims");
+                    LOG.info("add all claims: {}", userInfo.getClaims());
                     claims.putAll(userInfo.getClaims());
+                    claims.put("profile", "");
+                    claims.put("picture", "");
                 });
             }
             else  if (context.getTokenType() == OAuth2TokenType.ACCESS_TOKEN) {
