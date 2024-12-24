@@ -66,6 +66,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer.authorizationServer;
+
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 public class JwtUserInfoMapperSecurityConfig {
@@ -85,8 +87,9 @@ public class JwtUserInfoMapperSecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                new OAuth2AuthorizationServerConfigurer();
+
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = authorizationServer();
+
         RequestMatcher endpointsMatcher = authorizationServerConfigurer
               //  .tokenGenerator(tokenGenerator())
                 .getEndpointsMatcher();
@@ -98,14 +101,13 @@ public class JwtUserInfoMapperSecurityConfig {
             return new OidcUserInfo(principal.getToken().getClaims());
         };
 
-        authorizationServerConfigurer
-                .oidc((oidc) -> oidc
-                        .userInfoEndpoint((userInfo) -> userInfo
-                                .userInfoMapper(userInfoMapper)
-				)
-			);
-
         http.securityMatcher(endpointsMatcher)
+                .with(authorizationServerConfigurer, (authorizationServer) ->
+                        authorizationServer.oidc((oidc) -> oidc
+                                .userInfoEndpoint((userInfo) -> userInfo
+                                        .userInfoMapper(userInfoMapper)
+                                ))
+                )
                 .authorizeHttpRequests((authorize) -> authorize
                         .anyRequest().authenticated()
                 )
@@ -118,8 +120,7 @@ public class JwtUserInfoMapperSecurityConfig {
                         new LoginUrlAuthenticationEntryPoint("/"),
                         new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                 )
-        )
-                .apply(authorizationServerConfigurer);
+        );
 
         return http.cors(Customizer.withDefaults()).build();
     }

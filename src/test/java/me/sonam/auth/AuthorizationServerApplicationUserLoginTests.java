@@ -15,11 +15,11 @@
  */
 package me.sonam.auth;
 
-import com.gargoylesoftware.htmlunit.*;
-import com.gargoylesoftware.htmlunit.html.HtmlButton;
-import com.gargoylesoftware.htmlunit.html.HtmlInput;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.parser.HTMLParser;
+import org.htmlunit.html.HtmlButton;
+import org.htmlunit.html.HtmlInput;
+import org.htmlunit.html.HtmlPage;
+import org.htmlunit.WebClient;
+import org.htmlunit.Page;
 import me.sonam.auth.jpa.entity.ClientOrganization;
 import me.sonam.auth.jpa.entity.ClientOrganizationId;
 import me.sonam.auth.jpa.entity.ClientUser;
